@@ -92,44 +92,33 @@ export function formulerParGabarit(entree: EntreeFormulation): string {
   );
 
   for (const [i, c] of r.resultats.entries()) {
-    lignes.push('');
-    lignes.push(`${i + 1}. ${c.domaine} — ${c.nom_cuvee}${c.millesime ? ` ${c.millesime}` : ''}`);
-    lignes.push(`   ${decrireFaits(c)}`);
+    const identite =
+      `${i + 1}. ${c.domaine}, ${c.nom_cuvee}${c.millesime ? ` ${c.millesime}` : ''}` +
+      (c.prix_ttc !== null ? ` — ${EUROS(c.prix_ttc)}` : '');
 
-    if (c.note_degustation && c.note_source) {
-      lignes.push(`   Note du producteur : « ${extrait(c.note_degustation)} »`);
-      lignes.push(`   Source : ${c.note_source.label}, relevee le ${c.note_source.date_releve} — ${c.note_source.url}`);
-      if (c.fixture) {
-        lignes.push(`   ATTENTION : donnee de developpement, non relevee sur une fiche technique.`);
-      }
+    if (c.note_degustation) {
+      // Justification citee de la fiche, pas reformulee. La carte affiche la
+      // citation complete et sa source: inutile de les repeter ici.
+      lignes.push(`${identite}. ${extrait(c.note_degustation, 110)}`);
     } else if (c.profil_appellation) {
-      // Separation des niveaux: on annonce que ce qui suit decrit
-      // l'appellation, pas la cuvee.
+      // Separation des niveaux: dit explicitement qu'on decrit l'appellation.
       lignes.push(
-        `   Aucune fiche technique indexee pour cette cuvee. ` +
-        `Profil de l'appellation : ${c.profil_appellation.texte}`,
+        `${identite}. Aucune fiche technique indexee pour cette cuvee ; ` +
+        `le profil ci-contre est celui de l'appellation.`,
       );
-      lignes.push(
-        `   Source : ${c.profil_appellation.source.label}` +
-        (c.profil_appellation.section ? ` (${c.profil_appellation.section})` : '') +
-        ` — ${c.profil_appellation.source.url}`,
-      );
+    } else {
+      lignes.push(`${identite}. Aucun element descriptif indexe.`);
     }
   }
 
-  if (r.accordsPourLePlat.length > 0) {
-    lignes.push('');
-    lignes.push(
-      `Accords suggeres pour ce type de plat, deduits du profil d'appellation ` +
-      `(et non d'une caracteristique de ces cuvees) : ` +
-      r.accordsPourLePlat.map((a) => a.libelle).join(', ') + '.',
-    );
-  }
-
+  // Les accords, les sources et les avertissements de fixture sont rendus par
+  // l'interface, chacun a sa place. Les repeter ici doublait la longueur de la
+  // page sans rien ajouter.
   return lignes.join('\n');
 }
 
-function decrireFaits(c: Resultat): string {
+/** Conserve pour les sorties texte (CLI, journal), ou aucune carte n'existe. */
+export function decrireFaits(c: Resultat): string {
   const faits: string[] = [];
   if (c.assemblage.length > 0) {
     faits.push(

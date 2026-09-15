@@ -76,7 +76,10 @@ export const PLATS: Record<string, { categorie: 'viande' | 'fromage' | 'poisson'
   volaille: { categorie: 'viande', termes: ['volaille', 'poulet', 'magret', 'canard', 'pintade'] },
   charcuterie: { categorie: 'viande', termes: ['charcuterie', 'saucisson', 'jambon', 'pate'] },
   fromage: { categorie: 'fromage', termes: ['fromage', 'pelardon', 'roquefort', 'tomme', 'chevre', 'brebis'] },
-  poisson: { categorie: 'poisson', termes: ['poisson', 'brandade', 'bourride', 'tielle', 'daurade', 'loup', 'saumon', 'thon'] },
+  // 'loup' est volontairement absent: l'appellation s'appelle Pic Saint-Loup,
+  // et toute demande la citant se retrouvait classee en accord poisson.
+  // Le cout d'un faux positif ici est superieur au gain d'un vrai positif.
+  poisson: { categorie: 'poisson', termes: ['poisson', 'brandade', 'bourride', 'tielle', 'daurade', 'bar de ligne', 'saumon', 'thon', 'cabillaud'] },
   aperitif: { categorie: 'autre', termes: ['aperitif', 'apero', 'tapas', 'grignotage'] },
 };
 

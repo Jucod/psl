@@ -103,3 +103,17 @@ describe('parseur deterministe', () => {
     expect(texteVectoriel(parser('un rouge a 20 euros', opts))).toBeNull();
   });
 });
+
+describe('collisions de vocabulaire', () => {
+  it("ne classe pas une demande citant l'appellation en accord poisson", () => {
+    // Regression: 'loup' figurait dans les termes "poisson", et toute demande
+    // citant Pic Saint-Loup declenchait donc un accord poisson.
+    const f = parser('un vin du Pic Saint-Loup', opts);
+    expect(f.plat).toBeNull();
+  });
+
+  it('reconnait toujours une vraie demande de poisson', () => {
+    expect(parser('quelque chose pour une daurade grillee', opts).plat).toBe('poisson');
+    expect(parser('pour accompagner du poisson', opts).plat).toBe('poisson');
+  });
+});
