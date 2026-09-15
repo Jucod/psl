@@ -58,10 +58,14 @@ le modèle déraille, et elles sont démontrables sans lui.
 Le refus d'un blanc en Pic Saint-Loup est **un résultat de requête**, pas une
 consigne : `tests/recherche.test.ts` le vérifie sans aucun appel LLM.
 
-Trois comportements se voient à l'écran :
+Quatre comportements se voient à l'écran :
 
-- **Refus** — « un vin blanc du Pic Saint-Loup » → refus explicite citant le
-  cahier des charges INAO. Aucun blanc approchant n'est proposé.
+- **Refus de couverture** — « un vin blanc du Pic Saint-Loup » → refus explicite
+  citant le cahier des charges INAO. Aucun blanc approchant n'est proposé.
+- **Refus d'encépagement** — « avez-vous du chardonnay ? » → refus citant les
+  cépages que l'appellation autorise. Les cépages hors appellation sont
+  reconnus **délibérément** (`CEPAGES_HORS_APPELLATION`) : sans ça la contrainte
+  s'évaporait et le système répondait trois rouges.
 - **Vide** — « un rosé » → l'AOC autorise le rosé, mais aucune cuvée rosée n'est
   indexée. Réponse vide assumée, distincte du refus.
 - **Élargissement** — « moins de 12 euros » → rien sous 12 €, le budget est
@@ -164,8 +168,21 @@ Quatre points de fuite ont été identifiés et traités :
 3. Le prompt de formulation ne cite que des champs nommés et ne reformule rien.
 4. **Le message de l'utilisateur lui-même.** « Décris-moi ce vin comme une soirée
    d'été » injecte le registre interdit. C'est le point le plus facile à rater :
-   le type `EntreeFormulation` (`src/llm/index.ts`) **ne contient ni le message
-   ni les descripteurs**. La barrière est de type, pas de discipline.
+   le type `EntreeFormulation` (`src/llm/index.ts`) ne contient ni le message ni
+   les descripteurs, et `entreeFormulation()` construit l'objet **champ par
+   champ**. Un spread aurait laissé `filtresDemandes` physiquement présent dans
+   l'objet remis au modèle : TypeScript ne vérifie pas les propriétés en trop
+   sur un spread, donc la barrière n'aurait existé qu'à la lecture.
+
+Deux points restent ouverts, et il faut les dire :
+
+- **Le corpus est un vecteur d'injection, pas seulement l'utilisateur.** Une
+  note de fiche technique contenant une consigne part brute au modèle. Seule la
+  règle 7 du prompt s'y oppose.
+- **La garantie est architecturale en provider `local`, contrôlée en provider
+  `anthropic`.** `descripteursInventes()` bascule sur le gabarit si la réponse
+  du modèle introduit une famille de descripteurs absente des notes fournies.
+  C'est un filet, pas une preuve : à énoncer honnêtement en clientèle.
 
 L'interface porte la mention sanitaire. Un interstitiel d'âge reste à ajouter si
 la démo devient publique : ce n'est pas de l'authentification, c'est vingt lignes.
@@ -188,9 +205,20 @@ Conséquence, assumée et visible :
   `fixture_dev`.
 
 Le calque n'est appliqué que si `PSL_AUTORISER_FIXTURES=1`. **Le défaut du code
-est `0`**, et le moteur refuse en plus de *servir* une cuvée adossée à une
-fixture même si elle est déjà en base : le verrou est à l'ingestion et à la
-lecture. L'interface badge chaque carte concernée en rouge.
+est `0`.**
+
+Le verrou joue à l'ingestion **et** à la lecture, pour le cas où la base aurait
+été peuplée avec le flag à 1 puis servie avec le flag à 0. À la lecture, on
+masque les **champs** issus du calque, pas la ligne : la cuvée reste visible et
+sa description retombe sur le profil d'appellation, en l'annonçant. Exclure la
+ligne faisait répondre « le catalogue ne contient aucune cuvée » sur un
+catalogue de cinq, pendant que `/api/catalogue` annonçait les mêmes.
+
+Le masquage porte sur les colonnes, pas seulement sur l'affichage : un prix
+masqué vaut `NULL` et cesse d'être retenu par un filtre de budget. Filtrer sur
+une valeur qu'on refuse d'afficher serait pire que de l'exclure. `/api/sante` et
+`/api/catalogue` appliquent le même prédicat, sans quoi le curseur de budget du
+front affichait une fourchette construite sur des données de développement.
 
 Pour passer en données réelles : remplir `db/seed/cuvees/*.json` depuis les
 fiches techniques, supprimer le dossier `cuvees.fixtures/`, remettre la variable

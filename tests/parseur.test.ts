@@ -177,3 +177,35 @@ describe('couleur: les pieges rencontres', () => {
     expect(parser('un viognier', opts).cepages_inclus).toContain('viognier');
   });
 });
+
+describe('controle de sortie du modele', () => {
+  it('ne rejette pas une reponse qui rapporte fidelement les donnees fournies', async () => {
+    // Faux positif corrige: l'elevage "en fut de 400 litres" porte la famille
+    // "boise", absente de la note de degustation. Se limiter a la note faisait
+    // rejeter une reponse exacte.
+    const { descripteursInventes } = await import('../src/llm/anthropic.js');
+    const donnees = {
+      references: [{
+        cuvee: 'Dame Jeanne',
+        elevage: '16 a 18 mois en fut de 400 litres',
+        note_degustation_producteur: 'Nez de fruits noirs murs, cassis et mure. L attaque est ronde.',
+      }],
+    };
+    const reponse =
+      'Bergerie du Capucin, Dame Jeanne 2022. Elevage 16 a 18 mois en fut de 400 litres. ' +
+      'Nez de fruits noirs murs, l attaque est ronde.';
+    expect(descripteursInventes(reponse, donnees)).toHaveLength(0);
+  });
+
+  it('rejette une reponse qui introduit un descripteur absent des donnees', async () => {
+    const { descripteursInventes } = await import('../src/llm/anthropic.js');
+    const donnees = {
+      references: [{ note_degustation_producteur: 'Nez de fruits noirs murs, cassis et mure.' }],
+    };
+    // "tanins serres" et "charpente" ne figurent nulle part dans les donnees.
+    const invente = descripteursInventes(
+      'Un vin charpente, aux tanins serres et a la finale mentholee.', donnees,
+    );
+    expect(invente).toContain('tannique');
+  });
+});
