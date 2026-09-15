@@ -15,7 +15,12 @@ const RACINE_WEB = join(ICI, '../../web/dist');
 
 const app = Fastify({ logger: { level: 'info' } });
 
-await app.register(cors, { origin: true });
+// CORS: une origine libre laisse une page tierce consommer le plafond de
+// depense quotidien. Le rate limit par IP l'attenue sans l'annuler.
+// Par defaut, meme origine uniquement; PSL_ORIGINES_AUTORISEES ouvre au besoin.
+const origines = (process.env.PSL_ORIGINES_AUTORISEES ?? '')
+  .split(',').map((o) => o.trim()).filter(Boolean);
+await app.register(cors, { origin: origines.length > 0 ? origines : false });
 
 /** Sert le front construit s'il existe. Absent en dev: Vite s'en charge. */
 try {
@@ -25,10 +30,16 @@ try {
 }
 
 app.get('/api/sante', async () => {
+  // Compter les notes sans tenir compte du flag faisait annoncer
+  // "5 cuvees avec note" a cote de "fixtures_actives: false".
   const { rows } = await db().query<{ cuvees: number; avec_note: number }>(
     `SELECT count(*)::int AS cuvees,
-            count(*) FILTER (WHERE embedding_niveau = 'cuvee')::int AS avec_note
+            count(*) FILTER (
+              WHERE embedding_niveau = 'cuvee'
+                AND ($1::boolean OR NOT provenance_fixture)
+            )::int AS avec_note
        FROM cuvees`,
+    [env.autoriserFixtures()],
   );
   return {
     ok: true,
@@ -44,18 +55,33 @@ app.get('/api/sante', async () => {
  * Metadonnees pour le panneau de filtres editable: le front ne doit pas
  * connaitre les valeurs du domaine en dur, il les demande.
  */
+/**
+ * Metadonnees du panneau de filtres.
+ *
+ * Le meme predicat de fixture que le moteur s'applique ici. Sans lui, le
+ * curseur de budget affichait une fourchette 14-26 € et trois cepages
+ * entierement issus du calque de developpement, flag a 0: le panneau de
+ * gauche contredisait la reponse de droite, dans la meme seconde.
+ */
 app.get('/api/catalogue', async () => {
   const pool = db();
+  const fixtures = env.autoriserFixtures();
   const [appellations, couleurs, cepages, bornes] = await Promise.all([
     pool.query(`SELECT a.id, a.nom, s.label AS source_label, s.url AS source_url
                   FROM appellations a JOIN sources s ON s.id = a.source_id ORDER BY a.nom`),
     pool.query(`SELECT DISTINCT couleur FROM appellation_couleurs ORDER BY couleur`),
     pool.query(`SELECT c.code, c.libelle FROM cepages c
-                 WHERE EXISTS (SELECT 1 FROM cuvee_cepages cc WHERE cc.cepage = c.code)
-                 ORDER BY c.libelle`),
+                 WHERE EXISTS (
+                   SELECT 1 FROM cuvee_cepages cc
+                     JOIN cuvees cu ON cu.id = cc.cuvee_id
+                    WHERE cc.cepage = c.code
+                      AND ($1::boolean OR NOT cu.provenance_fixture)
+                 )
+                 ORDER BY c.libelle`, [fixtures]),
     pool.query(`SELECT min(prix_ttc)::float AS prix_min, max(prix_ttc)::float AS prix_max,
                        min(millesime)::int AS millesime_min, max(millesime)::int AS millesime_max
-                  FROM cuvees WHERE disponible`),
+                  FROM cuvees
+                 WHERE disponible AND ($1::boolean OR NOT provenance_fixture)`, [fixtures]),
   ]);
 
   return {

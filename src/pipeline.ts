@@ -5,7 +5,7 @@ import { env } from './config/env.js';
 import { db } from './db/client.js';
 import { fournisseurEmbedding } from './embeddings/index.js';
 import { construireIndexCepages, codeCepage } from './ingest/util.js';
-import { fournisseurLlm, type Usage } from './llm/index.js';
+import { fournisseurLlm, type EntreeFormulation, type Usage } from './llm/index.js';
 import { texteVectoriel } from './llm/parseur.js';
 import { rechercher } from './moteur/recherche.js';
 import { choisirExtrait } from './moteur/justification.js';
@@ -48,15 +48,77 @@ async function cepages(): Promise<ReadonlyMap<string, string>> {
  * C'est ici, et pas dans le moteur, parce que c'est une question de vocabulaire
  * metier: le moteur reste ignorant du domaine.
  */
-export async function normaliserFiltres(f: Filtres): Promise<Filtres> {
+export async function normaliserFiltres(
+  f: Filtres,
+): Promise<{ filtres: Filtres; inconnus: string[] }> {
   const index = await cepages();
-  const normaliserListe = (liste: string[]) =>
-    [...new Set(liste.map((c) => codeCepage(c, index)).filter((c): c is string => c !== null))].sort();
+  const inconnus: string[] = [];
+
+  const normaliserListe = (liste: string[]) => {
+    const codes: string[] = [];
+    for (const denomination of liste) {
+      const code = codeCepage(denomination, index);
+      // Un cepage non resolu ne doit PAS disparaitre en silence. Le supprimer
+      // faisait repondre trois rouges a "avez-vous du chardonnay ?": la
+      // contrainte s'evaporait et le refus attendu n'arrivait jamais.
+      if (code === null) inconnus.push(denomination);
+      else codes.push(code);
+    }
+    return [...new Set(codes)].sort();
+  };
 
   return {
-    ...f,
-    cepages_inclus: normaliserListe(f.cepages_inclus),
-    cepages_exclus: normaliserListe(f.cepages_exclus),
+    filtres: {
+      ...f,
+      cepages_inclus: normaliserListe(f.cepages_inclus),
+      cepages_exclus: normaliserListe(f.cepages_exclus),
+    },
+    inconnus: [...new Set(inconnus)],
+  };
+}
+
+/**
+ * Refus construit depuis l'encepagement du cahier des charges. Comme le refus
+ * de couleur, c'est un resultat de requete, et il cite sa source.
+ */
+async function refuserCepagesInconnus(
+  inconnus: string[],
+  appellation: string | null,
+): Promise<ResultatRecherche['refus']> {
+  if (!appellation) {
+    return { message: `Cepage inconnu du catalogue : ${inconnus.join(', ')}.`, source: null };
+  }
+
+  const { rows } = await db().query(
+    `SELECT a.nom, a.encepagement, s.id, s.type, s.label, s.url, s.autorite,
+            s.date_releve::text AS date_releve
+       FROM appellations a JOIN sources s ON s.id = a.source_id
+      WHERE a.id = $1`,
+    [appellation],
+  );
+  const ligne = rows[0];
+  if (!ligne) {
+    return { message: `Cepage inconnu du catalogue : ${inconnus.join(', ')}.`, source: null };
+  }
+
+  const autorises = new Set<string>();
+  for (const bloc of Object.values(ligne.encepagement ?? {})) {
+    for (const cle of ['principaux', 'accessoires']) {
+      for (const c of (bloc as any)?.[cle] ?? []) autorises.add(String(c));
+    }
+  }
+
+  return {
+    message:
+      `${inconnus.join(', ')} : ce cepage n'entre pas dans l'encepagement de ` +
+      `l'appellation ${ligne.nom}` +
+      (autorises.size
+        ? `, qui n'autorise que ${[...autorises].sort().join(', ')}.`
+        : '.'),
+    source: {
+      id: ligne.id, type: ligne.type, label: ligne.label, url: ligne.url,
+      autorite: ligne.autorite ?? null, date_releve: ligne.date_releve,
+    },
   };
 }
 
@@ -132,7 +194,24 @@ export async function executerPipeline(entree: EntreePipeline): Promise<SortiePi
   }
 
   if (filtres.appellation === null && defaut) filtres = { ...filtres, appellation: defaut };
-  filtres = await normaliserFiltres(filtres);
+
+  const normalisation = await normaliserFiltres(filtres);
+  filtres = normalisation.filtres;
+
+  if (normalisation.inconnus.length > 0) {
+    const refus = await refuserCepagesInconnus(normalisation.inconnus, filtres.appellation);
+    const recherche: ResultatRecherche = {
+      statut: 'refus_hors_catalogue', refus,
+      filtresDemandes: filtres, filtresAppliques: filtres,
+      relachements: [], classement: 'lexicographique', resultats: [],
+      accordsPourLePlat: [], tailleCatalogue: 0, avertissements: [],
+    };
+    const { texte } = await llm.formuler(entreeFormulation(recherche));
+    return {
+      ...base, statut: 'refus_hors_catalogue', texte, recherche,
+      degrade, raisonDegrade, usage, latence_ms: Date.now() - debut,
+    };
+  }
 
   // --- vecteur de la partie floue ------------------------------------------
   // Arithmetique de vecteurs: souhaite moins refuse. Une note qui contient les
@@ -168,9 +247,7 @@ export async function executerPipeline(entree: EntreePipeline): Promise<SortiePi
   }
 
   // --- appel 2 --------------------------------------------------------------
-  const { texte, usage: usage2 } = await llm.formuler({
-    recherche: { ...recherche, filtresAppliques: recherche.filtresAppliques as unknown as Record<string, unknown> },
-  });
+  const { texte, usage: usage2 } = await llm.formuler(entreeFormulation(recherche));
   usage.tokens_in += usage2.tokens_in;
   usage.tokens_out += usage2.tokens_out;
   usage.cout_eur += usage2.cout_eur;
@@ -184,6 +261,32 @@ export async function executerPipeline(entree: EntreePipeline): Promise<SortiePi
     raisonDegrade,
     usage,
     latence_ms: Date.now() - debut,
+  };
+}
+
+/**
+ * Construit l'entree de l'appel 2 champ par champ.
+ *
+ * Un spread `{ ...recherche }` laissait `filtresDemandes` - donc les
+ * descripteurs, et une appellation en texte libre - PHYSIQUEMENT present dans
+ * l'objet remis au modele. TypeScript ne verifie pas les proprietes en trop sur
+ * un spread : la "barriere de type" n'existait qu'a la lecture, et seule la
+ * liste blanche de donneesFormulation protegeait vraiment. Enumerer rend la
+ * barriere reelle au runtime.
+ */
+function entreeFormulation(recherche: ResultatRecherche): EntreeFormulation {
+  return {
+    recherche: {
+      statut: recherche.statut,
+      refus: recherche.refus,
+      relachements: recherche.relachements,
+      classement: recherche.classement,
+      resultats: recherche.resultats,
+      accordsPourLePlat: recherche.accordsPourLePlat,
+      tailleCatalogue: recherche.tailleCatalogue,
+      avertissements: recherche.avertissements,
+      filtresAppliques: {},
+    },
   };
 }
 

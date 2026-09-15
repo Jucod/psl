@@ -1,6 +1,6 @@
 import {
-  FAMILLE_PAR_MOT, FAMILLES, MARQUEURS_NEGATION, OPPOSES, PLATS,
-  PORTEE_NEGATION, mots, normaliser, racine,
+  CEPAGES_HORS_APPELLATION, FAMILLE_PAR_MOT, FAMILLES, MARQUEURS_NEGATION,
+  OPPOSES, PLATS, PORTEE_NEGATION, mots, normaliser, racine,
 } from '../config/lexique.js';
 import { FILTRES_VIDES, FiltresSchema, type Filtres } from '../schema/filtres.js';
 
@@ -31,10 +31,28 @@ export function parser(message: string, options: OptionsParseur = {}): Filtres {
   const texte = normaliser(message);
   const brut: Record<string, unknown> = { ...FILTRES_VIDES };
 
+  const decoupe = mots(message);
+
   // --- couleur -------------------------------------------------------------
-  if (/\brose(s)?\b|\brosee?s?\b/.test(texte)) brut.couleur = 'rose';
-  else if (/\bblanc(s|he|hes)?\b/.test(texte)) brut.couleur = 'blanc';
-  else if (/\brouges?\b/.test(texte)) brut.couleur = 'rouge';
+  // Trois pieges, tous rencontres:
+  //  - "blanche" n'est pas "blanc": une viande blanche declenchait un refus
+  //    d'appellation, confiant, explicite et source. Le pire mode de panne.
+  //  - "un rouge pour une viande blanche": le rouge est le sujet, il prime.
+  //  - "surtout pas un blanc": la couleur doit passer par la negation comme
+  //    les cepages et les descripteurs.
+  const COULEURS: [string, RegExp][] = [
+    ['rouge', /\brouges?\b/],
+    ['rose', /\bros[ée]e?s?\b/],
+    ['blanc', /\bblancs?\b/],
+  ];
+  for (const [code, motif] of COULEURS) {
+    const m = motif.exec(texte);
+    if (!m) continue;
+    const position = texte.slice(0, m.index).split(/\s+/).length - 1;
+    if (estNie(decoupe.brut, position)) continue;
+    brut.couleur = code;
+    break;
+  }
 
   // --- prix ----------------------------------------------------------------
   const min = RE_PRIX_MIN.exec(texte);
@@ -63,8 +81,6 @@ export function parser(message: string, options: OptionsParseur = {}): Filtres {
   // --- bio -----------------------------------------------------------------
   if (/\bbio\b|\bbiologique\b|\bagriculture biologique\b/.test(texte)) brut.bio = true;
 
-  const decoupe = mots(message);
-
   // --- cepages -------------------------------------------------------------
   if (options.indexCepages) {
     const parRacine = new Map<string, string>();
@@ -72,6 +88,12 @@ export function parser(message: string, options: OptionsParseur = {}): Filtres {
       if (synonyme.length < 4) continue;
       parRacine.set(synonyme.split(' ').map(racine).join(' '), code);
     }
+    // Les cepages hors appellation sont reconnus DELIBEREMENT, pour que la
+    // demande produise un refus source plutot que de s'evaporer.
+    for (const hors of CEPAGES_HORS_APPELLATION) {
+      parRacine.set(hors.split(' ').map(racine).join(' '), hors);
+    }
+
     const inclus = new Set<string>();
     const exclus = new Set<string>();
     for (const { cle, position } of sequences(decoupe.racines)) {

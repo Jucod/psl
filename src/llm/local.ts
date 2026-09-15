@@ -69,9 +69,15 @@ export function formulerParGabarit(entree: EntreeFormulation): string {
   }
 
   if (r.relachements.length > 0) {
+    // Nuance qui compte: "j'ai elargi" annonce un resultat obtenu grace a
+    // l'elargissement. Quand il n'a rien donne, le dire ainsi laisse croire
+    // qu'on a trouve quelque chose.
     lignes.push(
-      `Aucun resultat avec vos criteres initiaux. J'ai elargi : ` +
-      r.relachements.map((x) => x.annonce).join(', ') + '.',
+      r.statut === 'vide'
+        ? `Aucun resultat avec vos criteres initiaux. J'ai essaye d'elargir (` +
+          r.relachements.map((x) => x.annonce).join(', ') + '), sans resultat.'
+        : `Aucun resultat avec vos criteres initiaux. J'ai elargi : ` +
+          r.relachements.map((x) => x.annonce).join(', ') + '.',
     );
   }
 
@@ -79,8 +85,7 @@ export function formulerParGabarit(entree: EntreeFormulation): string {
     lignes.push(
       r.tailleCatalogue === 0
         ? `Le catalogue ne contient aucune cuvee correspondant a cette appellation et cette couleur.`
-        : `Aucune des ${r.tailleCatalogue} cuvee(s) du catalogue ne satisfait ces criteres, ` +
-          `meme apres elargissement.`,
+        : `Aucune des ${r.tailleCatalogue} cuvee(s) du catalogue ne satisfait ces criteres.`,
     );
     return lignes.join('\n');
   }
@@ -101,12 +106,23 @@ export function formulerParGabarit(entree: EntreeFormulation): string {
       // qui motive le classement au debut de la note, qui parle de la robe.
       const citation = c.extrait_pertinent ?? c.note_degustation;
       lignes.push(`${identite}. ${extrait(citation, 130)}`);
+      // La tracabilite ne depend PAS du canal de rendu. L'interface affiche la
+      // source dans la carte, mais ce texte part aussi en CLI, dans le journal
+      // et dans tout copier-coller: un element descriptif sans sa source est
+      // une violation du contrat, pas une redondance evitee.
+      if (c.note_source) {
+        lignes.push(
+          `   Source : ${c.note_source.label} — ${c.note_source.url}` +
+          (c.fixture ? '  [DONNEE DE DEVELOPPEMENT, non relevee sur une fiche]' : ''),
+        );
+      }
     } else if (c.profil_appellation) {
       // Separation des niveaux: dit explicitement qu'on decrit l'appellation.
       lignes.push(
         `${identite}. Aucune fiche technique indexee pour cette cuvee ; ` +
         `le profil ci-contre est celui de l'appellation.`,
       );
+      lignes.push(`   Source du profil : ${c.profil_appellation.source.label} — ${c.profil_appellation.source.url}`);
     } else {
       lignes.push(`${identite}. Aucun element descriptif indexe.`);
     }

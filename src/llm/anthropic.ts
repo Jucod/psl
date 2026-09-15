@@ -4,6 +4,7 @@ import { FILTRES_VIDES, FiltresLlmSchema, FiltresSchema } from '../schema/filtre
 import { parser } from './parseur.js';
 import { SYSTEME_EXTRACTION, SYSTEME_FORMULATION, relanceSchema } from './prompts.js';
 import { formulerParGabarit } from './local.js';
+import { FAMILLE_PAR_MOT, tokeniser } from '../config/lexique.js';
 import type { EntreeFormulation, FournisseurLlm, ResultatExtraction, Usage } from './index.js';
 
 /** $ par million de tokens. Table du 2026-06-24, a reverifier avant deploiement. */
@@ -137,13 +138,52 @@ export class LlmAnthropic implements FournisseurLlm {
         .join('\n')
         .trim();
 
-      // Un modele muet ne doit pas produire une page blanche: on retombe sur
-      // le gabarit, qui donne toujours une reponse exacte.
-      return { texte: texte || formulerParGabarit(entree), usage };
+      // Un modele muet ne doit pas produire une page blanche, et un modele
+      // bavard ne doit pas produire du descriptif non source.
+      if (!texte) return { texte: formulerParGabarit(entree), usage };
+
+      const invente = descripteursInventes(texte, entree);
+      if (invente.length > 0) {
+        // On ne corrige pas, on remplace: le gabarit ne peut rien inventer.
+        return { texte: formulerParGabarit(entree), usage };
+      }
+      return { texte, usage };
     } catch {
       return { texte: formulerParGabarit(entree), usage };
     }
   }
+}
+
+/**
+ * Controle de sortie : la reponse du modele introduit-elle un descripteur
+ * sensoriel absent des textes qu'on lui a fournis ?
+ *
+ * Sans lui, "aucune note ne peut etre generee ou reformulee" est une garantie
+ * architecturale en provider local et une simple declaration en provider
+ * anthropic. C'est la difference a enoncer honnetement devant un client.
+ *
+ * Volontairement grossier: il ne juge pas le style, il compare des familles de
+ * descripteurs. Un faux positif coute une reponse par gabarit, exacte mais
+ * plus seche. Un faux negatif coute la promesse du projet.
+ */
+function descripteursInventes(texte: string, entree: EntreeFormulation): string[] {
+  const autorise = new Set<string>();
+  for (const c of entree.recherche.resultats) {
+    for (const source of [c.note_degustation, c.profil_appellation?.texte]) {
+      if (!source) continue;
+      for (const t of tokeniser(source)) {
+        const f = FAMILLE_PAR_MOT.get(t);
+        if (f) autorise.add(f);
+      }
+    }
+  }
+
+  const trouves = new Set<string>();
+  for (const t of tokeniser(texte)) {
+    const f = FAMILLE_PAR_MOT.get(t);
+    if (f && !autorise.has(f)) trouves.add(f);
+  }
+  return [...trouves];
 }
 
 function cumuler(usage: Usage, u: { input_tokens: number; output_tokens: number }, modele: string): void {
@@ -162,6 +202,10 @@ function donneesFormulation(entree: EntreeFormulation) {
     statut: r.statut,
     refus: r.refus,
     contraintes_relachees: r.relachements.map((x) => x.annonce),
+    // Sans cette information le modele ne peut pas savoir qu'il doit taire la
+    // pertinence d'un classement qui n'en a pas.
+    classement: r.classement,
+    elargissement_infructueux: r.relachements.length > 0 && r.statut === 'vide',
     taille_catalogue: r.tailleCatalogue,
     accords_derives_du_profil_appellation: r.accordsPourLePlat.map((a) => a.libelle),
     references: r.resultats.map((c) => ({
@@ -180,13 +224,20 @@ function donneesFormulation(entree: EntreeFormulation) {
       passage_pertinent: c.extrait_pertinent,
       note_source: c.note_source ? { label: c.note_source.label, url: c.note_source.url } : null,
       donnee_de_developpement: c.fixture,
-      profil_appellation: c.profil_appellation
-        ? {
-            texte: c.profil_appellation.texte,
-            source: c.profil_appellation.source.label,
-            url: c.profil_appellation.source.url,
-          }
-        : null,
+      // Le profil d'appellation n'est transmis QUE lorsqu'il sert de repli.
+      // L'envoyer alors que la cuvee a sa propre note laissait au modele de
+      // quoi tisser la prose INAO dans la description d'un vin precis: la
+      // separation des niveaux se serait jouee sur la seule discipline du
+      // prompt. Une donnee qui ne doit pas servir n'a rien a faire dans le
+      // contexte.
+      profil_appellation:
+        c.niveau === 'appellation' && c.profil_appellation
+          ? {
+              texte: c.profil_appellation.texte,
+              source: c.profil_appellation.source.label,
+              url: c.profil_appellation.source.url,
+            }
+          : null,
     })),
   };
 }

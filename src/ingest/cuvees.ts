@@ -40,7 +40,7 @@ async function lireDossier(dossier: string): Promise<Record<string, any>[]> {
  * du brief: il ne comble jamais le vide.
  */
 export async function chargerCuvees(autoriserFixtures: boolean): Promise<{
-  cuvees: Cuvee[];
+  cuvees: (Cuvee & { _fixture: boolean })[];
   fixturesAppliquees: number;
 }> {
   const base = await lireDossier(DOSSIER_BASE);
@@ -67,7 +67,9 @@ export async function chargerCuvees(autoriserFixtures: boolean): Promise<{
         `cuvee ${brut.id} invalide: ${parsed.error.issues.map((i) => `${i.path.join('.')} ${i.message}`).join('; ')}`,
       );
     }
-    return parsed.data;
+    // La provenance suit la LIGNE, pas la seule note: le calque pose aussi
+    // prix, assemblage, degre, elevage et certification.
+    return { ...parsed.data, _fixture: calque !== undefined };
   });
 
   return { cuvees, fixturesAppliquees };
@@ -113,8 +115,8 @@ export async function ingererCuvees(
          (id, domaine_id, appellation_id, couleur, nom_cuvee, millesime, degre,
           elevage, prix_ttc, prix_date_releve, bio, certification,
           note_degustation, note_degustation_source_id, accords_producteur,
-          embedding_source, embedding_niveau, fiche_url)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+          embedding_source, embedding_niveau, fiche_url, provenance_fixture)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
        ON CONFLICT (id) DO UPDATE SET
          domaine_id=EXCLUDED.domaine_id, appellation_id=EXCLUDED.appellation_id,
          couleur=EXCLUDED.couleur, nom_cuvee=EXCLUDED.nom_cuvee,
@@ -128,11 +130,12 @@ export async function ingererCuvees(
          embedding_source=EXCLUDED.embedding_source,
          embedding_niveau=EXCLUDED.embedding_niveau,
          fiche_url=EXCLUDED.fiche_url,
+         provenance_fixture=EXCLUDED.provenance_fixture,
          updated_at=now()`,
       [c.id, c.domaine_id, c.appellation_id, c.couleur, c.nom_cuvee, c.millesime,
        c.degre, c.elevage, c.prix_ttc, c.prix_date_releve, c.bio, c.certification,
        c.note_degustation, sourceNoteId, c.accords_producteur,
-       embeddingSource, niveau, c.fiche_url],
+       embeddingSource, niveau, c.fiche_url, c._fixture],
     );
 
     res.cuvees++;

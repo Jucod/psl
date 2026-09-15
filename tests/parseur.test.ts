@@ -150,3 +150,30 @@ describe('justification', () => {
     expect(extrait).toBeNull();
   });
 });
+
+describe('couleur: les pieges rencontres', () => {
+  it('"viande blanche" ne doit pas etre lu comme "vin blanc"', () => {
+    // Le pire mode de panne du prototype: un refus confiant, explicite et
+    // source INAO, sur une demande parfaitement legitime.
+    expect(parser('un rouge pour une viande blanche', opts).couleur).toBe('rouge');
+    expect(parser('un rouge pour une volaille a la creme blanche', opts).couleur).toBe('rouge');
+  });
+
+  it('le sujet de la demande prime sur la couleur citee ensuite', () => {
+    expect(parser('je cherche un rouge, surtout pas un blanc', opts).couleur).toBe('rouge');
+  });
+
+  it('la couleur passe par la negation comme le reste', () => {
+    expect(parser('surtout pas de blanc', opts).couleur).toBeNull();
+  });
+
+  it('une vraie demande de blanc reste reconnue', () => {
+    expect(parser('un vin blanc du pic saint loup', opts).couleur).toBe('blanc');
+    expect(parser('des blancs secs', opts).couleur).toBe('blanc');
+  });
+
+  it('reconnait un cepage hors appellation pour pouvoir le refuser', () => {
+    expect(parser('avez-vous du chardonnay ?', opts).cepages_inclus).toContain('chardonnay');
+    expect(parser('un viognier', opts).cepages_inclus).toContain('viognier');
+  });
+});

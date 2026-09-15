@@ -33,7 +33,10 @@ export function CarteResultat({ c, rang }: { c: Resultat; rang: number }) {
         )}
       </header>
 
-      {c.fixture && (
+      {/* Le bandeau n'a de sens que si un champ issu du calque est REELLEMENT
+          affiche. Quand le flag est a 0, tout est masque et le bloc de repli
+          sur le profil d'appellation explique deja la situation. */}
+      {c.fixture && c.note_degustation !== null && (
         <p className="alerte-fixture">
           Donnee de developpement : cette note, ce prix et cet assemblage n'ont pas
           ete releves sur une fiche technique de producteur.

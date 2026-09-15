@@ -83,6 +83,26 @@ export const PLATS: Record<string, { categorie: 'viande' | 'fromage' | 'poisson'
   aperitif: { categorie: 'autre', termes: ['aperitif', 'apero', 'tapas', 'grignotage'] },
 };
 
+/**
+ * Cepages courants ABSENTS de l'appellation.
+ *
+ * Sans cette liste, "avez-vous du chardonnay ?" ne produisait aucun filtre a
+ * refuser: le parseur ne reconnaissait que les cepages du catalogue, la
+ * contrainte s'evaporait, et le systeme repondait trois rouges. Les nommer
+ * permet au moteur de REFUSER en citant l'encepagement du cahier des charges,
+ * au lieu de servir un approchant.
+ *
+ * Liste a etendre selon les demandes reellement reçues; elle n'a pas a etre
+ * exhaustive pour etre utile.
+ */
+export const CEPAGES_HORS_APPELLATION = [
+  'chardonnay', 'viognier', 'roussanne', 'marsanne', 'bourboulenc', 'clairette',
+  'vermentino', 'rolle', 'sauvignon', 'chenin', 'riesling', 'gewurztraminer',
+  'pinot noir', 'cabernet sauvignon', 'cabernet franc', 'merlot', 'gamay',
+  'malbec', 'tannat', 'nebbiolo', 'sangiovese', 'tempranillo', 'muscat',
+  'grenache blanc', 'picpoul', 'terret', 'aligote', 'melon de bourgogne',
+];
+
 /** Retire les accents et abaisse la casse. */
 export function normaliser(texte: string): string {
   return texte

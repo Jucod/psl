@@ -102,6 +102,9 @@ export const config: ConfigDomaine = {
       rendu: (v) => `jusqu'a ${EUROS(v)}`,
       // Par paliers de 25 %, plafonne a +50 % du budget initial.
       relacher: (courante: number, origine: number) => {
+        // Sans cette garde, un origine absent rend la comparaison NaN, donc
+        // fausse, donc le plafond de derive ne s'applique jamais.
+        if (!Number.isFinite(origine)) return null;
         const suivante = Math.round(courante * 1.25 * 100) / 100;
         if (suivante > origine * 1.5 + 0.001) return null;
         return {
@@ -124,6 +127,7 @@ export const config: ConfigDomaine = {
       colonne: 'millesime',
       rendu: (v) => `${v} ou plus recent`,
       relacher: (courante: number, origine: number) => {
+        if (!Number.isFinite(origine)) return null;
         const suivante = courante - 1;
         if (suivante < origine - 3) return null;
         return { valeur: suivante, annonce: `millesime elargi jusqu'a ${suivante}` };
@@ -136,6 +140,7 @@ export const config: ConfigDomaine = {
       colonne: 'millesime',
       rendu: (v) => `${v} ou plus ancien`,
       relacher: (courante: number, origine: number) => {
+        if (!Number.isFinite(origine)) return null;
         const suivante = courante + 1;
         if (suivante > origine + 3) return null;
         return { valeur: suivante, annonce: `millesime elargi jusqu'a ${suivante}` };
