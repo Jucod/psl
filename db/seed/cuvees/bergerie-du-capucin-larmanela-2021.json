@@ -1,0 +1,39 @@
+{
+  "id": "bergerie-du-capucin-larmanela-2021",
+  "domaine_id": "bergerie-du-capucin",
+  "appellation_id": "aoc-pic-saint-loup",
+  "nom_cuvee": "Larmanela",
+  "couleur": "rouge",
+  "millesime": 2021,
+  "assemblage": [
+    {
+      "cepage": "syrah",
+      "pct": null
+    },
+    {
+      "cepage": "grenache",
+      "pct": null
+    }
+  ],
+  "degre": 14.5,
+  "elevage": "Vinification traditionnelle, longue cuvaison. Elevage en fut de 400 L durant 24 mois.",
+  "prix_ttc": 29.0,
+  "prix_date_releve": "2026-09-16",
+  "bio": null,
+  "certification": null,
+  "note_degustation": "Rencontre avec les fruits des bois et les notes aromatiques de la garrigue. Assemblage de syrah et de grenache sur eboulis argilo-calcaires, vignes de 35 ans. Elevage de 24 mois en futs de 400 litres. A servir entre 15 et 16 C, peut se conserver entre 5 et 10 ans.",
+  "note_degustation_source": {
+    "id": "page-bergerie-du-capucin-larmanela-2021",
+    "type": "page_domaine",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://bergerieducapucin.fr/fr/larmanela/110-aop-pic-saint-loup-larmanela.html",
+    "autorite": "Bergerie du Capucin",
+    "date_releve": "2026-09-16"
+  },
+  "accords_producteur": [
+    "viandes rouges",
+    "agneau",
+    "gibier"
+  ],
+  "fiche_url": "https://bergerieducapucin.fr/fr/larmanela/110-aop-pic-saint-loup-larmanela.html"
+}

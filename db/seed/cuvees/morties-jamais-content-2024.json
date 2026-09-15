@@ -1,0 +1,35 @@
+{
+  "id": "morties-jamais-content-2024",
+  "domaine_id": "domaine-de-morties",
+  "appellation_id": "aoc-pic-saint-loup",
+  "nom_cuvee": "Jamais Content",
+  "couleur": "rouge",
+  "millesime": 2024,
+  "assemblage": [
+    {
+      "cepage": "syrah",
+      "pct": 85
+    },
+    {
+      "cepage": "grenache",
+      "pct": 15
+    }
+  ],
+  "degre": null,
+  "elevage": "Vendange manuelle en caissette, infusion lente. Elevage en barrique de 225 L pendant 9 mois.",
+  "prix_ttc": 30.5,
+  "prix_date_releve": "2026-09-16",
+  "bio": null,
+  "certification": null,
+  "note_degustation": "Robe pourpre aux reflets grenat. Nez tres expressif, fume, evoluant sur des notes de graphite et de thym. La bouche se deroule sur la meme trame aromatique avec une finale cacaotee et des petits fruits noirs.",
+  "note_degustation_source": {
+    "id": "page-morties-jamais-content-2024",
+    "type": "page_domaine",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://morties.com/products/copie-de-jamais-content-aop-pic-saint-loup-rouge-2020-domaine-morties",
+    "autorite": "Domaine de Morties",
+    "date_releve": "2026-09-16"
+  },
+  "accords_producteur": [],
+  "fiche_url": "https://morties.com/products/copie-de-jamais-content-aop-pic-saint-loup-rouge-2020-domaine-morties"
+}
