@@ -114,9 +114,11 @@ describe('jalon 2 - recherche hybride', () => {
     const pireSouple = Math.min(...scoresSouples);
     const meilleurCharpente = Math.max(...scoresCharpentes);
     expect(pireSouple).toBeGreaterThan(meilleurCharpente);
-    // Marge exigee, pour que le test tombe si le signal se degrade, et pas
-    // seulement s'il s'inverse.
-    expect(pireSouple - meilleurCharpente).toBeGreaterThan(0.15);
+    // Marge exigee, pour que le test tombe si le signal se DEGRADE, et pas
+    // seulement s'il s'inverse. La valeur observee est 0,45; a 0,15 le test
+    // survivait a une baisse de deux tiers de POIDS_FAMILLE, donc il ne
+    // temoignait que de la suppression du mecanisme. 0,35 garde ~20 % de jeu.
+    expect(pireSouple - meilleurCharpente).toBeGreaterThan(0.35);
   });
 
   it('CAS INVERSE: la partition s inverse quand la demande s inverse', async () => {
@@ -270,8 +272,12 @@ describe('regressions issues de la revue', () => {
 
     const annonces = r.relachements.map((x) => x.annonce);
     expect(new Set(annonces).size).toBe(annonces.length);
+    // La borne de depart et celle d'arrivee doivent differer. L'ancienne
+    // version utilisait \S+, qui ne franchit pas l'espace de "0.01 €" et ne
+    // pouvait donc jamais matcher: un faux verrou.
     for (const x of r.relachements) {
-      expect(x.annonce).not.toMatch(/de (\S+) a \1$/);
+      const m = /de (.+?) a (.+?)$/.exec(x.annonce);
+      if (m) expect(m[1]).not.toBe(m[2]);
     }
   });
 
@@ -283,7 +289,8 @@ describe('regressions issues de la revue', () => {
     const f = filtres({ couleur: 'rouge', descripteurs_exclus: ['fruits_rouges'] });
     const r = await rechercher(f, { ...options, vecteurRequete: await vecteur(f) });
 
-    if (r.classement === 'lexicographique') {
+    expect(r.classement).toBe('lexicographique');
+    {
       const prix = r.resultats.map((c) => c.prix_ttc ?? Infinity);
       const tous = await rechercher(filtres({ couleur: 'rouge' }), { ...options, maxResultats: 99 });
       const attendus = tous.resultats
@@ -291,6 +298,117 @@ describe('regressions issues de la revue', () => {
         .sort((a, b) => a - b)
         .slice(0, prix.length);
       expect(prix.slice().sort((a, b) => a - b)).toEqual(attendus);
+    }
+  });
+});
+
+describe('regressions de la seconde revue', () => {
+  it("N2: une absence ne se conclut pas d'une ignorance", async () => {
+    // "sans mourvedre" sur une cuvee dont l'assemblage est masque: le moteur
+    // l'affirmait sur un vin qui en contient 25 %. C'est la seule affirmation
+    // factuellement fausse sur un produit qu'un tel moteur puisse produire.
+    const avecCalque = await rechercher(
+      filtres({ couleur: 'rouge', cepages_exclus: ['mourvedre'] }), { autoriserFixtures: true },
+    );
+    const sansCalque = await rechercher(
+      filtres({ couleur: 'rouge', cepages_exclus: ['mourvedre'] }), { autoriserFixtures: false },
+    );
+
+    // Assemblage connu: le filtre discrimine reellement.
+    expect(avecCalque.resultats.length).toBeGreaterThan(0);
+    for (const c of avecCalque.resultats) {
+      expect(c.assemblage.some((a) => a.cepage === 'mourvedre')).toBe(false);
+    }
+    // Assemblage inconnu: on ne conclut rien.
+    expect(sansCalque.resultats).toHaveLength(0);
+  });
+
+  it('N6: une donnee manquante n est pas une absence de correspondance', async () => {
+    const r = await rechercher(
+      filtres({ couleur: 'rouge', prix_max: 20 }), { autoriserFixtures: false },
+    );
+    expect(r.statut).toBe('vide');
+    expect(r.filtresIndecidables.map((f) => f.champ)).toContain('prix_max');
+
+    // Et le catalogue n'est pas vide pour autant: c'est bien la donnee qui
+    // manque, pas les cuvees.
+    expect(r.tailleCatalogue).toBeGreaterThan(0);
+  });
+
+  it('N6 bis: un critere decidable n est pas signale comme indecidable', async () => {
+    const r = await rechercher(
+      filtres({ couleur: 'rouge', prix_max: 1 }), { autoriserFixtures: true },
+    );
+    expect(r.statut).toBe('vide');
+    expect(r.filtresIndecidables).toHaveLength(0);
+  });
+
+  it('N7: un signal de niveau appellation ne fait pas un classement de cuvees', async () => {
+    // Sans calque, toutes les cuvees retombent sur le MEME profil AOC: leurs
+    // vecteurs sont identiques et l'ordre n'est que le departage par id.
+    const f = filtres({ couleur: 'rouge', descripteurs: ['souple'] });
+    const r = await rechercher(f, { autoriserFixtures: false, vecteurRequete: await vecteur(f) });
+
+    expect(r.resultats.length).toBeGreaterThan(0);
+    expect(r.resultats.every((c) => c.niveau === 'appellation')).toBe(true);
+    expect(r.classement).toBe('lexicographique');
+  });
+
+  it('le vecteur de rejet participe reellement au classement', async () => {
+    // Temoin du mecanisme lui-meme: sur une demande de REJET SEUL, le vecteur
+    // de requete n'existe que par le rejet. A poidsRejet = 0 il serait
+    // degenere et il n'y aurait aucun classement vectoriel du tout.
+    const f = filtres({ couleur: 'rouge', descripteurs_exclus: ['tannique'] });
+    const v = await vecteur(f);
+    expect(v).not.toBeNull();
+
+    const r = await rechercher(f, { ...options, vecteurRequete: v, maxResultats: 5 });
+    expect(r.classement).toBe('vectoriel');
+
+    const score = (id: string) => r.resultats.find((x) => x.id === id)?.score ?? NaN;
+    // La cuvee la plus charpentee du corpus ferme la marche.
+    const dernier = r.resultats[r.resultats.length - 1]!;
+    expect(dernier.id).toBe('lancyre-grande-cuvee-2021');
+    expect(score('bergerie-du-capucin-dame-jeanne-2022')).toBeGreaterThan(score('lancyre-grande-cuvee-2021'));
+  });
+
+  it('toute cle posee par le calque est masquee par le moteur', async () => {
+    // La liste de masquage de SQL_RESULTATS est maintenue a la main: une
+    // nouvelle cle dans un fichier de calque fuirait en silence. Ce test la
+    // verrouille durablement.
+    const { readdirSync, readFileSync } = await import('node:fs');
+    const dossier = new URL('../db/seed/cuvees.fixtures/', import.meta.url);
+    const clesCalque = new Set<string>();
+    for (const f of readdirSync(dossier).filter((x) => x.endsWith('.json'))) {
+      for (const cle of Object.keys(JSON.parse(readFileSync(new URL(f, dossier), 'utf8')))) {
+        if (!cle.startsWith('_') && cle !== 'id') clesCalque.add(cle);
+      }
+    }
+    expect(clesCalque.size).toBeGreaterThan(0);
+
+    const r = await rechercher(filtres({ couleur: 'rouge' }), { autoriserFixtures: false });
+    expect(r.resultats.length).toBeGreaterThan(0);
+
+    // Correspondance entre les cles du calque et les champs du resultat.
+    const projection: Record<string, (c: (typeof r.resultats)[number]) => unknown> = {
+      note_degustation: (c) => c.note_degustation,
+      note_degustation_source: (c) => c.note_source,
+      accords_producteur: (c) => (c.accords_producteur.length ? c.accords_producteur : null),
+      prix_ttc: (c) => c.prix_ttc,
+      prix_date_releve: (c) => c.prix_date_releve,
+      degre: (c) => c.degre,
+      bio: (c) => c.bio,
+      certification: (c) => c.certification,
+      elevage: (c) => c.elevage,
+      assemblage: (c) => (c.assemblage.length ? c.assemblage : null),
+    };
+
+    for (const cle of clesCalque) {
+      const lecture = projection[cle];
+      expect(lecture, `cle de calque "${cle}" non couverte par ce test`).toBeDefined();
+      for (const c of r.resultats) {
+        expect(lecture!(c), `${c.id}.${cle} devrait etre masque`).toBeNull();
+      }
     }
   });
 });

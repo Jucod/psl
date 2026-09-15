@@ -87,4 +87,11 @@ export interface ResultatRecherche {
   tailleCatalogue: number;
   /** Problemes d'exploitation a remonter a l'operateur, pas a l'utilisateur. */
   avertissements: string[];
+  /**
+   * Filtres portant sur une donnee que le catalogue ne connait pour AUCUNE
+   * cuvee candidate. "Aucun vin sous 20 €" et "je n'ai le prix d'aucun vin"
+   * sont deux reponses differentes, et confondre la seconde avec la premiere
+   * est precisement l'affirmation sans fondement que ce projet refuse.
+   */
+  filtresIndecidables: { champ: string; libelle: string }[];
 }

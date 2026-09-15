@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import type pg from 'pg';
 import { CuveeSchema, type Cuvee } from '../schema/cuvee.js';
 import { codeCepage, construireIndexCepages } from './util.js';
+import { inspecterNote, type Quarantaine } from './quarantaine.js';
 
 const DOSSIER_BASE = new URL('../../db/seed/cuvees/', import.meta.url).pathname;
 const DOSSIER_FIXTURES = new URL('../../db/seed/cuvees.fixtures/', import.meta.url).pathname;
@@ -14,6 +15,8 @@ export interface ResultatCuvees {
   surProfilAppellation: number;
   fixturesAppliquees: number;
   assemblages: number;
+  /** Notes contenant ce qui ressemble a une instruction: a relire a la main. */
+  quarantaine: Quarantaine[];
 }
 
 async function lireDossier(dossier: string): Promise<Record<string, any>[]> {
@@ -86,10 +89,13 @@ export async function ingererCuvees(
 
   const res: ResultatCuvees = {
     cuvees: 0, avecNoteProducteur: 0, surProfilAppellation: 0,
-    fixturesAppliquees, assemblages: 0,
+    fixturesAppliquees, assemblages: 0, quarantaine: [],
   };
 
   for (const c of cuvees) {
+    const suspecte = inspecterNote(c.id, c.note_degustation);
+    if (suspecte) res.quarantaine.push(suspecte);
+
     let sourceNoteId: string | null = null;
     if (c.note_degustation_source) {
       const s = c.note_degustation_source;

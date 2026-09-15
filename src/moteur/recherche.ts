@@ -242,6 +242,48 @@ async function accordsPourLePlat(
   return rows as AccordDerive[];
 }
 
+/**
+ * Quels filtres actifs portent sur une colonne inconnue pour toutes les cuvees
+ * candidates ? Les cles de couverture (appellation, couleur) sont exclues: ce
+ * sont des criteres d'identite, pas des donnees susceptibles de manquer.
+ *
+ * Le masquage des fixtures est applique, sinon on conclurait sur des valeurs
+ * qu'on refuse d'afficher.
+ */
+async function filtresIndecidables(
+  pool: pg.Pool, filtres: Filtres, autoriserFixtures: boolean,
+): Promise<{ champ: string; libelle: string }[]> {
+  const identite = new Set(config.couverture.cles.map((c) => c.filtre));
+  const candidats = config.champs.filter(
+    (c) =>
+      c.colonne &&
+      !identite.has(c.cle) &&
+      (filtres as Record<string, unknown>)[c.cle] !== null &&
+      (filtres as Record<string, unknown>)[c.cle] !== undefined,
+  );
+  if (candidats.length === 0) return [];
+
+  const projections = candidats
+    .map((c, i) => `count(${c.colonne}) FILTER (WHERE NOT masque)::int AS n${i}`)
+    .join(', ');
+
+  const { rows } = await pool.query(
+    `SELECT ${projections}
+       FROM (
+         SELECT *, (provenance_fixture AND NOT $3::boolean) AS masque
+           FROM cuvees
+          WHERE disponible
+            AND ($1::text IS NULL OR appellation_id = $1)
+            AND ($2::text IS NULL OR couleur = $2)
+       ) t`,
+    [filtres.appellation, filtres.couleur, autoriserFixtures],
+  );
+
+  return candidats
+    .filter((_, i) => rows[0]![`n${i}`] === 0)
+    .map((c) => ({ champ: c.cle, libelle: c.libelle }));
+}
+
 async function tailleCatalogue(pool: pg.Pool, filtres: Filtres): Promise<number> {
   const { rows } = await pool.query(
     // Les lignes masquees existent toujours dans le catalogue: seuls leurs
@@ -289,6 +331,7 @@ export async function rechercher(
     accordsPourLePlat: [],
     tailleCatalogue: 0,
     avertissements,
+    filtresIndecidables: [],
   };
 
   // 1. Le catalogue peut-il, par construction, contenir ce qui est demande ?
@@ -313,8 +356,25 @@ export async function rechercher(
       // annonçait "classement par prix" en rendant les 2e et 3e bouteilles les
       // plus cheres du catalogue, deux moins cheres satisfaisant pourtant tous
       // les filtres durs. On relance donc la requete sans vecteur.
-      const meilleur = Math.max(...resultats.map((r) => r.score));
-      const pertinent = vecteur !== null && meilleur >= config.seuilSimilarite;
+      const scores = resultats.map((r) => r.score);
+      const ecart = Math.max(...scores) - Math.min(...scores);
+
+      // Deux conditions, toutes deux apprises a l'usage.
+      //
+      // 1. Un signal de niveau APPELLATION n'est pas un classement de cuvees.
+      //    Quand toutes les lignes retombent sur le meme profil AOC, leurs
+      //    vecteurs sont IDENTIQUES: le cosinus vaut 0,28 partout, l'ordre
+      //    reel n'est que le departage par prix puis par id, et le moteur
+      //    annonçait quand meme "classement par pertinence". C'est une
+      //    caracteristique d'appellation presentee comme une caracteristique
+      //    de cuvee, sous sa forme la plus extreme.
+      //
+      // 2. La discrimination se mesure a l'ECART, pas a un plancher absolu.
+      //    Voir le commentaire de config.seuilDiscrimination.
+      const pertinent =
+        vecteur !== null &&
+        resultats.some((r) => r.niveau === 'cuvee') &&
+        ecart >= config.seuilDiscrimination;
 
       const ordonnes = pertinent
         ? resultats
@@ -336,7 +396,13 @@ export async function rechercher(
     relachements.push(cran.relachement);
   }
 
-  return { ...base, statut: 'vide', filtresAppliques: courants as Filtres, relachements };
+  return {
+    ...base,
+    statut: 'vide',
+    filtresAppliques: courants as Filtres,
+    relachements,
+    filtresIndecidables: await filtresIndecidables(pool, filtres, autoriserFixtures),
+  };
 }
 
 /**

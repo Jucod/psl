@@ -69,7 +69,16 @@ function clausePourChamp(
     case 'jointure_aucun': {
       const j = champ.jointure!;
       params.push(valeur);
-      return `NOT EXISTS (SELECT 1 FROM ${j.table} jj WHERE jj.${j.cleEtrangere} = c.id AND jj.${j.colonne} = ANY(${prochainParam()}))`;
+      // Symetrique du `IS NOT NULL` des operateurs scalaires: une absence ne
+      // se conclut pas d'une ignorance. Sans la seconde condition, une cuvee
+      // dont l'assemblage est masque satisfaisait "sans mourvedre" — et le
+      // moteur l'affirmait sur un vin qui en contient 25 %. C'est la seule
+      // affirmation factuellement fausse qu'un moteur de ce genre puisse
+      // produire sur un produit.
+      return (
+        `NOT EXISTS (SELECT 1 FROM ${j.table} jj WHERE jj.${j.cleEtrangere} = c.id AND jj.${j.colonne} = ANY(${prochainParam()}))` +
+        ` AND EXISTS (SELECT 1 FROM ${j.table} jk WHERE jk.${j.cleEtrangere} = c.id)`
+      );
     }
 
     default: {

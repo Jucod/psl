@@ -175,6 +175,7 @@ button {
 .bandeau-degrade      { background: var(--info-fond);    border-color: var(--info);    color: var(--info); }
 .bandeau-accords      { background: var(--fond-doux);    border-color: var(--bord);    color: var(--texte-doux); }
 .bandeau-vide         { background: var(--fond-doux);    border-color: var(--bord);    color: var(--texte-doux); }
+.bandeau-indecidable  { background: var(--info-fond);    border-color: var(--info);    color: var(--info); }
 .bandeau .detail { opacity: .8; }
 .bandeau a { color: inherit; }
 

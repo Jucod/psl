@@ -13,7 +13,20 @@ try {
   await client.query('COMMIT');
 
   console.log('referentiel :', ref);
-  console.log('cuvees      :', cuv);
+  console.log('cuvees      :', { ...cuv, quarantaine: cuv.quarantaine.length });
+
+  if (cuv.quarantaine.length > 0) {
+    console.warn(
+      `\n  QUARANTAINE  ${cuv.quarantaine.length} note(s) contiennent ce qui\n` +
+      '  ressemble a une instruction adressee a un systeme. Elles sont ingerees,\n' +
+      '  mais A RELIRE A LA MAIN avant toute demo:\n',
+    );
+    for (const q of cuv.quarantaine) {
+      console.warn(`    ${q.cuvee_id} [${q.motifs.join(', ')}]`);
+      console.warn(`      ${q.extrait}…`);
+    }
+    console.warn('');
+  }
 
   if (autoriserFixtures) {
     console.warn(

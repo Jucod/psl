@@ -58,6 +58,7 @@ export interface Recherche {
   resultats: Resultat[];
   accordsPourLePlat: { libelle: string; categorie: string; statut: string; derive_de: string }[];
   tailleCatalogue: number;
+  filtresIndecidables: { champ: string; libelle: string }[];
 }
 
 export interface ReponseRecherche {

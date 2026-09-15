@@ -54,15 +54,27 @@ export async function normaliserFiltres(
   const index = await cepages();
   const inconnus: string[] = [];
 
-  const normaliserListe = (liste: string[]) => {
+  /**
+   * `signaler` distingue les deux sens, et la distinction compte.
+   *
+   * Un cepage inconnu DEMANDE est une contrainte que le catalogue ne peut pas
+   * satisfaire: le supprimer faisait repondre trois rouges a "avez-vous du
+   * chardonnay ?". Il doit produire un refus.
+   *
+   * Un cepage inconnu EXCLU est une contrainte satisfaite par construction:
+   * "un rouge sans chardonnay" a pour bonne reponse trois rouges, pas un refus.
+   * Refuser la revenait a ne pas repondre a une demande qu'on honore
+   * trivialement, sur une formulation de caviste parfaitement banale.
+   */
+  const normaliserListe = (liste: string[], signaler: boolean) => {
     const codes: string[] = [];
     for (const denomination of liste) {
       const code = codeCepage(denomination, index);
-      // Un cepage non resolu ne doit PAS disparaitre en silence. Le supprimer
-      // faisait repondre trois rouges a "avez-vous du chardonnay ?": la
-      // contrainte s'evaporait et le refus attendu n'arrivait jamais.
-      if (code === null) inconnus.push(denomination);
-      else codes.push(code);
+      if (code === null) {
+        if (signaler) inconnus.push(denomination);
+      } else {
+        codes.push(code);
+      }
     }
     return [...new Set(codes)].sort();
   };
@@ -70,8 +82,8 @@ export async function normaliserFiltres(
   return {
     filtres: {
       ...f,
-      cepages_inclus: normaliserListe(f.cepages_inclus),
-      cepages_exclus: normaliserListe(f.cepages_exclus),
+      cepages_inclus: normaliserListe(f.cepages_inclus, true),
+      cepages_exclus: normaliserListe(f.cepages_exclus, false),
     },
     inconnus: [...new Set(inconnus)],
   };
@@ -205,6 +217,7 @@ export async function executerPipeline(entree: EntreePipeline): Promise<SortiePi
       filtresDemandes: filtres, filtresAppliques: filtres,
       relachements: [], classement: 'lexicographique', resultats: [],
       accordsPourLePlat: [], tailleCatalogue: 0, avertissements: [],
+      filtresIndecidables: [],
     };
     const { texte } = await llm.formuler(entreeFormulation(recherche));
     return {
@@ -285,6 +298,7 @@ function entreeFormulation(recherche: ResultatRecherche): EntreeFormulation {
       accordsPourLePlat: recherche.accordsPourLePlat,
       tailleCatalogue: recherche.tailleCatalogue,
       avertissements: recherche.avertissements,
+      filtresIndecidables: recherche.filtresIndecidables,
       filtresAppliques: {},
     },
   };

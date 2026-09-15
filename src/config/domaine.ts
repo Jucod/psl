@@ -67,8 +67,18 @@ export interface ConfigDomaine {
   readonly maxResultats: number;
   readonly poidsRejet: number;
   readonly dimensionEmbedding: number;
-  /** Sous ce cosinus, un resultat vectoriel n'est pas considere pertinent. */
-  readonly seuilSimilarite: number;
+  /**
+   * Ecart minimal entre le meilleur et le moins bon score pour qu'un
+   * classement vectoriel soit considere comme discriminant.
+   *
+   * C'est un seuil d'ECART, pas de similarite absolue, et la nuance compte.
+   * Sur une demande de rejet seul ("rien de tannique"), le vecteur de requete
+   * pointe a l'oppose du concept refuse: tous les cosinus sont negatifs alors
+   * que l'ordre, lui, est parfaitement informatif. Un plancher absolu
+   * n'etait jamais franchi et le rejet ne servait qu'a selectionner, jamais a
+   * classer. Ce qui fait un classement, c'est la separation.
+   */
+  readonly seuilDiscrimination: number;
 }
 
 const EUROS = (n: number) => `${Number(n).toFixed(2).replace(/\.00$/, '')} €`;
@@ -200,7 +210,7 @@ export const config: ConfigDomaine = {
    */
   poidsRejet: 0.7,
   dimensionEmbedding: 1536,
-  seuilSimilarite: 0.05,
+  seuilDiscrimination: 0.05,
 };
 
 /** Acces indexe, utilise partout dans le moteur. */

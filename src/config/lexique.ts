@@ -100,8 +100,23 @@ export const CEPAGES_HORS_APPELLATION = [
   'vermentino', 'rolle', 'sauvignon', 'chenin', 'riesling', 'gewurztraminer',
   'pinot noir', 'cabernet sauvignon', 'cabernet franc', 'merlot', 'gamay',
   'malbec', 'tannat', 'nebbiolo', 'sangiovese', 'tempranillo', 'muscat',
-  'grenache blanc', 'picpoul', 'terret', 'aligote', 'melon de bourgogne',
+  'grenache blanc', 'picpoul', 'terret', 'aligote',
 ];
+
+/**
+ * Ces denominations sont des NOMS PROPRES et ne passent pas par racine().
+ *
+ * racine() supprime le 'e' final, donc 'aligote' devenait 'aligot' — et
+ * "un rouge pour un aligot" declenchait un refus d'encepagement, confiant,
+ * explicite et source INAO, sur un plat. Le meme mode de panne que
+ * "viande blanche", par une autre porte.
+ *
+ * Consequence assumee: un cepage ecrit au pluriel n'est pas reconnu. Rater un
+ * refus coute moins cher qu'un refus faux.
+ */
+export const CEPAGES_HORS_APPELLATION_EXACTS = new Set(
+  CEPAGES_HORS_APPELLATION.map(normaliser),
+);
 
 /** Retire les accents et abaisse la casse. */
 export function normaliser(texte: string): string {
@@ -159,8 +174,20 @@ export const MARQUEURS_NEGATION = new Set([
 /** Portee d'un marqueur, en nombre de mots vers la droite. */
 export const PORTEE_NEGATION = 3;
 
-/** Decoupe en mots pleins, sans retrait des mots vides, racines appliquees. */
+/**
+ * Decoupe en mots pleins, mots vides conserves, racines appliquees.
+ *
+ * Les fragments d'elision sont ecartes: "n'", "d'", "l'", "qu'" ne sont pas des
+ * mots et ne doivent pas consommer de distance. Sans ce filtre, "je n'ai pas
+ * envie d'un blanc" placait "pas" hors de la fenetre de negation, et la demande
+ * ressortait en refus de blanc. Le francais en est plein.
+ */
+const ELISIONS = new Set(['qu']);
+
 export function mots(texte: string): { brut: string[]; racines: string[] } {
-  const brut = normaliser(texte).replace(/[^a-z0-9]+/g, ' ').split(' ').filter(Boolean);
+  const brut = normaliser(texte)
+    .replace(/[^a-z0-9]+/g, ' ')
+    .split(' ')
+    .filter((m) => m.length > 1 && !ELISIONS.has(m));
   return { brut, racines: brut.map(racine) };
 }

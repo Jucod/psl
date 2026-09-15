@@ -72,21 +72,40 @@ export function formulerParGabarit(entree: EntreeFormulation): string {
     // Nuance qui compte: "j'ai elargi" annonce un resultat obtenu grace a
     // l'elargissement. Quand il n'a rien donne, le dire ainsi laisse croire
     // qu'on a trouve quelque chose.
-    lignes.push(
-      r.statut === 'vide'
-        ? `Aucun resultat avec vos criteres initiaux. J'ai essaye d'elargir (` +
-          r.relachements.map((x) => x.annonce).join(', ') + '), sans resultat.'
-        : `Aucun resultat avec vos criteres initiaux. J'ai elargi : ` +
-          r.relachements.map((x) => x.annonce).join(', ') + '.',
-    );
+    const indecidables = new Set(r.filtresIndecidables.map((f) => f.champ));
+    const utiles = r.relachements.filter((x) => !indecidables.has(x.champ));
+    // Annoncer "j'ai elargi le budget" quand aucun prix n'est connu est du
+    // theatre: l'elargissement n'avait aucune chance de changer quoi que ce
+    // soit, et le dire donne l'illusion d'un effort qui n'a pas eu lieu.
+    if (utiles.length > 0) {
+      lignes.push(
+        r.statut === 'vide'
+          ? `Aucun resultat avec vos criteres initiaux. J'ai essaye d'elargir (` +
+            utiles.map((x) => x.annonce).join(', ') + '), sans resultat.'
+          : `Aucun resultat avec vos criteres initiaux. J'ai elargi : ` +
+            utiles.map((x) => x.annonce).join(', ') + '.',
+      );
+    }
   }
 
   if (r.statut === 'vide') {
-    lignes.push(
-      r.tailleCatalogue === 0
-        ? `Le catalogue ne contient aucune cuvee correspondant a cette appellation et cette couleur.`
-        : `Aucune des ${r.tailleCatalogue} cuvee(s) du catalogue ne satisfait ces criteres.`,
-    );
+    if (r.filtresIndecidables.length > 0) {
+      // Nuance decisive: le catalogue ne CONTREDIT pas le critere, il ne le
+      // connait pas. L'annoncer comme une absence serait une affirmation sans
+      // fondement, exactement ce que le systeme existe pour eviter.
+      const noms = r.filtresIndecidables.map((f) => f.libelle.toLowerCase()).join(', ');
+      lignes.push(
+        `Je ne peux pas repondre sur ce critere : aucune des ${r.tailleCatalogue} ` +
+        `cuvee(s) du catalogue ne porte l'information demandee (${noms}). ` +
+        `Ce n'est pas une absence de correspondance, c'est une donnee manquante.`,
+      );
+    } else {
+      lignes.push(
+        r.tailleCatalogue === 0
+          ? `Le catalogue ne contient aucune cuvee correspondant a cette appellation et cette couleur.`
+          : `Aucune des ${r.tailleCatalogue} cuvee(s) du catalogue ne satisfait ces criteres.`,
+      );
+    }
     return lignes.join('\n');
   }
 

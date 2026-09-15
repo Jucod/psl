@@ -1,6 +1,6 @@
 import {
-  CEPAGES_HORS_APPELLATION, FAMILLE_PAR_MOT, FAMILLES, MARQUEURS_NEGATION,
-  OPPOSES, PLATS, PORTEE_NEGATION, mots, normaliser, racine,
+  CEPAGES_HORS_APPELLATION_EXACTS, FAMILLE_PAR_MOT, FAMILLES,
+  MARQUEURS_NEGATION, OPPOSES, PLATS, PORTEE_NEGATION, mots, normaliser, racine,
 } from '../config/lexique.js';
 import { FILTRES_VIDES, FiltresSchema, type Filtres } from '../schema/filtres.js';
 
@@ -46,9 +46,13 @@ export function parser(message: string, options: OptionsParseur = {}): Filtres {
     ['blanc', /\bblancs?\b/],
   ];
   for (const [code, motif] of COULEURS) {
-    const m = motif.exec(texte);
-    if (!m) continue;
-    const position = texte.slice(0, m.index).split(/\s+/).length - 1;
+    // La position doit etre cherchee dans le MEME espace de tokens que celui
+    // qu'indexe estNie(). Compter les espaces de `texte` decalait la fenetre
+    // d'un cran par apostrophe, puisque decoupe.brut coupe aussi sur elles:
+    // "pour l'anniversaire d'un ami, pas de blanc" ressortait en blanc, donc
+    // en refus, sur un message qui dit litteralement "pas de blanc".
+    const position = decoupe.brut.findIndex((mot) => motif.test(mot));
+    if (position === -1) continue;
     if (estNie(decoupe.brut, position)) continue;
     brut.couleur = code;
     break;
@@ -88,18 +92,30 @@ export function parser(message: string, options: OptionsParseur = {}): Filtres {
       if (synonyme.length < 4) continue;
       parRacine.set(synonyme.split(' ').map(racine).join(' '), code);
     }
-    // Les cepages hors appellation sont reconnus DELIBEREMENT, pour que la
-    // demande produise un refus source plutot que de s'evaporer.
-    for (const hors of CEPAGES_HORS_APPELLATION) {
-      parRacine.set(hors.split(' ').map(racine).join(' '), hors);
-    }
-
     const inclus = new Set<string>();
     const exclus = new Set<string>();
-    for (const { cle, position } of sequences(decoupe.racines)) {
-      const code = parRacine.get(cle);
-      if (!code) continue;
+    const vues = new Set<number>();
+
+    // Un bigramme reconnu consomme sa position: sans ça "cabernet sauvignon"
+    // faisait aussi matcher "sauvignon", et le refus nommait deux cepages la
+    // ou l'utilisateur en avait ecrit un.
+    const retenir = (code: string, position: number, longueur: number) => {
+      for (let i = position; i < position + longueur; i++) vues.add(i);
       (estNie(decoupe.brut, position) ? exclus : inclus).add(code);
+    };
+
+    for (const { cle, position, longueur } of sequences(decoupe.racines)) {
+      if (vues.has(position)) continue;
+      const code = parRacine.get(cle);
+      if (code) retenir(code, position, longueur);
+    }
+
+    // Les cepages hors appellation sont reconnus DELIBEREMENT, pour produire un
+    // refus source plutot que de laisser la contrainte s'evaporer. Sur forme
+    // exacte, jamais par racine: voir CEPAGES_HORS_APPELLATION_EXACTS.
+    for (const { cle, position, longueur } of sequences(decoupe.brut)) {
+      if (vues.has(position)) continue;
+      if (CEPAGES_HORS_APPELLATION_EXACTS.has(cle)) retenir(cle, position, longueur);
     }
     brut.cepages_inclus = [...inclus].filter((c) => !exclus.has(c)).sort();
     brut.cepages_exclus = [...exclus].sort();
@@ -149,10 +165,14 @@ export function parser(message: string, options: OptionsParseur = {}): Filtres {
  * Enumere les unigrammes et bigrammes du message avec leur position.
  * Le bigramme est teste en premier: "fruits rouges" doit primer sur "rouges".
  */
-function* sequences(racines: string[]): Generator<{ cle: string; position: number }> {
-  for (let i = 0; i < racines.length; i++) {
-    if (i + 1 < racines.length) yield { cle: `${racines[i]} ${racines[i + 1]}`, position: i };
-    yield { cle: racines[i]!, position: i };
+function* sequences(
+  tokens: string[],
+): Generator<{ cle: string; position: number; longueur: number }> {
+  for (let i = 0; i < tokens.length; i++) {
+    if (i + 1 < tokens.length) {
+      yield { cle: `${tokens[i]} ${tokens[i + 1]}`, position: i, longueur: 2 };
+    }
+    yield { cle: tokens[i]!, position: i, longueur: 1 };
   }
 }
 

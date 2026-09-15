@@ -4,7 +4,7 @@ import { FILTRES_VIDES, FiltresLlmSchema, FiltresSchema } from '../schema/filtre
 import { parser } from './parseur.js';
 import { SYSTEME_EXTRACTION, SYSTEME_FORMULATION, relanceSchema } from './prompts.js';
 import { formulerParGabarit } from './local.js';
-import { FAMILLE_PAR_MOT, tokeniser } from '../config/lexique.js';
+import { verifierSortie } from './controle-sortie.js';
 import type { EntreeFormulation, FournisseurLlm, ResultatExtraction, Usage } from './index.js';
 
 /** $ par million de tokens. Table du 2026-06-24, a reverifier avant deploiement. */
@@ -144,8 +144,8 @@ export class LlmAnthropic implements FournisseurLlm {
       // bavard ne doit pas produire du descriptif non source.
       if (!texte) return { texte: formulerParGabarit(entree), usage };
 
-      const invente = descripteursInventes(texte, donnees);
-      if (invente.length > 0) {
+      const anomalies = verifierSortie(texte, entree.recherche.resultats);
+      if (anomalies.length > 0) {
         // On ne corrige pas, on remplace: le gabarit ne peut rien inventer.
         return { texte: formulerParGabarit(entree), usage };
       }
@@ -154,39 +154,6 @@ export class LlmAnthropic implements FournisseurLlm {
       return { texte: formulerParGabarit(entree), usage };
     }
   }
-}
-
-/**
- * Controle de sortie : la reponse du modele introduit-elle un descripteur
- * sensoriel absent de TOUT ce qu'on lui a fourni ?
- *
- * Sans lui, "aucune note ne peut etre generee ou reformulee" est une garantie
- * architecturale en provider local et une simple declaration en provider
- * anthropic. C'est la difference a enoncer honnetement devant un client.
- *
- * Le corpus autorise est la charge utile ENTIERE, pas la seule note. Se limiter
- * a la note rejetait une reponse correcte: un elevage "en fut de 400 litres"
- * rapporte fidelement depuis les donnees porte la famille "boise", absente de
- * la note de degustation. Autoriser exactement ce qu'on a transmis est la seule
- * definition qui ne produit pas de faux positif.
- *
- * Volontairement grossier: il ne juge pas le style, il compare des familles de
- * descripteurs. Un faux positif coute une reponse par gabarit, exacte mais plus
- * seche. Un faux negatif coute la promesse du projet.
- */
-export function descripteursInventes(texte: string, donnees: unknown): string[] {
-  const autorise = new Set<string>();
-  for (const t of tokeniser(JSON.stringify(donnees))) {
-    const f = FAMILLE_PAR_MOT.get(t);
-    if (f) autorise.add(f);
-  }
-
-  const trouves = new Set<string>();
-  for (const t of tokeniser(texte)) {
-    const f = FAMILLE_PAR_MOT.get(t);
-    if (f && !autorise.has(f)) trouves.add(f);
-  }
-  return [...trouves];
 }
 
 function cumuler(usage: Usage, u: { input_tokens: number; output_tokens: number }, modele: string): void {
@@ -223,8 +190,12 @@ export function donneesFormulation(entree: EntreeFormulation) {
       prix_date_releve: c.prix_date_releve,
       certification: c.certification,
       niveau_description: c.niveau,
-      note_degustation_producteur: c.note_degustation,
-      passage_pertinent: c.extrait_pertinent,
+      // On transmet le PASSAGE retenu plutot que la note integrale quand on en
+      // a un. La surface d'injection passe d'une fiche technique entiere a une
+      // phrase, et une injection qui doit tenir en une phrase, passer pour une
+      // note de degustation et survivre a la selection de passage est tres
+      // difficile a ecrire. Accessoirement, ça reduit les tokens.
+      passage_cite: c.extrait_pertinent ?? c.note_degustation,
       note_source: c.note_source ? { label: c.note_source.label, url: c.note_source.url } : null,
       donnee_de_developpement: c.fixture,
       // Le profil d'appellation n'est transmis QUE lorsqu'il sert de repli.

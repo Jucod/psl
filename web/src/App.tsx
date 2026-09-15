@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { chargerCatalogue, rechercher } from './api.ts';
 import { CarteResultat } from './composants/CarteResultat.tsx';
 import {
-  BandeauAccords, BandeauDegrade, BandeauElargissement, BandeauRefus,
+  BandeauAccords, BandeauDegrade, BandeauElargissement, BandeauIndecidable, BandeauRefus,
 } from './composants/Bandeaux.tsx';
 import { PanneauFiltres } from './composants/PanneauFiltres.tsx';
 import type { Catalogue, Filtres, ReponseRecherche } from './types.ts';
@@ -99,6 +99,7 @@ export function App() {
             <div className="reponse">
               {reponse.degrade && <BandeauDegrade raison={reponse.raison_degrade ?? null} />}
               {reponse.recherche && <BandeauRefus recherche={reponse.recherche} />}
+              {reponse.recherche && <BandeauIndecidable recherche={reponse.recherche} />}
               {reponse.recherche && <BandeauElargissement recherche={reponse.recherche} />}
 
               {/* Le bandeau de refus porte deja le message et sa source:
@@ -107,7 +108,8 @@ export function App() {
                 <p className="texte-reponse">{reponse.texte}</p>
               )}
 
-              {reponse.recherche?.statut === 'vide' && (
+              {reponse.recherche?.statut === 'vide' &&
+                reponse.recherche.filtresIndecidables.length === 0 && (
                 <div className="bandeau bandeau-vide">
                   <strong>Aucune reference.</strong> Le catalogue compte{' '}
                   {reponse.recherche.tailleCatalogue} cuvee(s) pour cette appellation et
