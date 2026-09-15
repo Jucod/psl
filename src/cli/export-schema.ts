@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { writeFile } from 'node:fs/promises';
 import { z } from 'zod';
 import { CuveeBaseSchema } from '../schema/cuvee.js';
@@ -42,7 +43,7 @@ export function rendre(cible: (typeof CIBLES)[number]): string {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   for (const cible of CIBLES) {
-    const chemin = new URL(`../../db/schema/${cible.fichier}`, import.meta.url).pathname;
+    const chemin = fileURLToPath(new URL(`../../db/schema/${cible.fichier}`, import.meta.url));
     await writeFile(chemin, rendre(cible), 'utf8');
     console.log(`schema exporte: db/schema/${cible.fichier}`);
   }

@@ -1,9 +1,10 @@
+import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import type pg from 'pg';
 import { slug } from './util.js';
 
-const CHEMIN_SEED = new URL('../../db/seed/pic-saint-loup-seed.json', import.meta.url).pathname;
-const CHEMIN_CEPAGES = new URL('../../db/seed/cepages.json', import.meta.url).pathname;
+const CHEMIN_SEED = fileURLToPath(new URL('../../db/seed/pic-saint-loup-seed.json', import.meta.url));
+const CHEMIN_CEPAGES = fileURLToPath(new URL('../../db/seed/cepages.json', import.meta.url));
 
 /** Date du releve manuel du referentiel, pas de la publication du texte INAO. */
 const DATE_RELEVE = '2026-09-14';

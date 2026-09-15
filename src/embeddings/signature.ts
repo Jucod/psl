@@ -1,9 +1,10 @@
+import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import type pg from 'pg';
 import type { FournisseurEmbedding } from './index.js';
 
-const CHEMIN_LEXIQUE = new URL('../config/lexique.ts', import.meta.url).pathname;
+const CHEMIN_LEXIQUE = fileURLToPath(new URL('../config/lexique.ts', import.meta.url));
 
 /**
  * Empreinte de tout ce qui influence la valeur d'un vecteur: le provider, la

@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { createHmac } from 'node:crypto';
 import { config } from './config/domaine.js';
@@ -12,7 +13,7 @@ import { choisirExtrait } from './moteur/justification.js';
 import type { ResultatRecherche } from './moteur/types.js';
 import { FILTRES_VIDES, parserFiltresPartiels, type Filtres } from './schema/filtres.js';
 
-const CHEMIN_CEPAGES = new URL('../db/seed/cepages.json', import.meta.url).pathname;
+const CHEMIN_CEPAGES = fileURLToPath(new URL('../db/seed/cepages.json', import.meta.url));
 
 export interface EntreePipeline {
   message: string;

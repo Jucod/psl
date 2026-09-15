@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { construireIndexCepages } from '../ingest/util.js';
 import type { Filtres } from '../schema/filtres.js';
@@ -5,7 +6,7 @@ import type { Resultat } from '../moteur/types.js';
 import { parser } from './parseur.js';
 import { USAGE_NUL, type EntreeFormulation, type FournisseurLlm, type ResultatExtraction } from './index.js';
 
-const CHEMIN_CEPAGES = new URL('../../db/seed/cepages.json', import.meta.url).pathname;
+const CHEMIN_CEPAGES = fileURLToPath(new URL('../../db/seed/cepages.json', import.meta.url));
 
 /**
  * Provider sans reseau ni cle API.

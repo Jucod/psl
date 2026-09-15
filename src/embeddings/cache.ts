@@ -1,8 +1,9 @@
+import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import type { FournisseurEmbedding } from './index.js';
 
-const CHEMIN = new URL('../../db/seed/embeddings.cache.json', import.meta.url).pathname;
+const CHEMIN = fileURLToPath(new URL('../../db/seed/embeddings.cache.json', import.meta.url));
 
 type Cache = Record<string, number[]>;
 

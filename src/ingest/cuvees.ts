@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type pg from 'pg';
@@ -5,9 +6,9 @@ import { CuveeSchema, type Cuvee } from '../schema/cuvee.js';
 import { codeCepage, construireIndexCepages } from './util.js';
 import { inspecterNote, type Quarantaine } from './quarantaine.js';
 
-const DOSSIER_BASE = new URL('../../db/seed/cuvees/', import.meta.url).pathname;
-const DOSSIER_FIXTURES = new URL('../../db/seed/cuvees.fixtures/', import.meta.url).pathname;
-const CHEMIN_CEPAGES = new URL('../../db/seed/cepages.json', import.meta.url).pathname;
+const DOSSIER_BASE = fileURLToPath(new URL('../../db/seed/cuvees/', import.meta.url));
+const DOSSIER_FIXTURES = fileURLToPath(new URL('../../db/seed/cuvees.fixtures/', import.meta.url));
+const CHEMIN_CEPAGES = fileURLToPath(new URL('../../db/seed/cepages.json', import.meta.url));
 
 export interface ResultatCuvees {
   cuvees: number;
@@ -19,12 +20,25 @@ export interface ResultatCuvees {
   quarantaine: Quarantaine[];
 }
 
-async function lireDossier(dossier: string): Promise<Record<string, any>[]> {
+/**
+ * `facultatif` n'est vrai que pour le calque de fixtures, dont l'absence est un
+ * etat normal (et souhaitable en production). Le dossier de base, lui, doit
+ * exister: un `catch` muet y transformait un chemin casse en catalogue vide, et
+ * le seed se terminait « avec succes » sur zero cuvee.
+ */
+async function lireDossier(
+  dossier: string,
+  facultatif = false,
+): Promise<Record<string, any>[]> {
   let fichiers: string[];
   try {
     fichiers = (await readdir(dossier)).filter((f) => f.endsWith('.json'));
-  } catch {
-    return [];
+  } catch (err: any) {
+    if (facultatif && err?.code === 'ENOENT') return [];
+    throw new Error(`dossier de cuvees illisible: ${dossier} (${err?.code ?? err})`);
+  }
+  if (!facultatif && fichiers.length === 0) {
+    throw new Error(`aucune cuvee dans ${dossier}: le seed n'a rien a charger.`);
   }
   return Promise.all(
     fichiers.sort().map(async (f) => JSON.parse(await readFile(join(dossier, f), 'utf8'))),
@@ -47,7 +61,7 @@ export async function chargerCuvees(autoriserFixtures: boolean): Promise<{
   fixturesAppliquees: number;
 }> {
   const base = await lireDossier(DOSSIER_BASE);
-  const calques = autoriserFixtures ? await lireDossier(DOSSIER_FIXTURES) : [];
+  const calques = autoriserFixtures ? await lireDossier(DOSSIER_FIXTURES, true) : [];
   const parId = new Map(calques.map((c) => [c.id as string, c]));
 
   let fixturesAppliquees = 0;

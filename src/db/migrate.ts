@@ -1,8 +1,9 @@
+import { fileURLToPath } from 'node:url';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { db } from './client.js';
 
-const DOSSIER = new URL('../../db/migrations/', import.meta.url).pathname;
+const DOSSIER = fileURLToPath(new URL('../../db/migrations/', import.meta.url));
 
 /**
  * Les migrations >= 900 ne sont pas appliquees par defaut: ce sont des
