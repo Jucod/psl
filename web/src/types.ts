@@ -30,6 +30,7 @@ export interface Resultat {
   profil_appellation: { texte: string; source: Source; section: string | null } | null;
   score: number;
   fixture: boolean;
+  extrait_pertinent: string | null;
 }
 
 export interface Filtres {

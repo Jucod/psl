@@ -97,6 +97,7 @@ function versResultat(r: Record<string, any>): Resultat {
         : null,
     score: r.score === null || r.score === undefined ? 0 : Number(r.score),
     fixture: noteSource?.type === 'fixture_dev',
+    extrait_pertinent: null,
   };
 }
 
@@ -157,14 +158,19 @@ async function verifierCouverture(
   if (disponibles.length === 0) return null; // appellation inconnue: pas un refus de couverture
 
   const { rows: src } = await pool.query(
-    `SELECT s.id, s.type, s.label, s.url, s.autorite, s.date_releve::text
+    `SELECT a.nom, s.id, s.type, s.label, s.url, s.autorite, s.date_releve::text
        FROM appellations a JOIN sources s ON s.id = a.source_id
       WHERE a.id = $1`,
     [valeurs[cles[0]!.filtre]],
   );
 
+  // Le message s'adresse a un visiteur: il doit lire "Pic Saint-Loup", pas
+  // "aoc-pic-saint-loup".
+  const lisibles = { ...valeurs };
+  if (src[0]?.nom) lisibles[cles[0]!.filtre] = src[0].nom;
+
   return {
-    message: message(valeurs, disponibles),
+    message: message(lisibles, disponibles),
     source: src[0]
       ? { ...src[0], autorite: src[0].autorite ?? null } as SourceCitee
       : null,

@@ -177,6 +177,7 @@ function donneesFormulation(entree: EntreeFormulation) {
       certification: c.certification,
       niveau_description: c.niveau,
       note_degustation_producteur: c.note_degustation,
+      passage_pertinent: c.extrait_pertinent,
       note_source: c.note_source ? { label: c.note_source.label, url: c.note_source.url } : null,
       donnee_de_developpement: c.fixture,
       profil_appellation: c.profil_appellation

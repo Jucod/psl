@@ -8,6 +8,7 @@ import { construireIndexCepages, codeCepage } from './ingest/util.js';
 import { fournisseurLlm, type Usage } from './llm/index.js';
 import { texteVectoriel } from './llm/parseur.js';
 import { rechercher } from './moteur/recherche.js';
+import { choisirExtrait } from './moteur/justification.js';
 import type { ResultatRecherche } from './moteur/types.js';
 import { FILTRES_VIDES, parserFiltresPartiels, type Filtres } from './schema/filtres.js';
 
@@ -151,6 +152,20 @@ export async function executerPipeline(entree: EntreePipeline): Promise<SortiePi
     vecteurRequete: vecteur,
     autoriserFixtures: fixtures,
   });
+
+  // --- justification: quelle phrase de la note motive le classement ? -------
+  // Fait ici et non dans le moteur: c'est une question de restitution, et le
+  // pipeline detient deja le vecteur de requete. Cela garde intacte la barriere
+  // de type de EntreeFormulation, qui ne doit jamais voir les descripteurs.
+  if (vecteur) {
+    const fournisseur = fournisseurEmbedding();
+    await Promise.all(
+      recherche.resultats.map(async (c) => {
+        if (!c.note_degustation) return;
+        c.extrait_pertinent = await choisirExtrait(c.note_degustation, vecteur, fournisseur);
+      }),
+    );
+  }
 
   // --- appel 2 --------------------------------------------------------------
   const { texte, usage: usage2 } = await llm.formuler({

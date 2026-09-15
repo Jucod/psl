@@ -151,3 +151,11 @@ describe('jalon 2 - recherche hybride', () => {
     expect(r.accordsPourLePlat.every((a) => a.statut === 'derive')).toBe(true);
   });
 });
+
+describe('restitution', () => {
+  it('le refus nomme l appellation, il n affiche pas son identifiant', async () => {
+    const r = await rechercher(filtres({ couleur: 'blanc' }), options);
+    expect(r.refus?.message).toContain('Pic Saint-Loup');
+    expect(r.refus?.message).not.toContain('aoc-pic-saint-loup');
+  });
+});

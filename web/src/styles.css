@@ -249,6 +249,20 @@ button {
 .note a { color: var(--accent); }
 .note .date, .note .tronquee { color: var(--texte-doux); }
 
+.correspondance {
+  margin: 0 !important;
+  font-weight: 560;
+}
+.correspondance > span {
+  display: block;
+  font-size: 11px;
+  font-weight: 620;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--accent);
+  margin-bottom: 3px;
+}
+
 .note-appellation { border-left-color: var(--info); background: var(--info-fond); }
 .avertissement-niveau { font-size: 12.5px; color: var(--info); margin-bottom: 7px !important; font-weight: 560; }
 

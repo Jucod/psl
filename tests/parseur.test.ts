@@ -117,3 +117,36 @@ describe('collisions de vocabulaire', () => {
     expect(parser('pour accompagner du poisson', opts).plat).toBe('poisson');
   });
 });
+
+describe('justification', () => {
+  it('selectionne la phrase qui motive le classement, sans la reecrire', async () => {
+    const { choisirExtrait } = await import('../src/moteur/justification.js');
+    const { EmbeddingLocal } = await import('../src/embeddings/local.js');
+    const { texteVectoriel } = await import('../src/llm/parseur.js');
+    const { combiner } = await import('../src/pipeline.js');
+    const { FILTRES_VIDES } = await import('../src/schema/filtres.js');
+
+    const note =
+      'Robe grenat de moyenne intensite. Le nez ouvre sur les fruits rouges frais, ' +
+      'griotte et framboise, avec une pointe florale. La bouche est souple et coulante, ' +
+      'les tanins sont fondus, la finale reste fraiche et digeste.';
+
+    const emb = new EmbeddingLocal(1536);
+    const t = texteVectoriel({ ...FILTRES_VIDES, descripteurs: ['souple'], descripteurs_exclus: ['tannique'] })!;
+    const [vIn, vEx] = await emb.embed([t.inclus, t.exclus!]);
+    const q = combiner(vIn!, vEx!, 0.7)!;
+
+    const extrait = await choisirExtrait(note, q, emb);
+    // La phrase retenue parle bien de texture, pas de la robe.
+    expect(extrait).toContain('souple');
+    // Et c'est une phrase EXISTANTE de la note, recopiee telle quelle.
+    expect(note).toContain(extrait!);
+  });
+
+  it('ne justifie rien quand la demande n a pas de partie floue', async () => {
+    const { choisirExtrait } = await import('../src/moteur/justification.js');
+    const { EmbeddingLocal } = await import('../src/embeddings/local.js');
+    const extrait = await choisirExtrait('Une note. Deux phrases ici.', null, new EmbeddingLocal(1536));
+    expect(extrait).toBeNull();
+  });
+});

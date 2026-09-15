@@ -97,9 +97,10 @@ export function formulerParGabarit(entree: EntreeFormulation): string {
       (c.prix_ttc !== null ? ` — ${EUROS(c.prix_ttc)}` : '');
 
     if (c.note_degustation) {
-      // Justification citee de la fiche, pas reformulee. La carte affiche la
-      // citation complete et sa source: inutile de les repeter ici.
-      lignes.push(`${identite}. ${extrait(c.note_degustation, 110)}`);
+      // Justification citee de la fiche, pas reformulee. On prefere la phrase
+      // qui motive le classement au debut de la note, qui parle de la robe.
+      const citation = c.extrait_pertinent ?? c.note_degustation;
+      lignes.push(`${identite}. ${extrait(citation, 130)}`);
     } else if (c.profil_appellation) {
       // Separation des niveaux: dit explicitement qu'on decrit l'appellation.
       lignes.push(

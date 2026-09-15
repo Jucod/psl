@@ -55,6 +55,12 @@ export interface Resultat {
   score: number;
   /** Vrai si la note vient d'une fixture de developpement. */
   fixture: boolean;
+  /**
+   * Phrase de la note du producteur la plus proche de la demande. Selectionnee,
+   * jamais reecrite. null quand rien ne correspond ou qu'il n'y a pas de partie
+   * floue dans la demande.
+   */
+  extrait_pertinent: string | null;
 }
 
 export interface Relachement {

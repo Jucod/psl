@@ -53,9 +53,20 @@ export function CarteResultat({ c, rang }: { c: Resultat; rang: number }) {
 
       {c.niveau === 'cuvee' && c.note_degustation ? (
         <blockquote className="note">
-          <p>« {c.note_degustation} »</p>
+          {/* Quand une phrase de la note motive le classement, c'est ELLE qu'on
+              cite. Afficher en plus la note entiere la repetait, et citer une
+              phrase plutot qu'un paragraphe sert mieux la regle "on cite, on ne
+              republie pas": le texte integral reste sur la fiche du domaine. */}
+          {c.extrait_pertinent ? (
+            <p className="correspondance">
+              <span>Correspond a votre demande</span>
+              « {c.extrait_pertinent} »
+            </p>
+          ) : (
+            <p>« {c.note_degustation} »</p>
+          )}
           <footer>
-            {c.note_tronquee && <span className="tronquee">extrait · </span>}
+            {(c.note_tronquee || c.extrait_pertinent) && <span className="tronquee">extrait · </span>}
             <a href={c.note_source?.url} target="_blank" rel="noreferrer noopener">
               {c.note_source?.label}
             </a>
