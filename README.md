@@ -68,6 +68,10 @@ Quatre comportements se voient à l'écran :
   s'évaporait et le système répondait trois rouges.
 - **Vide** — « un rosé » → l'AOC autorise le rosé, mais aucune cuvée rosée n'est
   indexée. Réponse vide assumée, distincte du refus.
+- **Donnée manquante** — « autour de 20 € » quand aucun prix n'est relevé →
+  « je ne peux pas répondre sur ce critère ». « Aucun vin sous 20 € » et « je
+  n'ai le prix d'aucun vin » sont deux réponses différentes, et confondre la
+  seconde avec la première est une affirmation sans fondement.
 - **Élargissement** — « moins de 12 euros » → rien sous 12 €, le budget est
   relâché par paliers de 25 %, plafonné à +50 %, et **annoncé**. L'appellation
   n'est jamais relâchée en silence.
@@ -174,15 +178,46 @@ Quatre points de fuite ont été identifiés et traités :
    l'objet remis au modèle : TypeScript ne vérifie pas les propriétés en trop
    sur un spread, donc la barrière n'aurait existé qu'à la lecture.
 
-Deux points restent ouverts, et il faut les dire :
+### Une seule règle, tenue aux deux bouts
 
-- **Le corpus est un vecteur d'injection, pas seulement l'utilisateur.** Une
-  note de fiche technique contenant une consigne part brute au modèle. Seule la
-  règle 7 du prompt s'y oppose.
-- **La garantie est architecturale en provider `local`, contrôlée en provider
-  `anthropic`.** `descripteursInventes()` bascule sur le gabarit si la réponse
-  du modèle introduit une famille de descripteurs absente des notes fournies.
-  C'est un filet, pas une preuve : à énoncer honnêtement en clientèle.
+Au jalon 5, toute note extraite d'un PDF doit se retrouver **littéralement**
+dans sa couche texte. La même règle s'applique en sortie : tout segment entre
+guillemets dans la réponse du modèle doit être une sous-chaîne littérale d'un
+passage fourni (`src/llm/controle-sortie.ts`). Sinon, la réponse est remplacée
+par le gabarit, qui ne peut rien inventer.
+
+C'est exact, sans faux positif, et ça attrape la reformulation comme
+l'attribution croisée — deux choses qu'un filtre de vocabulaire laisse passer.
+Hors guillemets, un contrôle par familles de descripteurs complète, **scopé par
+référence** : globalement, trois notes couvrant le lexique saturaient l'ensemble
+autorisé et le contrôle devenait incapable de rien rejeter.
+
+**Ce contrôle sert le contrat « aucune invention », pas la loi Evin.** Le lexique
+ne contient aucun mot d'ambiance : « une soirée d'été entre amis » passe. À dire
+plutôt qu'à masquer.
+
+### Le corpus est le vrai vecteur d'injection
+
+La demande de l'utilisateur n'atteint jamais le prompt de formulation. Le texte
+tiers, si : au jalon 5, les notes viendront de PDF téléchargés sur des sites
+qu'on ne contrôle pas. Trois défenses, par ordre de rapport qualité/prix :
+
+1. **Réduire la surface.** On transmet le passage retenu, pas la fiche entière.
+   Une injection qui doit tenir en une phrase, passer pour une note de
+   dégustation et survivre à la sélection de passage est difficile à écrire.
+2. **Vérifier les citations** (ci-dessus).
+3. **Quarantaine à l'ingestion** (`src/ingest/quarantaine.ts`). Une note
+   contenant ce qui ressemble à une instruction est signalée pour relecture
+   humaine, pas rejetée. C'est le seul filtre heuristique du projet, et il est
+   placé là où se tromper est bon marché : l'ingestion est hors ligne, rare et
+   supervisée. Un faux positif y coûte trente secondes ; en ligne il coûterait
+   une réponse dégradée.
+
+**La garantie reste architecturale en provider `local` et contrôlée en provider
+`anthropic`.** Pour une démo dont l'argument est « le moteur ne dépend pas de la
+bonne volonté du modèle », le gabarit *est* le produit ; le LLM est une couche
+de confort dont la sortie est vérifiée et qui retombe sur le gabarit au moindre
+doute. C'est défendable et vérifiable en direct.
 
 L'interface porte la mention sanitaire. Un interstitiel d'âge reste à ajouter si
 la démo devient publique : ce n'est pas de l'authentification, c'est vingt lignes.
