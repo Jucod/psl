@@ -1,0 +1,25 @@
+{
+  "appellation_id": "aoc-pic-saint-loup",
+  "nom_cuvee": "Cuvee Le Serre",
+  "couleur": "rouge",
+  "millesime": 2021,
+  "assemblage": [
+    {
+      "cepage": "syrah",
+      "pct": 70.0
+    },
+    {
+      "cepage": "grenache",
+      "pct": 20.0
+    },
+    {
+      "cepage": "mourvedre",
+      "pct": 10.0
+    }
+  ],
+  "degre": 14.0,
+  "elevage": "15 mois en foudre de chene",
+  "prix_ttc": null,
+  "certification": "Agriculture biologique",
+  "note_degustation": "Robe pourpre soutenue. Le nez livre des fruits noirs compotes et une pointe de poivre blanc. La bouche est ample, portee par des tanins serres mais polis, et se prolonge sur une finale saline."
+}

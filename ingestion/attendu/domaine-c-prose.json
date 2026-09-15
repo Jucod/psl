@@ -1,0 +1,21 @@
+{
+  "appellation_id": "aoc-pic-saint-loup",
+  "nom_cuvee": "L'Enclos",
+  "couleur": "rouge",
+  "millesime": 2020,
+  "assemblage": [
+    {
+      "cepage": "syrah",
+      "pct": 80.0
+    },
+    {
+      "cepage": "mourvedre",
+      "pct": 20.0
+    }
+  ],
+  "degre": 14.5,
+  "elevage": "vingt-quatre mois en demi-muids",
+  "prix_ttc": null,
+  "certification": null,
+  "note_degustation": "Une robe grenat dense. Au nez, la mure et le cassis dominent, releves d'une note de reglisse. En bouche, le vin est puissant et charpente, les tanins sont fermes, la longueur est remarquable. A attendre trois ans."
+}

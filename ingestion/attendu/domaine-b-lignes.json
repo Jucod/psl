@@ -1,0 +1,25 @@
+{
+  "appellation_id": "aoc-pic-saint-loup",
+  "nom_cuvee": "Les Terrasses du Pic",
+  "couleur": "rouge",
+  "millesime": 2022,
+  "assemblage": [
+    {
+      "cepage": "syrah",
+      "pct": 55.0
+    },
+    {
+      "cepage": "grenache",
+      "pct": 30.0
+    },
+    {
+      "cepage": "mourvedre",
+      "pct": 15.0
+    }
+  ],
+  "degre": 13.5,
+  "elevage": "12 mois en cuve inox puis 6 mois en bouteille",
+  "prix_ttc": 15.8,
+  "certification": null,
+  "note_degustation": "Nez expressif de cerise noire et de garrigue. Attaque souple, texture soyeuse, tanins fondus. La finale reste fraiche et mentholee."
+}
