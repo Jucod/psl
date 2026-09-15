@@ -269,19 +269,23 @@ fiches techniques, supprimer le dossier `cuvees.fixtures/`, remettre la variable
 | 2 | Recherche hybride sans LLM | fait |
 | 3 | Couche LLM, deux appels | provider Anthropic câblé, non exécuté faute de clé dans l'environnement |
 | 4 | Interface | fait |
-| 5 | Ingestion PDF automatisée | à faire, en Python |
+| 5 | Ingestion PDF automatisée | extracteur et banc de mesure faits, mesurés sur trois PDF fabriqués ici |
 
-Le jalon 5 est en Python (`pdfplumber`, OCR si les fiches sont des scans). Le
-contrat entre les deux langages est posé : zod est la source de vérité unique,
-`npm run schema:export` en produit le JSON Schema commité dans `db/schema/`, que
-le script Python validera avant d'écrire. `tests/schema-export.test.ts` échoue si
-le fichier commité n'est plus à jour.
+Le jalon 5 vit dans `ingestion/` (voir son README). Le contrat entre les deux
+langages est posé : zod est la source de vérité unique, `npm run schema:export`
+en produit le JSON Schema commité dans `db/schema/`, et `extraire.py` valide sa
+sortie contre lui avant d'écrire. `tests/schema-export.test.ts` échoue si le
+fichier commité n'est plus à jour.
 
 Règle à tenir : le périmètre de Python s'arrête à « PDF → JSON ». Dès qu'il
 touche la base, les embeddings ou l'API, ce sont deux toolchains à maintenir pour
 une personne seule.
 
-Garde-fou pour le jalon 5 : toute note extraite doit se retrouver
-**littéralement** dans la couche texte du PDF, vérifié par comparaison de
-chaînes. C'est le seul endroit du pipeline où une hallucination passerait
-inaperçue.
+Garde-fou : toute note extraite doit se retrouver **littéralement** dans la
+couche texte du PDF, vérifié par comparaison de chaînes. C'est le seul endroit
+du pipeline où une hallucination passerait inaperçue.
+
+**Le chiffre du banc de mesure ne vaut rien pour l'instant.** Les trois fiches de
+test ont été fabriquées ici, donc mesurer l'extracteur dessus est circulaire. Le
+banc est le livrable ; le taux ne sera lisible que sur de vraies fiches relues à
+la main.
