@@ -1,0 +1,20 @@
+{
+  "_provenance": "Nom de cuvee et domaine attestes de maniere concordante sur plusieurs listings de cavistes independants. La fiche technique du producteur n'a PAS pu etre recuperee (egress reseau bloque sur les sites des domaines). Tout champ descriptif, tarifaire ou d'assemblage reste null ici et vit dans db/seed/cuvees.fixtures/, marque fixture_dev.",
+  "id": "bergerie-du-capucin-dame-jeanne-2022",
+  "domaine_id": "bergerie-du-capucin",
+  "appellation_id": "aoc-pic-saint-loup",
+  "nom_cuvee": "Dame Jeanne",
+  "couleur": "rouge",
+  "millesime": 2022,
+  "assemblage": [],
+  "degre": null,
+  "elevage": null,
+  "prix_ttc": null,
+  "prix_date_releve": null,
+  "bio": null,
+  "certification": null,
+  "note_degustation": null,
+  "note_degustation_source": null,
+  "accords_producteur": [],
+  "fiche_url": "https://bergerieducapucin.fr/"
+}

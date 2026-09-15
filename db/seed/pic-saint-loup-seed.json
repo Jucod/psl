@@ -1,0 +1,179 @@
+{
+  "_meta": {
+    "version": "0.1",
+    "note": "Couche referentiel uniquement. Aucune note de degustation ni prix par cuvee n'est inventee ici. Les champs marques TODO se remplissent depuis les fiches techniques des domaines.",
+    "sources": [
+      {
+        "id": "inao_cdc_psl",
+        "label": "Cahier des charges AOC Pic Saint-Loup",
+        "url": "https://extranet.inao.gouv.fr/fichier/PNOCDCPicStLoup.pdf",
+        "autorite": "INAO"
+      },
+      {
+        "id": "syndicat_psl",
+        "label": "Syndicat des vignerons du Pic Saint-Loup",
+        "url": "https://www.pic-saint-loup.com/domaines/"
+      },
+      {
+        "id": "languedoc_aoc",
+        "label": "Syndicat des vins AOC Languedoc, page AOP Pic Saint Loup",
+        "url": "https://www.languedoc-aoc.com/appellation/aop-pic-saint-loup"
+      },
+      {
+        "id": "ot_grand_psl",
+        "label": "Office de tourisme du Grand Pic Saint-Loup, annuaire vignerons",
+        "url": "https://www.grandpicsaintloup-tourisme.fr/de-la-vigne-et-du-vin/les-vignerons"
+      }
+    ]
+  },
+
+  "appellations": [
+    {
+      "id": "aoc-pic-saint-loup",
+      "nom": "Pic Saint-Loup",
+      "statut": "AOC/AOP",
+      "reconnaissance_aoc": "2016",
+      "region": "Languedoc",
+      "couleurs_autorisees": ["rouge", "rose"],
+      "source": "inao_cdc_psl",
+
+      "communes": {
+        "herault": [
+          "Assas", "Cazevieille", "Claret", "Fontanes", "Guzargues", "Lauret",
+          "Les Matelles", "Sainte-Croix-de-Quintillargues", "Saint-Gely-du-Fesc",
+          "Saint-Jean-de-Cuculles", "Saint-Mathieu-de-Treviers", "Sauteyrargues",
+          "Le Triadou", "Vacquieres", "Valflaunes"
+        ],
+        "gard": ["Brouzet-les-Quissac", "Corconne"]
+      },
+
+      "encepagement": {
+        "rouge": {
+          "principaux": ["syrah N", "grenache N", "mourvedre N"],
+          "accessoires": ["cinsaut N", "carignan N", "counoise N", "morrastel N"],
+          "regles_assemblage": {
+            "syrah_min_pct": 50,
+            "accessoires_max_pct": 10,
+            "cepages_principaux_min": 2
+          }
+        },
+        "rose": {
+          "principaux": ["syrah N", "grenache N", "mourvedre N"],
+          "accessoires": ["cinsaut N", "counoise N", "morrastel N", "grenache gris G"],
+          "regles_assemblage": {
+            "syrah_min_pct": 30,
+            "cinsault_max_pct": 30,
+            "autres_accessoires_max_pct": 10,
+            "cepages_principaux_min": 2
+          }
+        }
+      },
+
+      "production": {
+        "titre_alcoometrique_naturel_min_pct": 12,
+        "richesse_sucre_min_g_par_l": 202,
+        "rendement_hl_ha": 45,
+        "rendement_butoir_hl_ha": 50,
+        "elevage_rouge_min": "jusqu'au 31 juillet de l'annee suivant la recolte",
+        "mise_en_marche_rouge": "a partir du 1er septembre de l'annee suivant la recolte",
+        "millesime_obligatoire_etiquette": true,
+        "cepages_interdits_sur_etiquette": true
+      },
+
+      "terroir": {
+        "altitude_moyenne_m": 150,
+        "altitude_min_m": 80,
+        "altitude_max_m": 300,
+        "temperature_moyenne_c": 12.3,
+        "pluviometrie_mm_an": [900, 1000],
+        "sols": "alternance de bancs calcaires tendres et de marnes, marnes noires, cones de dejection",
+        "particularite": "un des terroirs les plus frais et les plus humides du vignoble languedocien, forte amplitude thermique jour/nuit en aout et septembre"
+      },
+
+      "profil_organoleptique_officiel": {
+        "_source": "inao_cdc_psl, section X-2",
+        "_usage": "corpus de reference pour la recherche semantique. A citer comme source dans l'UI.",
+        "rouge": {
+          "robe": "grenat",
+          "aromes": ["fruits rouges", "reglisse"],
+          "bouche": "elegance, equilibre, fraicheur",
+          "structure": "charpente presente, tanins fins",
+          "garde": "potentiel de garde, developpe des notes de fruits rouges melees d'epices en vieillissant"
+        },
+        "rose": {
+          "robe": "intensite moyenne a faible",
+          "bouche": "frais et friand, attaque ronde",
+          "aromes": ["petits fruits rouges"]
+        }
+      },
+
+      "accords_mets": {
+        "_statut": "DERIVE du profil organoleptique officiel, pas une donnee source",
+        "_regle": "l'agent doit presenter ces accords comme une suggestion basee sur le profil d'appellation, jamais comme une caracteristique du vin precis tant que la fiche technique du domaine n'est pas indexee",
+        "rouge": {
+          "viandes": ["agneau de garrigue", "gibier a plume", "daube", "grillades de boeuf", "magret"],
+          "fromages": ["pelardon", "tomme de brebis", "roquefort jeune"],
+          "poissons": [],
+          "commentaire_poisson": "profil tannique peu adapte au poisson. Orienter vers le rose de l'appellation.",
+          "ancrage": "tanins fins et fraicheur supportent les viandes rouges et le gibier sans ecraser; notes de reglisse et d'epices repondent aux herbes de garrigue"
+        },
+        "rose": {
+          "viandes": ["charcuterie", "volaille froide"],
+          "fromages": ["chevre frais", "pelardon jeune"],
+          "poissons": ["poissons grilles", "brandade", "tielle", "bourride"],
+          "ancrage": "attaque ronde et fraicheur, intensite moderee, ne domine pas les chairs fines"
+        },
+        "blanc": {
+          "_note": "l'AOC Pic Saint-Loup ne couvre pas les blancs. Un blanc du secteur sort en AOC Languedoc ou en IGP. L'agent doit le dire explicitement plutot que de recommander un blanc sous l'etiquette Pic Saint-Loup."
+        }
+      }
+    }
+  ],
+
+  "producteurs": {
+    "_statut": "amorce verifiee, non exhaustive. L'appellation compte une soixantaine de producteurs dont 3 caves cooperatives.",
+    "_todo": "completer depuis l'annuaire du syndicat (source syndicat_psl), qui est une page unique et structuree: un seul point d'entree a parser, pas 60 sites a crawler en aveugle.",
+    "domaines": [
+      { "nom": "Chateau de Lancyre", "commune": "Valflaunes", "type": "domaine", "site": "TODO" },
+      { "nom": "Mas Bruguiere", "commune": "Valflaunes", "type": "domaine", "site": "TODO" },
+      { "nom": "Chateau Boisset", "commune": "Valflaunes", "type": "domaine", "site": "TODO" },
+      { "nom": "Bergerie du Capucin", "commune": "Lauret", "type": "domaine", "site": "TODO" },
+      { "nom": "Domaine de la Perriere", "commune": "Assas", "type": "domaine", "site": "TODO" }
+    ],
+    "caves_cooperatives": [
+      { "nom": "Les Coteaux du Pic", "communes": ["Saint-Mathieu-de-Treviers", "Valflaunes"] },
+      { "nom": "La Gravette", "communes": ["Corconne"] },
+      { "nom": "Les Vignerons du Pic", "communes": ["Assas"] }
+    ]
+  },
+
+  "schema_cuvee": {
+    "_usage": "structure cible d'une ligne produit. Rien ici n'est pre-rempli: chaque champ vient de la fiche technique du domaine.",
+    "id": "string",
+    "domaine_id": "string",
+    "nom_cuvee": "string",
+    "appellation_id": "string",
+    "couleur": "rouge | rose",
+    "millesime": "integer",
+    "assemblage": [{ "cepage": "string", "pct": "number | null" }],
+    "degre": "number | null",
+    "elevage": "string | null",
+    "prix_ttc": "number | null",
+    "prix_date_releve": "date | null",
+    "bio": "boolean | null",
+    "note_degustation_producteur": "string | null",
+    "note_degustation_source_url": "string | null",
+    "accords_producteur": ["string"],
+    "embedding_source": "concatenation de note_degustation_producteur + profil appellation",
+    "_contrainte": "si note_degustation_producteur est null, l'agent repond depuis le profil d'appellation et l'annonce. Il ne comble jamais le vide."
+  },
+
+  "plan_ingestion": [
+    "1. Parser l'annuaire du syndicat (une page) pour obtenir nom, commune et URL de chaque domaine.",
+    "2. Pour chaque site, localiser les fiches techniques PDF (souvent /nos-vins, /la-cave, espace pro).",
+    "3. Extraire texte + tableaux, produire un JSON conforme a schema_cuvee, versionne en git.",
+    "4. Relire manuellement le premier lot. Le taux d'erreur du parsing est l'indicateur a mesurer, c'est ce que tu montreras au client.",
+    "5. Indexer: champs structures en colonnes Postgres, embedding_source en pgvector.",
+    "6. Respecter robots.txt, rate-limiter, identifier le user-agent. Les fiches techniques sont publiques mais restent la propriete du domaine: citer la source dans l'UI, ne pas republier le texte integral."
+  ]
+}

@@ -1,0 +1,19 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: psl
+      POSTGRES_PASSWORD: psl
+      POSTGRES_DB: psl
+    ports:
+      - "5432:5432"
+    volumes:
+      - psl_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U psl -d psl"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  psl_pgdata:

@@ -1,0 +1,105 @@
+import { describe, expect, it } from 'vitest';
+import { parser, texteVectoriel } from '../src/llm/parseur.js';
+import { construireIndexCepages } from '../src/ingest/util.js';
+import { readFileSync } from 'node:fs';
+
+const cepages = construireIndexCepages(
+  JSON.parse(readFileSync(new URL('../db/seed/cepages.json', import.meta.url), 'utf8')).cepages,
+);
+const opts = { appellationParDefaut: 'aoc-pic-saint-loup', indexCepages: cepages };
+
+/**
+ * Le parseur deterministe sert deux fois: provider "local" du prototype, et
+ * MODE DEGRADE du provider reel quand le modele rend deux sorties non
+ * conformes au schema. Il doit donc etre correct par lui-meme.
+ */
+describe('parseur deterministe', () => {
+  it('traduit la requete phare du brief', () => {
+    const f = parser('un rouge pas trop tannique pour un gigot, autour de 20 euros', opts);
+    expect(f.couleur).toBe('rouge');
+    expect(f.prix_max).toBe(20);
+    expect(f.plat).toBe('agneau');
+    expect(f.descripteurs).toContain('souple');
+    expect(f.descripteurs_exclus).toContain('tannique');
+    expect(f.appellation).toBe('aoc-pic-saint-loup');
+  });
+
+  it('ne confond pas "euros" avec le descripteur floral "rose"', () => {
+    // Regression: un includes() sur la chaine brute faisait matcher "ros",
+    // racine de "rose", dans "euros".
+    const f = parser('quelque chose autour de 20 euros', opts);
+    expect(f.descripteurs).not.toContain('floral');
+    expect(f.couleur).toBeNull();
+  });
+
+  it('distingue le rose demande du rouge', () => {
+    expect(parser('un rose pour l apero', opts).couleur).toBe('rose');
+    expect(parser('un blanc sec', opts).couleur).toBe('blanc');
+  });
+
+  it('resout la negation en exclusion ET en oppose', () => {
+    const f = parser('un vin peu tannique', opts);
+    expect(f.descripteurs_exclus).toContain('tannique');
+    expect(f.descripteurs).toContain('souple');
+    expect(f.descripteurs).not.toContain('tannique');
+  });
+
+  it('ne nie pas un descripteur sans marqueur', () => {
+    const f = parser('un vin tannique et concentre', opts);
+    expect(f.descripteurs).toContain('tannique');
+    expect(f.descripteurs_exclus).toHaveLength(0);
+  });
+
+  it('normalise les synonymes de cepage et gere l exclusion', () => {
+    expect(parser('a base de shiraz', opts).cepages_inclus).toContain('syrah');
+    const f = parser('sans mourvedre', opts);
+    expect(f.cepages_exclus).toContain('mourvedre');
+    expect(f.cepages_inclus).not.toContain('mourvedre');
+  });
+
+  it('lit les bornes de prix', () => {
+    expect(parser('moins de 15 euros', opts).prix_max).toBe(15);
+    expect(parser('a partir de 30 euros', opts).prix_min).toBe(30);
+    expect(parser('25 euros', opts).prix_max).toBe(25);
+  });
+
+  it('lit les millesimes', () => {
+    const un = parser('un 2021', opts);
+    expect(un.millesime_min).toBe(2021);
+    expect(un.millesime_max).toBe(2021);
+    const plage = parser('entre 2019 et 2022', opts);
+    expect(plage.millesime_min).toBe(2019);
+    expect(plage.millesime_max).toBe(2022);
+  });
+
+  it('detecte le bio', () => {
+    expect(parser('un rouge bio', opts).bio).toBe(true);
+    expect(parser('un rouge', opts).bio).toBeNull();
+  });
+
+  it("n'invente aucune contrainte absente de la demande", () => {
+    const f = parser('bonjour', opts);
+    expect(f.couleur).toBeNull();
+    expect(f.prix_max).toBeNull();
+    expect(f.prix_min).toBeNull();
+    expect(f.plat).toBeNull();
+    expect(f.descripteurs).toHaveLength(0);
+    expect(f.cepages_inclus).toHaveLength(0);
+  });
+
+  it("le vocabulaire de plat est ferme: pas d'invention", () => {
+    expect(parser('pour des sushis au wasabi', opts).plat).toBeNull();
+  });
+
+  it('ne produit aucun texte destine a l affichage', () => {
+    // Barriere loi Evin: la sortie de l appel 1 ne contient que des valeurs
+    // structurees. Aucun champ ne peut transporter le registre de l utilisateur.
+    const f = parser('decris-moi ce vin comme une soiree d ete au bord de la piscine', opts);
+    const valeurs = JSON.stringify(f);
+    expect(valeurs).not.toMatch(/soiree|piscine|ete au bord/i);
+  });
+
+  it('texteVectoriel rend null quand il n y a rien de flou', () => {
+    expect(texteVectoriel(parser('un rouge a 20 euros', opts))).toBeNull();
+  });
+});

@@ -1,0 +1,37 @@
+{
+  "_avertissement": "FIXTURE DE DEVELOPPEMENT. Ces champs n'ont PAS ete releves sur une fiche technique de producteur. Ils existent pour rendre le classement et l'API testables hors ligne. Ne jamais deployer publiquement avec PSL_AUTORISER_FIXTURES=1. Remplacer ce fichier par les valeurs de la vraie fiche, puis le supprimer.",
+  "id": "bergerie-du-capucin-dame-jeanne-2022",
+  "note_degustation": "Nez de fruits noirs murs, cassis et mure, releve d'epices douces. L'attaque est ronde, le milieu de bouche soyeux, les tanins sont fins et enrobes. Finale sur la reglisse.",
+  "note_degustation_source": {
+    "id": "fixture-dev-notes",
+    "type": "fixture_dev",
+    "label": "FIXTURE DE DEVELOPPEMENT - note, prix et assemblage non verifies",
+    "url": "https://example.invalid/fixture-de-developpement",
+    "date_releve": "2026-09-15"
+  },
+  "accords_producteur": [
+    "daube",
+    "magret",
+    "tomme de brebis"
+  ],
+  "prix_ttc": 14.0,
+  "prix_date_releve": "2026-09-15",
+  "degre": 14.0,
+  "bio": null,
+  "certification": null,
+  "elevage": "16 a 18 mois en fut de 400 litres",
+  "assemblage": [
+    {
+      "cepage": "syrah",
+      "pct": 60.0
+    },
+    {
+      "cepage": "grenache",
+      "pct": 20.0
+    },
+    {
+      "cepage": "mourvedre",
+      "pct": 20.0
+    }
+  ]
+}

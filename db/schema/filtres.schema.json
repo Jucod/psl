@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "appellation": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 80
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Identifiant d'appellation, ex: aoc-pic-saint-loup. null si non precise."
+    },
+    "couleur": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "rouge",
+            "rose",
+            "blanc"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "rouge, rose ou blanc. null si non precise."
+    },
+    "prix_min": {
+      "anyOf": [
+        {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10000
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Budget plancher en euros TTC. null si non precise."
+    },
+    "prix_max": {
+      "anyOf": [
+        {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10000
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Budget plafond en euros TTC. null si non precise."
+    },
+    "millesime_min": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 1900,
+          "maximum": 2100
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "millesime_max": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 1900,
+          "maximum": 2100
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "bio": {
+      "description": "true si l utilisateur demande explicitement du bio. null sinon.",
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "cepages_inclus": {
+      "maxItems": 6,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 60
+      },
+      "description": "Cepages souhaites. Tableau vide si non precise."
+    },
+    "cepages_exclus": {
+      "maxItems": 6,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 60
+      },
+      "description": "Cepages refuses. Tableau vide si non precise."
+    },
+    "plat": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "agneau",
+            "boeuf",
+            "gibier",
+            "daube",
+            "volaille",
+            "charcuterie",
+            "fromage",
+            "poisson",
+            "aperitif"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Vocabulaire ferme. null si aucun plat de la liste ne correspond."
+    },
+    "descripteurs": {
+      "maxItems": 8,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 40
+      },
+      "description": "Descripteurs sensoriels demandes, deja normalises en cas de negation (\"pas trop tannique\" donne \"souple\"). Sert au classement, jamais affiche."
+    }
+  },
+  "required": [
+    "appellation",
+    "couleur",
+    "prix_min",
+    "prix_max",
+    "millesime_min",
+    "millesime_max",
+    "bio",
+    "cepages_inclus",
+    "cepages_exclus",
+    "plat",
+    "descripteurs"
+  ],
+  "additionalProperties": false,
+  "x-invariants": [
+    "prix_min <= prix_max",
+    "millesime_min <= millesime_max"
+  ]
+}
