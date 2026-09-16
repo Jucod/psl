@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import pg from 'pg';
 import { afterAll, describe, expect, it } from 'vitest';
 import { fermer } from '../src/db/client.js';
 import { rechercher } from '../src/moteur/recherche.js';
@@ -24,6 +26,67 @@ async function vecteur(f: Filtres): Promise<number[] | null> {
 
 const options = { autoriserFixtures: true };
 
+const DOSSIER_CALQUE = new URL('../db/seed/cuvees.fixtures/', import.meta.url);
+
+/** Contenu du calque de developpement, lu a la source. */
+const CALQUE: { id: string; cles: string[] }[] = (() => {
+  try {
+    return readdirSync(DOSSIER_CALQUE)
+      .filter((x) => x.endsWith('.json'))
+      .map((x) => JSON.parse(readFileSync(new URL(x, DOSSIER_CALQUE), 'utf8')))
+      .map((o: Record<string, unknown>) => ({
+        id: String(o.id),
+        cles: Object.keys(o).filter((k) => !k.startsWith('_') && k !== 'id'),
+      }));
+  } catch {
+    return [];
+  }
+})();
+const IDS_CALQUE = new Set(CALQUE.map((c) => c.id));
+
+/**
+ * Le calque est temporaire: l'objectif du projet est de le supprimer. Le jour
+ * ou il disparait, ces cas n'ont plus de sujet. On les SAUTE visiblement
+ * plutot que de les laisser passer sur un ensemble vide, ce qui les
+ * transformerait en faux temoins silencieux.
+ */
+const siCalque = IDS_CALQUE.size > 0 ? it : it.skip;
+
+/**
+ * Construit un etat de catalogue dans une transaction annulee.
+ *
+ * Un pool a connexion UNIQUE est indispensable: avec un pool ordinaire le
+ * moteur prendrait une autre connexion et ne verrait pas la transaction.
+ */
+async function dansUneTransaction<T>(
+  preparation: string, corps: (pool: pg.Pool) => Promise<T>,
+): Promise<T> {
+  const p = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
+  try {
+    await p.query('BEGIN');
+    await p.query(preparation);
+    return await corps(p);
+  } finally {
+    await p.query('ROLLBACK').catch(() => {});
+    await p.end();
+  }
+}
+
+// Partition etablie en LISANT les notes, pas en triant les scores: choisir les
+// membres d'apres le classement qu'on teste serait circulaire. Chaque id porte
+// le segment de sa note qui le range.
+const SOUPLES = [
+  'morties-que-sera-sera-2024',      // "les tanins fins et delicats"
+  'mas-bruguiere-l-arbouse-2024',    // "la rondeur s'associe a une belle fraicheur"
+  'mas-foulaquier-l-orphee-2023',    // "alliant gourmandise, souplesse et puissance"
+  'mas-foulaquier-les-calades-2024', // "alliant gourmandise, souplesse et epice"
+];
+const CHARPENTES = [
+  'lancyre-vieilles-vignes-2022',    // "Bouche dense et charpentee, tanins presents et serres"
+  'lancyre-grande-cuvee-2021',       // "Bouche puissante et structuree, tanins fermes"
+  'morties-pic-saint-loup-2024',     // "des tanins presents qui s'affineront"
+];
+
 describe('jalon 2 - recherche hybride', () => {
   afterAll(async () => { await fermer(); });
 
@@ -40,19 +103,43 @@ describe('jalon 2 - recherche hybride', () => {
     expect(r.refus?.source?.url).toMatch(/^https?:\/\//);
   });
 
-  it('CAS VIDE: une couleur couverte par l AOC mais absente du catalogue', async () => {
-    // Le rose est autorise par le cahier des charges: pas de refus de
-    // couverture. Mais aucune cuvee rose n'est indexee: reponse vide assumee.
-    const r = await rechercher(filtres({ couleur: 'rose' }), options);
+  it('CAS VIDE: un critere couvert par l AOC mais absent du catalogue', async () => {
+    // Ce cas portait sur le rose, qui n'etait alors represente par aucune
+    // cuvee. Le corpus reel en contient un (Dame Jeanne 2025): la premisse
+    // est morte, et c'est une bonne nouvelle. On la reconstruit sur l'axe
+    // cepage, ou elle est plus discriminante: le cinsaut est autorise par
+    // l'encepagement de l'AOC, donc AUCUN refus de couverture n'est du,
+    // mais aucune cuvee du catalogue n'en contient.
+    //
+    // Les trois etats du meme axe sont ainsi tenus par trois tests:
+    //   chardonnay -> refus (hors encepagement AOC)
+    //   cinsaut    -> vide  (dans l'AOC, absent du catalogue)
+    //   syrah      -> ok
+    const r = await rechercher(filtres({ couleur: 'rouge', cepages_inclus: ['cinsaut'] }), options);
 
     expect(r.statut).toBe('vide');
     expect(r.resultats).toHaveLength(0);
-    expect(r.tailleCatalogue).toBe(0);
     expect(r.refus).toBeNull();
+    // Le catalogue n'est pas vide: c'est bien ce cepage-la qui est absent.
+    expect(r.tailleCatalogue).toBeGreaterThan(0);
+    // Et on ne pretexte pas une donnee manquante: les assemblages sont connus.
+    expect(r.filtresIndecidables).toHaveLength(0);
+  });
+
+  it('CAS ROSE: une couleur de l AOC desormais representee repond normalement', async () => {
+    // Temoin de la bascule fixtures -> donnees reelles: le rose etait le trou
+    // du catalogue, il ne l'est plus. Si ce test redevient vide, le corpus a
+    // regresse.
+    const r = await rechercher(filtres({ couleur: 'rose' }), options);
+
+    expect(r.statut).toBe('ok');
+    expect(r.resultats.length).toBeGreaterThan(0);
+    expect(r.refus).toBeNull();
+    for (const c of r.resultats) expect(c.couleur).toBe('rose');
   });
 
   it('CAS ELARGISSEMENT: le budget est relache par paliers, et annonce', async () => {
-    // Rien sous 12 euros. La cuvee la moins chere est a 14.
+    // Rien sous 12 euros: le rouge le moins cher du catalogue est a 16.
     const r = await rechercher(filtres({ couleur: 'rouge', prix_max: 12 }), options);
 
     expect(r.statut).toBe('ok');
@@ -64,6 +151,28 @@ describe('jalon 2 - recherche hybride', () => {
     expect(r.filtresDemandes.prix_max).toBe(12);
     // Plafond a +50%: on ne derive pas indefiniment.
     expect(r.filtresAppliques.prix_max).toBeLessThanOrEqual(12 * 1.5 + 0.01);
+  });
+
+  it("CAS ELARGISSEMENT: le plafond annonce est ATTEIGNABLE, pas decoratif", async () => {
+    // Regression. L'echelle montait par paliers de 25 % et abandonnait des
+    // que le palier SUIVANT depassait le plafond, au lieu de s'y caler:
+    // 12 € -> 15 €, puis 18,75 € > 18 € donc arret. On repondait "rien
+    // trouve" en gardant 3 € de marge annoncee sous le coude, alors que deux
+    // cuvees etaient a 16 €. Un plafond qu'on ne peut pas atteindre ment sur
+    // ce que le systeme a reellement essaye.
+    //
+    // Invisible sur le corpus de fixtures: la moins chere y etait a 14 €,
+    // donc le premier palier suffisait toujours.
+    const r = await rechercher(filtres({ couleur: 'rouge', prix_max: 12 }), options);
+
+    expect(r.statut).toBe('ok');
+    expect(r.filtresAppliques.prix_max).toBeCloseTo(18, 2);
+    // Chaque cran est annonce, et chacun avance.
+    const annonces = r.relachements.map((x) => x.annonce);
+    expect(annonces.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(annonces).size).toBe(annonces.length);
+    // Et le resultat tient dans le plafond annonce.
+    for (const c of r.resultats) expect(c.prix_ttc).toBeLessThanOrEqual(18);
   });
 
   it('CAS SANS ELARGISSEMENT POSSIBLE: rien, et on le dit', async () => {
@@ -82,63 +191,71 @@ describe('jalon 2 - recherche hybride', () => {
   });
 
   it('CAS CLASSEMENT: "pas trop tannique" separe les souples des charpentes', async () => {
-    // Sur cinq cuvees, asserter un RANG EXACT est un faux temoin: l'ecart
-    // entre L'Arbouse et Dame Jeanne vaut 0,008 de cosinus, soit le bruit de
-    // collision du hachage. Les deux notes sont d'ailleurs aussi souples l'une
-    // que l'autre ("tanins fondus" contre "tanins fins et enrobes"): les
-    // donnees ne tranchent pas, et un test ne doit pas pretendre le contraire.
+    // Asserter un RANG EXACT serait un faux temoin: entre deux notes aussi
+    // souples l'une que l'autre, l'ecart vaut le bruit de collision du
+    // hachage. Ce qui est reellement discrimine, c'est la PARTITION.
     //
-    // Ce qui est reellement discrimine, et avec une marge de 0,45, c'est la
-    // PARTITION entre les souples et les charpentes. C'est elle qu'on teste.
+    // maxResultats couvre tout le catalogue rouge: sur un top-3, les trois
+    // premiers sont souvent a egalite et la partition n'est pas observable.
     const f = filtres({
       couleur: 'rouge',
       descripteurs: ['souple'], descripteurs_exclus: ['tannique'],
     });
     const r = await rechercher(f, {
-      ...options, vecteurRequete: await vecteur(f), maxResultats: 5,
+      ...options, vecteurRequete: await vecteur(f), maxResultats: 50,
     });
 
     expect(r.statut).toBe('ok');
     expect(r.classement).toBe('vectoriel');
 
-    const SOUPLES = ['mas-bruguiere-l-arbouse-2022', 'bergerie-du-capucin-dame-jeanne-2022'];
-    const CHARPENTES = ['lancyre-vieilles-vignes-2022', 'lancyre-grande-cuvee-2021'];
-
     const score = (id: string) => r.resultats.find((x) => x.id === id)?.score;
     const scoresSouples = SOUPLES.map(score).filter((s): s is number => s !== undefined);
     const scoresCharpentes = CHARPENTES.map(score).filter((s): s is number => s !== undefined);
 
-    expect(scoresSouples.length).toBe(2);
-    expect(scoresCharpentes.length).toBe(2);
+    // Sans ces deux egalites, un id renomme sortirait du jeu en silence et le
+    // test passerait sur un ensemble vide.
+    expect(scoresSouples.length).toBe(SOUPLES.length);
+    expect(scoresCharpentes.length).toBe(CHARPENTES.length);
 
     const pireSouple = Math.min(...scoresSouples);
     const meilleurCharpente = Math.max(...scoresCharpentes);
     expect(pireSouple).toBeGreaterThan(meilleurCharpente);
-    // Marge exigee, pour que le test tombe si le signal se DEGRADE, et pas
-    // seulement s'il s'inverse. La valeur observee est 0,45; a 0,15 le test
-    // survivait a une baisse de deux tiers de POIDS_FAMILLE, donc il ne
-    // temoignait que de la suppression du mecanisme. 0,35 garde ~20 % de jeu.
-    expect(pireSouple - meilleurCharpente).toBeGreaterThan(0.35);
+    // Marge exigee, pour que le test tombe si le signal se DEGRADE et pas
+    // seulement s'il s'inverse. Valeur observee sur le corpus reel: 0,27,
+    // bornee par Morties Pic Saint-Loup, la note la plus ambigue des sept
+    // ("bouche equilibree" ET "tanins presents"). 0,20 garde ~25 % de jeu.
+    expect(pireSouple - meilleurCharpente).toBeGreaterThan(0.20);
   });
 
   it('CAS INVERSE: la partition s inverse quand la demande s inverse', async () => {
-    // Une assertion negative sur un id parmi cinq passerait sur un tri par
-    // prix, par id, ou au hasard quatre fois sur cinq. On reteste donc la
-    // partition, dans l'autre sens.
+    // Une assertion negative sur un seul id passerait sur un tri par prix, par
+    // id, ou au hasard. On reteste donc la partition entiere, dans l'autre
+    // sens: les memes deux groupes doivent echanger leurs places.
+    //
+    // La version precedente lisait le score avec "?? -Infinity". Apres le
+    // renommage des cuvees, les ids compares n'existaient plus et elle
+    // comparait -Infinity a -Infinity: verte, et ne temoignant de rien.
     const f = filtres({
       couleur: 'rouge',
       descripteurs: ['tannique', 'concentre'], descripteurs_exclus: ['souple'],
     });
     const r = await rechercher(f, {
-      ...options, vecteurRequete: await vecteur(f), maxResultats: 5,
+      ...options, vecteurRequete: await vecteur(f), maxResultats: 50,
     });
 
     expect(r.statut).toBe('ok');
-    const score = (id: string) => r.resultats.find((x) => x.id === id)?.score ?? -Infinity;
-    expect(score('lancyre-vieilles-vignes-2022'))
-      .toBeGreaterThan(score('mas-bruguiere-l-arbouse-2022'));
-    expect(score('lancyre-grande-cuvee-2021'))
-      .toBeGreaterThan(score('mas-bruguiere-l-arbouse-2022'));
+    expect(r.classement).toBe('vectoriel');
+
+    const score = (id: string) => {
+      const c = r.resultats.find((x) => x.id === id);
+      // Echouer sur l'absence, ne jamais la remplacer par une valeur qui
+      // rendrait la comparaison vraie.
+      expect(c, `${id} absent du classement`).toBeDefined();
+      return c!.score;
+    };
+    const pireCharpente = Math.min(...CHARPENTES.map(score));
+    const meilleurSouple = Math.max(...SOUPLES.map(score));
+    expect(pireCharpente).toBeGreaterThan(meilleurSouple);
   });
 
   it('respecte le plafond de resultats sans rendre une liste vide', async () => {
@@ -161,42 +278,65 @@ describe('jalon 2 - recherche hybride', () => {
     }
   });
 
-  it('SEPARATION DES NIVEAUX: sans fixture, les champs sont masques mais la cuvee reste visible', async () => {
-    const r = await rechercher(filtres({ couleur: 'rouge' }), { autoriserFixtures: false });
+  siCalque('SEPARATION DES NIVEAUX: le calque est masque, la cuvee reste visible', async () => {
+    // Ce cas verifiait la propriete sur TOUT le catalogue, du temps ou toutes
+    // les cuvees venaient du calque. Le corpus reel l'a rendue fausse dans ce
+    // sens-la, et c'est le progres attendu. Le test verifie donc maintenant
+    // les DEUX cotes: la ligne de calque est masquee, la ligne reelle est
+    // intacte. C'est un temoin plus fort que l'ancien, qui passait aussi si
+    // le moteur masquait tout indistinctement.
+    const r = await rechercher(
+      filtres({ couleur: 'rouge' }), { autoriserFixtures: false, maxResultats: 50 },
+    );
 
-    // Sans cette premiere assertion, tout ce qui suit passe sur l'ensemble
-    // vide: le test survivrait a la suppression du repli sur le profil.
-    expect(r.resultats.length).toBeGreaterThan(0);
     expect(r.statut).toBe('ok');
+    const calque = r.resultats.filter((c) => IDS_CALQUE.has(c.id));
+    const reelles = r.resultats.filter((c) => !IDS_CALQUE.has(c.id));
 
-    for (const c of r.resultats) {
+    // Sans ces deux bornes, tout ce qui suit passerait sur un ensemble vide.
+    expect(calque.length).toBeGreaterThan(0);
+    expect(reelles.length).toBeGreaterThan(0);
+
+    for (const c of calque) {
       // On masque les CHAMPS, on n'exclut pas la ligne. Exclure faisait
       // repondre "catalogue vide" sur un catalogue de cinq cuvees.
-      expect(c.note_degustation).toBeNull();
-      expect(c.note_source).toBeNull();
-      expect(c.niveau).toBe('appellation');
-      expect(c.profil_appellation).not.toBeNull();
+      expect(c.note_degustation, c.id).toBeNull();
+      expect(c.note_source, c.id).toBeNull();
+      expect(c.niveau, c.id).toBe('appellation');
+      expect(c.profil_appellation, c.id).not.toBeNull();
       // Le calque ne pose pas que la note: prix et assemblage aussi.
-      expect(c.prix_ttc).toBeNull();
-      expect(c.assemblage).toHaveLength(0);
-      expect(c.fixture).toBe(true);
+      expect(c.prix_ttc, c.id).toBeNull();
+      expect(c.assemblage, c.id).toHaveLength(0);
+      expect(c.fixture, c.id).toBe(true);
+    }
+    for (const c of reelles) {
+      // Et une cuvee relevee chez le producteur ne subit rien de tout ca.
+      expect(c.note_degustation, c.id).not.toBeNull();
+      expect(c.note_source!.url, c.id).toMatch(/^https?:\/\//);
+      expect(c.niveau, c.id).toBe('cuvee');
+      expect(c.fixture, c.id).toBe(false);
     }
   });
 
-  it('un filtre de prix ne retient pas une cuvee dont le prix est masque', async () => {
+  siCalque('un filtre de prix ne retient pas une cuvee dont le prix est masque', async () => {
     // Filtrer sur une valeur qu'on refuse d'afficher serait pire que de
-    // l'exclure: le budget vient du calque, donc il n'existe pas ici.
+    // l'exclure. Le prix des lignes de calque n'existe pas ici, donc aucune
+    // d'elles ne peut satisfaire un budget, si large soit-il.
     const r = await rechercher(
-      filtres({ couleur: 'rouge', prix_max: 100 }), { autoriserFixtures: false },
+      filtres({ couleur: 'rouge', prix_max: 1000 }), { autoriserFixtures: false, maxResultats: 50 },
     );
-    expect(r.resultats).toHaveLength(0);
+    // Le filtre retient bien quelque chose: les cuvees reelles ont un prix.
+    expect(r.resultats.length).toBeGreaterThan(0);
+    for (const c of r.resultats) expect(IDS_CALQUE.has(c.id), `${c.id} masque mais retenu`).toBe(false);
   });
 
-  it('un filtre de cepage ne retient pas une cuvee dont l assemblage est masque', async () => {
+  siCalque('un filtre de cepage ne retient pas une cuvee dont l assemblage est masque', async () => {
     const r = await rechercher(
-      filtres({ couleur: 'rouge', cepages_inclus: ['syrah'] }), { autoriserFixtures: false },
+      filtres({ couleur: 'rouge', cepages_inclus: ['syrah'] }),
+      { autoriserFixtures: false, maxResultats: 50 },
     );
-    expect(r.resultats).toHaveLength(0);
+    expect(r.resultats.length).toBeGreaterThan(0);
+    for (const c of r.resultats) expect(IDS_CALQUE.has(c.id), `${c.id} masque mais retenu`).toBe(false);
   });
 
   it('les filtres de cepage passent par la jointure', async () => {
@@ -303,36 +443,65 @@ describe('regressions issues de la revue', () => {
 });
 
 describe('regressions de la seconde revue', () => {
-  it("N2: une absence ne se conclut pas d'une ignorance", async () => {
+  siCalque("N2: une absence ne se conclut pas d'une ignorance", async () => {
     // "sans mourvedre" sur une cuvee dont l'assemblage est masque: le moteur
     // l'affirmait sur un vin qui en contient 25 %. C'est la seule affirmation
     // factuellement fausse sur un produit qu'un tel moteur puisse produire.
-    const avecCalque = await rechercher(
-      filtres({ couleur: 'rouge', cepages_exclus: ['mourvedre'] }), { autoriserFixtures: true },
-    );
-    const sansCalque = await rechercher(
-      filtres({ couleur: 'rouge', cepages_exclus: ['mourvedre'] }), { autoriserFixtures: false },
-    );
+    const f = filtres({ couleur: 'rouge', cepages_exclus: ['mourvedre'] });
+    const avecCalque = await rechercher(f, { autoriserFixtures: true, maxResultats: 50 });
+    const sansCalque = await rechercher(f, { autoriserFixtures: false, maxResultats: 50 });
 
     // Assemblage connu: le filtre discrimine reellement.
     expect(avecCalque.resultats.length).toBeGreaterThan(0);
     for (const c of avecCalque.resultats) {
-      expect(c.assemblage.some((a) => a.cepage === 'mourvedre')).toBe(false);
+      expect(c.assemblage.some((a) => a.cepage === 'mourvedre'), c.id).toBe(false);
     }
-    // Assemblage inconnu: on ne conclut rien.
-    expect(sansCalque.resultats).toHaveLength(0);
+    // Au moins une ligne de calque passe le filtre quand son assemblage est
+    // lisible: sans ca, l'assertion suivante ne prouverait rien.
+    expect(avecCalque.resultats.some((c) => IDS_CALQUE.has(c.id))).toBe(true);
+
+    // Assemblage inconnu: on ne conclut rien. Aucune ligne de calque ne doit
+    // etre presentee comme "sans mourvedre" alors qu'on ignore ce qu'elle
+    // contient.
+    for (const c of sansCalque.resultats) {
+      expect(IDS_CALQUE.has(c.id), `${c.id}: absence affirmee sur un assemblage inconnu`).toBe(false);
+    }
   });
 
   it('N6: une donnee manquante n est pas une absence de correspondance', async () => {
-    const r = await rechercher(
-      filtres({ couleur: 'rouge', prix_max: 20 }), { autoriserFixtures: false },
+    // "Aucun vin sous 20 €" et "je n'ai le prix d'aucun vin" sont deux
+    // reponses differentes, et donner la premiere pour la seconde est une
+    // affirmation sans fondement.
+    //
+    // Ce cas reposait sur un accident du corpus: aucun prix n'etait relevable
+    // sans le calque. Les 15 cuvees reelles en portent un, donc la situation
+    // ne se produit plus d'elle-meme. On la CONSTRUIT, dans une transaction
+    // annulee, plutot que d'attendre du catalogue qu'il reste pauvre: le test
+    // survivra a la croissance du corpus, ce que l'ancien ne faisait pas.
+    const r = await dansUneTransaction(
+      'UPDATE cuvees SET prix_ttc = NULL',
+      (pool) => rechercher(
+        filtres({ couleur: 'rouge', prix_max: 20 }),
+        { pool, autoriserFixtures: true },
+      ),
     );
+
     expect(r.statut).toBe('vide');
     expect(r.filtresIndecidables.map((f) => f.champ)).toContain('prix_max');
-
     // Et le catalogue n'est pas vide pour autant: c'est bien la donnee qui
     // manque, pas les cuvees.
     expect(r.tailleCatalogue).toBeGreaterThan(0);
+  });
+
+  it('N6 ter: le prix connu de la majorite ne masque pas le prix inconnu du reste', async () => {
+    // Le pendant du cas precedent sur le corpus tel qu'il est: les prix sont
+    // connus, donc aucun critere n'est indecidable et le moteur repond.
+    const r = await rechercher(
+      filtres({ couleur: 'rouge', prix_max: 20 }), { autoriserFixtures: true },
+    );
+    expect(r.statut).toBe('ok');
+    expect(r.filtresIndecidables).toHaveLength(0);
+    for (const c of r.resultats) expect(c.prix_ttc).toBeLessThanOrEqual(20);
   });
 
   it('N6 bis: un critere decidable n est pas signale comme indecidable', async () => {
@@ -344,49 +513,80 @@ describe('regressions de la seconde revue', () => {
   });
 
   it('N7: un signal de niveau appellation ne fait pas un classement de cuvees', async () => {
-    // Sans calque, toutes les cuvees retombent sur le MEME profil AOC: leurs
-    // vecteurs sont identiques et l'ordre n'est que le departage par id.
+    // Quand toutes les lignes retombent sur le MEME profil AOC, leurs vecteurs
+    // sont identiques: l'ordre n'est qu'un departage, et annoncer "classement
+    // par pertinence" presenterait une caracteristique d'appellation comme une
+    // caracteristique de cuvee.
+    //
+    // Meme remarque qu'en N6: cet etat etait celui du catalogue de fixtures,
+    // il ne l'est plus. On le construit.
     const f = filtres({ couleur: 'rouge', descripteurs: ['souple'] });
-    const r = await rechercher(f, { autoriserFixtures: false, vecteurRequete: await vecteur(f) });
+    const v = await vecteur(f);
+    const r = await dansUneTransaction(
+      `UPDATE cuvees SET note_degustation = NULL, note_degustation_source_id = NULL,
+                        embedding_niveau = 'appellation', embedding = NULL`,
+      (pool) => rechercher(f, { pool, autoriserFixtures: true, vecteurRequete: v }),
+    );
 
     expect(r.resultats.length).toBeGreaterThan(0);
     expect(r.resultats.every((c) => c.niveau === 'appellation')).toBe(true);
     expect(r.classement).toBe('lexicographique');
   });
 
+  it('N7 bis: des notes de cuvee, elles, autorisent le classement vectoriel', async () => {
+    // Le pendant: le garde-fou de N7 ne doit pas etre si large qu'il
+    // interdise tout classement. Sur le corpus reel, il y a de quoi classer.
+    const f = filtres({ couleur: 'rouge', descripteurs: ['souple'], descripteurs_exclus: ['tannique'] });
+    const r = await rechercher(f, {
+      ...options, vecteurRequete: await vecteur(f), maxResultats: 50,
+    });
+    expect(r.resultats.some((c) => c.niveau === 'cuvee')).toBe(true);
+    expect(r.classement).toBe('vectoriel');
+  });
+
   it('le vecteur de rejet participe reellement au classement', async () => {
     // Temoin du mecanisme lui-meme: sur une demande de REJET SEUL, le vecteur
     // de requete n'existe que par le rejet. A poidsRejet = 0 il serait
     // degenere et il n'y aurait aucun classement vectoriel du tout.
+    //
+    // maxResultats couvre tout le catalogue rouge. Sur un top-5 de 16 cuvees,
+    // "le dernier" est le cinquieme, pas le moins bien classe: l'assertion ne
+    // porterait plus sur ce qu'elle nomme.
     const f = filtres({ couleur: 'rouge', descripteurs_exclus: ['tannique'] });
     const v = await vecteur(f);
     expect(v).not.toBeNull();
 
-    const r = await rechercher(f, { ...options, vecteurRequete: v, maxResultats: 5 });
+    const r = await rechercher(f, { ...options, vecteurRequete: v, maxResultats: 50 });
     expect(r.classement).toBe('vectoriel');
 
-    const score = (id: string) => r.resultats.find((x) => x.id === id)?.score ?? NaN;
-    // La cuvee la plus charpentee du corpus ferme la marche.
+    // Les cuvees dont la note nomme des tanins fermes ferment la marche.
+    const rang = (id: string) => {
+      const i = r.resultats.findIndex((x) => x.id === id);
+      expect(i, `${id} absent du classement`).toBeGreaterThanOrEqual(0);
+      return i;
+    };
     const dernier = r.resultats[r.resultats.length - 1]!;
-    expect(dernier.id).toBe('lancyre-grande-cuvee-2021');
-    expect(score('bergerie-du-capucin-dame-jeanne-2022')).toBeGreaterThan(score('lancyre-grande-cuvee-2021'));
+    expect(CHARPENTES).toContain(dernier.id);
+    // Et une note muette sur la structure passe devant une note qui la nomme:
+    // c'est le rejet, et lui seul, qui produit cet ordre.
+    expect(rang('bergerie-du-capucin-dame-jeanne-rouge-2022'))
+      .toBeLessThan(rang('lancyre-grande-cuvee-2021'));
   });
 
-  it('toute cle posee par le calque est masquee par le moteur', async () => {
+  siCalque('toute cle posee par le calque est masquee par le moteur', async () => {
     // La liste de masquage de SQL_RESULTATS est maintenue a la main: une
     // nouvelle cle dans un fichier de calque fuirait en silence. Ce test la
     // verrouille durablement.
-    const { readdirSync, readFileSync } = await import('node:fs');
-    const dossier = new URL('../db/seed/cuvees.fixtures/', import.meta.url);
-    const clesCalque = new Set<string>();
-    for (const f of readdirSync(dossier).filter((x) => x.endsWith('.json'))) {
-      for (const cle of Object.keys(JSON.parse(readFileSync(new URL(f, dossier), 'utf8')))) {
-        if (!cle.startsWith('_') && cle !== 'id') clesCalque.add(cle);
-      }
-    }
+    const clesCalque = new Set(CALQUE.flatMap((c) => c.cles));
     expect(clesCalque.size).toBeGreaterThan(0);
 
-    const r = await rechercher(filtres({ couleur: 'rouge' }), { autoriserFixtures: false });
+    const tous = await rechercher(
+      filtres({ couleur: 'rouge' }), { autoriserFixtures: false, maxResultats: 50 },
+    );
+    // Seules les lignes du calque sont concernees: les cuvees reelles portent
+    // legitimement ces memes champs, et les exiger nulles partout ferait
+    // passer ce test pour un masquage generalise.
+    const r = { resultats: tous.resultats.filter((c) => IDS_CALQUE.has(c.id)) };
     expect(r.resultats.length).toBeGreaterThan(0);
 
     // Correspondance entre les cles du calque et les champs du resultat.

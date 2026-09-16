@@ -45,6 +45,7 @@ export function parser(message: string, options: OptionsParseur = {}): Filtres {
     ['rose', /\bros[ée]e?s?\b/],
     ['blanc', /\bblancs?\b/],
   ];
+  let positionCouleur = -1;
   for (const [code, motif] of COULEURS) {
     // La position doit etre cherchee dans le MEME espace de tokens que celui
     // qu'indexe estNie(). Compter les espaces de `texte` decalait la fenetre
@@ -55,6 +56,7 @@ export function parser(message: string, options: OptionsParseur = {}): Filtres {
     if (position === -1) continue;
     if (estNie(decoupe.brut, position)) continue;
     brut.couleur = code;
+    positionCouleur = position;
     break;
   }
 
@@ -132,7 +134,14 @@ export function parser(message: string, options: OptionsParseur = {}): Filtres {
   // --- descripteurs, avec resolution explicite de la negation ---------------
   const descripteurs = new Set<string>();
   const exclus = new Set<string>();
-  for (const { cle, position } of sequences(decoupe.racines)) {
+  for (const { cle, position, longueur } of sequences(decoupe.racines)) {
+    // Le mot qui a servi a lire la COULEUR ne resservira pas de descripteur.
+    // "un rose" ajoutait la famille florale, parce que racine("rose") vaut
+    // "ros" et que la rose est une fleur du lexique: la demande repartait
+    // biaisee vers les notes florales, que personne n'avait demandees. Meme
+    // classe que le "euros" -> "rose" corrige plus tot, a ceci pres qu'ici le
+    // mot est bien celui qu'on croit — il est juste deja consomme.
+    if (positionCouleur >= position && positionCouleur < position + longueur) continue;
     const famille = FAMILLE_PAR_MOT.get(cle);
     if (!famille) continue;
     if (estNie(decoupe.brut, position)) {

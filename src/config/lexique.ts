@@ -13,8 +13,8 @@
 
 /** Familles de descripteurs. Les membres d'une famille s'attirent au cosinus. */
 export const FAMILLES: Record<string, string[]> = {
-  tannique: ['tannique', 'tanin', 'tanins', 'charpente', 'charpente', 'structure', 'structure', 'corse', 'puissant', 'ferme', 'austere', 'muscle', 'robuste'],
-  souple: ['souple', 'fondu', 'rond', 'ronde', 'soyeux', 'veloute', 'moelleux', 'coulant', 'gouleyant', 'caressant', 'fin', 'delicat', 'tendre'],
+  tannique: ['tannique', 'tanin', 'tanins', 'charpente', 'charpentee', 'structure', 'structuree', 'serre', 'serree', 'corse', 'puissant', 'ferme', 'austere', 'muscle', 'robuste'],
+  souple: ['souple', 'souplesse', 'fondu', 'rond', 'ronde', 'rondeur', 'soyeux', 'veloute', 'moelleux', 'coulant', 'gouleyant', 'caressant', 'fin', 'delicat', 'tendre'],
   frais: ['frais', 'fraiche', 'fraicheur', 'vif', 'vive', 'tendu', 'nerveux', 'acidite', 'croquant', 'eclatant', 'minerale', 'mineral', 'salin'],
   fruits_rouges: ['fruits rouges', 'cerise', 'fraise', 'framboise', 'groseille', 'griotte', 'fruit rouge'],
   fruits_noirs: ['fruits noirs', 'mure', 'cassis', 'myrtille', 'prunelle', 'fruit noir'],
@@ -22,7 +22,7 @@ export const FAMILLES: Record<string, string[]> = {
   garrigue: ['garrigue', 'thym', 'romarin', 'laurier', 'ciste', 'herbes', 'herbes seches', 'menthol'],
   boise: ['boise', 'fut', 'barrique', 'chene', 'vanille', 'torrefaction', 'cacao', 'grille', 'toaste', 'fume'],
   floral: ['floral', 'violette', 'pivoine', 'rose', 'fleurs'],
-  concentre: ['concentre', 'dense', 'riche', 'ample', 'genereux', 'puissant', 'profond'],
+  concentre: ['concentre', 'dense', 'riche', 'ample', 'genereux', 'puissant', 'puissance', 'profond'],
   leger: ['leger', 'legere', 'aerien', 'subtil', 'fluide', 'digeste'],
   garde: ['garde', 'vieillissement', 'potentiel', 'evolution', 'tenue'],
 };

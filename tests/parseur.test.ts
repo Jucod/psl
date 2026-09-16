@@ -176,5 +176,32 @@ describe('couleur: les pieges rencontres', () => {
     expect(parser('avez-vous du chardonnay ?', opts).cepages_inclus).toContain('chardonnay');
     expect(parser('un viognier', opts).cepages_inclus).toContain('viognier');
   });
+
+  it('le mot qui donne la couleur ne ressert pas de descripteur', () => {
+    // racine("rose") vaut "ros", et la rose est une fleur du lexique floral:
+    // "un rose" repartait avec un descripteur floral que personne n'avait
+    // demande, et biaisait le classement vers les notes florales.
+    const r = parser('un rose', opts);
+    expect(r.couleur).toBe('rose');
+    expect(r.descripteurs).toHaveLength(0);
+    expect(r.descripteurs_exclus).toHaveLength(0);
+
+    // Le pluriel aussi, qui passe par la meme regex de couleur.
+    expect(parser('des roses', opts).descripteurs).toHaveLength(0);
+  });
+
+  it("mais une SECONDE occurrence, elle, reste un descripteur", () => {
+    // La consommation porte sur le token qui a servi, pas sur le mot partout:
+    // sinon on ne pourrait plus demander un rose aux notes florales.
+    const r = parser('un rose aux notes de rose', opts);
+    expect(r.couleur).toBe('rose');
+    expect(r.descripteurs).toContain('floral');
+  });
+
+  it('les autres couleurs ne perdent aucun descripteur au passage', () => {
+    const r = parser('un rouge floral', opts);
+    expect(r.couleur).toBe('rouge');
+    expect(r.descripteurs).toContain('floral');
+  });
 });
 

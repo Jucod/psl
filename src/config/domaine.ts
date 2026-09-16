@@ -115,8 +115,17 @@ export const config: ConfigDomaine = {
         // Sans cette garde, un origine absent rend la comparaison NaN, donc
         // fausse, donc le plafond de derive ne s'applique jamais.
         if (!Number.isFinite(origine)) return null;
-        const suivante = Math.round(courante * 1.25 * 100) / 100;
-        if (suivante > origine * 1.5 + 0.001) return null;
+        const plafond = Math.round(origine * 1.5 * 100) / 100;
+        if (courante >= plafond - 0.001) return null;
+        // Le dernier cran se CALE sur le plafond au lieu d'etre abandonne.
+        // Avant: 12 € montait a 15 €, puis 18,75 € depassait le plafond de
+        // 18 € et l'echelle renonçait — on repondait "rien trouve" en gardant
+        // 3 € de marge annoncee sous le coude, alors que deux cuvees etaient
+        // a 16 €. Le plafond declare doit etre atteignable, sinon il ment.
+        const suivante = Math.min(Math.round(courante * 1.25 * 100) / 100, plafond);
+        // Un cran qui n'avance pas n'est pas un cran (budgets minuscules,
+        // ou l'arrondi au centime absorbe les 25 %).
+        if (suivante <= courante) return null;
         return {
           valeur: suivante,
           annonce: `budget porte de ${EUROS(courante)} a ${EUROS(suivante)}`,

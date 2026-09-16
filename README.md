@@ -66,8 +66,11 @@ Quatre comportements se voient à l'écran :
   cépages que l'appellation autorise. Les cépages hors appellation sont
   reconnus **délibérément** (`CEPAGES_HORS_APPELLATION`) : sans ça la contrainte
   s'évaporait et le système répondait trois rouges.
-- **Vide** — « un rosé » → l'AOC autorise le rosé, mais aucune cuvée rosée n'est
-  indexée. Réponse vide assumée, distincte du refus.
+- **Vide** — « un rouge à base de cinsaut » → le cinsaut est autorisé par
+  l'encépagement de l'AOC, donc aucun refus n'est dû, mais aucune cuvée du
+  catalogue n'en contient. Réponse vide assumée, distincte du refus. Les trois
+  états tiennent sur le même axe : chardonnay refuse, cinsaut est vide, syrah
+  répond.
 - **Donnée manquante** — « autour de 20 € » quand aucun prix n'est relevé →
   « je ne peux pas répondre sur ce critère ». « Aucun vin sous 20 € » et « je
   n'ai le prix d'aucun vin » sont deux réponses différentes, et confondre la
@@ -105,6 +108,41 @@ cosinus et le classement s'effondre.
 - note du producteur présente → elle est embeddée **seule**, `embedding_niveau = 'cuvee'` ;
 - absente → aucun vecteur n'est fabriqué, `embedding_niveau = 'appellation'`, la
   recherche retombe sur le profil AOC **et l'annonce** dans l'interface.
+
+### Ce que le passage aux données réelles a révélé
+
+Le corpus de fixtures validait le moteur sur un vocabulaire que j'avais écrit
+moi-même. Quinze fiches de producteurs ont fait tomber trois défauts que cinq
+fiches inventées ne pouvaient pas montrer. C'est l'argument pour livrer tôt sur
+de la vraie donnée, pas pour polir un moteur sur un corpus de laboratoire.
+
+**Le plafond d'élargissement était décoratif.** L'échelle montait par paliers de
+25 % et abandonnait dès que le palier suivant dépassait le plafond de +50 %, au
+lieu de s'y caler : sur un budget de 12 €, elle s'arrêtait à 15 € et répondait
+« rien trouvé » alors que deux cuvées étaient à 16 € et que le plafond annoncé
+était 18 €. Invisible avec les fixtures, dont la moins chère tombait dans le
+premier palier. Un plafond qu'on ne peut pas atteindre ment sur ce que le
+système a essayé.
+
+**Le lexique ratait les nominalisations.** `racine()` réduit `souple` à `soupl`
+mais `souplesse` à `soupless`, `rondeur` à `rondeur`, `charpentée` à
+`charpente` alors que la clé est `charpent`. Résultat : une cuvée dont la note
+dit littéralement « alliant gourmandise, **souplesse** et puissance » sortait
+en **négatif** sur une demande de vin souple. Les fiches inventées disaient
+« souple » et « tanins fondus », jamais « souplesse » — la morphologie réelle
+est plus riche que celle qu'on produit en écrivant ses propres données.
+
+Le correctif suit le design existant, qui énumère les formes de surface dans
+`FAMILLES` (`epice` **et** `epicee` y sont déjà) plutôt que de complexifier le
+stemmer : toucher à `racine()` aurait cassé des clés en place. Les formes
+ajoutées sont toutes des flexions de mots **déjà** dans leur famille, donc
+aucun jugement œnologique nouveau. L'écart de classement est passé de 0,56 à
+0,64.
+
+**Le mot qui donne la couleur resservait de descripteur.** `racine('rose')`
+vaut `ros`, et la rose est une fleur du lexique floral : « un rosé » repartait
+avec un descripteur `floral` que personne n'avait demandé. Sans rosé au
+catalogue, ça ne se voyait pas.
 
 ### Réutilisabilité
 
@@ -226,38 +264,63 @@ la démo devient publique : ce n'est pas de l'authentification, c'est vingt lign
 
 ## État des données
 
-**L'egress réseau de l'environnement de développement bloque les sites des
-domaines et du syndicat.** Aucune fiche technique n'a pu être récupérée, et
-aucune note de dégustation n'a été tirée d'un résumé de moteur de recherche :
-les résumés obtenus se contredisaient entre eux sur l'assemblage d'un même vin.
+**Le catalogue est réel.** 17 cuvées de 7 domaines, relevées le 16 septembre
+2026 sur les pages publiées par les producteurs eux-mêmes, chacune sous une
+source `page_domaine` portant son URL et sa date. Le référentiel compte les
+**74 producteurs** de l'appellation, relevés sur l'annuaire du syndicat. Le
+détail du relevé, y compris ce qui a été écarté et pourquoi, est dans
+`ingestion/RELEVE-2026-09-16.md`.
 
-Conséquence, assumée et visible :
+La démo tourne donc **`PSL_AUTORISER_FIXTURES=0`**, ce qui n'était pas le cas
+avant : sans données réelles, le catalogue entier était un calque de
+développement.
 
-- `db/seed/cuvees/` — ce qui a pu être établi (domaine, cuvée, appellation,
-  couleur, millésime). Tout le reste est `null`.
-- `db/seed/cuvees.fixtures/` — un **calque** qui remplit note, prix, degré et
-  assemblage avec des valeurs de développement, sous une source de type
-  `fixture_dev`.
+### Ce qui reste du calque
 
-Le calque n'est appliqué que si `PSL_AUTORISER_FIXTURES=1`. **Le défaut du code
-est `0`.**
-
-Le verrou joue à l'ingestion **et** à la lecture, pour le cas où la base aurait
-été peuplée avec le flag à 1 puis servie avec le flag à 0. À la lecture, on
-masque les **champs** issus du calque, pas la ligne : la cuvée reste visible et
-sa description retombe sur le profil d'appellation, en l'annonçant. Exclure la
-ligne faisait répondre « le catalogue ne contient aucune cuvée » sur un
-catalogue de cinq, pendant que `/api/catalogue` annonçait les mêmes.
+Deux cuvées du Château de Lancyre. Le site alterne 200 et échecs de poignée de
+main TLS, et sa boutique est un Wix rendu en JavaScript. Elles gardent leurs
+valeurs de développement sous une source `fixture_dev`, masquées champ par
+champ quand le flag est à 0 : la cuvée reste visible, sa description retombe
+sur le profil d'appellation, et l'interface l'annonce.
 
 Le masquage porte sur les colonnes, pas seulement sur l'affichage : un prix
 masqué vaut `NULL` et cesse d'être retenu par un filtre de budget. Filtrer sur
-une valeur qu'on refuse d'afficher serait pire que de l'exclure. `/api/sante` et
-`/api/catalogue` appliquent le même prédicat, sans quoi le curseur de budget du
-front affichait une fourchette construite sur des données de développement.
+une valeur qu'on refuse d'afficher serait pire que de l'exclure. `/api/sante`
+et `/api/catalogue` appliquent le même prédicat.
 
-Pour passer en données réelles : remplir `db/seed/cuvees/*.json` depuis les
-fiches techniques, supprimer le dossier `cuvees.fixtures/`, remettre la variable
-à `0`.
+Les cas de masquage de `tests/recherche.test.ts` se **désactivent visiblement**
+(`it.skip`) le jour où `db/seed/cuvees.fixtures/` disparaît, plutôt que de
+passer en silence sur un ensemble vide.
+
+### Trois limites à énoncer avant de montrer la démo
+
+**Deux paires de cuvées portent une note identique.** Dame Jeanne rouge 2022 et
+2023 d'un côté, les deux Moja Negra de l'autre. Vérification faite, les pages
+citées sont distinctes et portent réellement le même texte : les domaines
+réutilisent leur propre copie d'un produit au suivant. La donnée est donc
+honnête et sourcée, et c'est pour ça qu'elle n'est pas « corrigée ». Mais elle
+a deux conséquences : leurs vecteurs sont identiques, donc rien ne les
+départage, et sur trois résultats elles peuvent occuper deux places en
+paraissant un bug. Un écran qui affiche deux vins différents sous la même
+description perd la confiance qu'il cherche à établir ; dédupliquer sur la note
+est une décision produit, pas un correctif.
+
+**Le degré manque presque partout.** 5 cuvées sur 17. C'est le champ le plus
+mal servi par les sites marchands, et celui qui viendrait des fiches techniques.
+
+**Un millésime à vérifier.** Dame Jeanne rosé est enregistré en 2025, l'URL de
+la page citée porte `...rose-2024...`. Slug périmé ou millésime mal relevé :
+impossible de trancher sans rouvrir la page. Signalé plutôt que corrigé au
+jugé, puisque c'est précisément la traçabilité qui est en jeu.
+
+### Ce qui manque encore
+
+Les **fiches techniques PDF**. La Bergerie du Capucin en annonce quatre en
+téléchargement ; son serveur les sert avec `Content-Length: 0`. Le banc de
+mesure du jalon 5 tourne donc toujours sur trois PDF fabriqués ici, et **son
+taux de 3 % ne vaut rien** : mesurer un extracteur sur des fiches qu'on a
+soi-même produites est circulaire. Il faut demander les fiches aux domaines ou
+les récupérer au caveau.
 
 ---
 
@@ -265,7 +328,7 @@ fiches techniques, supprimer le dossier `cuvees.fixtures/`, remettre la variable
 
 | | | |
 |---|---|---|
-| 1 | Socle données | fait |
+| 1 | Socle données | fait, sur corpus réel (17 cuvées, 74 producteurs) |
 | 2 | Recherche hybride sans LLM | fait |
 | 3 | Couche LLM, deux appels | provider Anthropic câblé, non exécuté faute de clé dans l'environnement |
 | 4 | Interface | fait |
