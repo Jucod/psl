@@ -3,20 +3,20 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { db } from './client.js';
 
-const DOSSIER = fileURLToPath(new URL('../../db/migrations/', import.meta.url));
+const MIGRATIONS_DIR = fileURLToPath(new URL('../../db/migrations/', import.meta.url));
 
 /**
- * Les migrations >= 900 ne sont pas appliquees par defaut: ce sont des
- * operations dont l'opportunite depend du volume de donnees (index vectoriel).
+ * Migrations >= 900 are not applied by default: they are operations whose
+ * relevance depends on the data volume (vector index).
  */
-const SEUIL_OPTIONNEL = 900;
+const OPTIONAL_THRESHOLD = 900;
 
-export interface OptionsMigration {
-  readonly avecIndexVectoriel?: boolean;
+export interface MigrateOptions {
+  readonly withVectorIndex?: boolean;
   readonly reset?: boolean;
 }
 
-export async function migrer(opts: OptionsMigration = {}): Promise<string[]> {
+export async function migrate(opts: MigrateOptions = {}): Promise<string[]> {
   const pool = db();
 
   if (opts.reset) {
@@ -25,40 +25,40 @@ export async function migrer(opts: OptionsMigration = {}): Promise<string[]> {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
-      nom        text PRIMARY KEY,
-      applique_le timestamptz NOT NULL DEFAULT now()
+      name       text PRIMARY KEY,
+      applied_at timestamptz NOT NULL DEFAULT now()
     )
   `);
 
-  const fichiers = (await readdir(DOSSIER))
+  const files = (await readdir(MIGRATIONS_DIR))
     .filter((f) => f.endsWith('.sql'))
     .sort();
 
-  const { rows } = await pool.query<{ nom: string }>('SELECT nom FROM schema_migrations');
-  const deja = new Set(rows.map((r) => r.nom));
+  const { rows } = await pool.query<{ name: string }>('SELECT name FROM schema_migrations');
+  const alreadyApplied = new Set(rows.map((r) => r.name));
 
-  const appliquees: string[] = [];
-  for (const fichier of fichiers) {
-    if (deja.has(fichier)) continue;
+  const applied: string[] = [];
+  for (const file of files) {
+    if (alreadyApplied.has(file)) continue;
 
-    const numero = Number(fichier.slice(0, 3));
-    if (numero >= SEUIL_OPTIONNEL && !opts.avecIndexVectoriel) continue;
+    const number = Number(file.slice(0, 3));
+    if (number >= OPTIONAL_THRESHOLD && !opts.withVectorIndex) continue;
 
-    const sql = await readFile(join(DOSSIER, fichier), 'utf8');
+    const sql = await readFile(join(MIGRATIONS_DIR, file), 'utf8');
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(sql);
-      await client.query('INSERT INTO schema_migrations (nom) VALUES ($1)', [fichier]);
+      await client.query('INSERT INTO schema_migrations (name) VALUES ($1)', [file]);
       await client.query('COMMIT');
-      appliquees.push(fichier);
+      applied.push(file);
     } catch (e) {
       await client.query('ROLLBACK');
-      throw new Error(`migration ${fichier}: ${(e as Error).message}`, { cause: e });
+      throw new Error(`migration ${file}: ${(e as Error).message}`, { cause: e });
     } finally {
       client.release();
     }
   }
 
-  return appliquees;
+  return applied;
 }

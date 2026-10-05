@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Moteur de recherche conversationnel sur catalogue. Demonstration: AOC Pic Saint-Loup.",
+  "description": "Conversational search engine over a product catalog. Demo: the Pic Saint-Loup AOC.",
   "engines": {
     "node": ">=22"
   },
@@ -15,14 +15,14 @@
     "db:reset": "tsx src/cli/migrate.ts --reset",
     "schema:export": "tsx src/cli/export-schema.ts",
     "demo": "tsx src/cli/demo.ts",
-    "api": "tsx src/api/serveur.ts",
-    "api:dev": "tsx watch src/api/serveur.ts",
+    "api": "tsx src/api/server.ts",
+    "api:dev": "tsx watch src/api/server.ts",
     "web:dev": "npm --prefix web run dev",
     "web:build": "npm --prefix web run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "verifie": "npm run typecheck && npm run test"
+    "check": "npm run typecheck && npm run test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",

@@ -1,0 +1,37 @@
+{
+  "_warning": "DEVELOPMENT FIXTURE. These fields were NOT collected from a producer tech sheet. They exist to make ranking and the API testable offline. Never deploy publicly with PSL_ALLOW_FIXTURES=1. Replace this file with the values of the real sheet, then delete it.",
+  "id": "lancyre-grande-cuvee-2021",
+  "tasting_note": "Nez marque par la torrefaction, le cedre et le poivre, sur fond de fruits noirs. Bouche puissante et structuree, tanins fermes, elevage sous bois bien integre. Finale longue et epicee.",
+  "tasting_note_source": {
+    "id": "fixture-dev-notes",
+    "type": "dev_fixture",
+    "label": "FIXTURE DE DEVELOPPEMENT - note, prix et assemblage non verifies",
+    "url": "https://example.invalid/fixture-de-developpement",
+    "retrieved_on": "2026-09-15"
+  },
+  "producer_pairings": [
+    "cote de boeuf",
+    "gibier",
+    "roquefort jeune"
+  ],
+  "price_eur": 26.0,
+  "price_as_of": "2026-09-15",
+  "abv": 14.5,
+  "organic": true,
+  "certification": "AB",
+  "aging": "14 mois en barrique",
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 70.0
+    },
+    {
+      "grape": "grenache",
+      "pct": 20.0
+    },
+    {
+      "grape": "mourvedre",
+      "pct": 10.0
+    }
+  ]
+}

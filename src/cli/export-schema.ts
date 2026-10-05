@@ -1,50 +1,51 @@
 import { fileURLToPath } from 'node:url';
 import { writeFile } from 'node:fs/promises';
 import { z } from 'zod';
-import { CuveeBaseSchema } from '../schema/cuvee.js';
-import { FiltresLlmSchema } from '../schema/filtres.js';
+import { WineBaseSchema } from '../schema/wine.js';
+import { LlmFiltersSchema } from '../schema/filters.js';
 
 /**
- * Exporte les schemas zod en JSON Schema.
+ * Exports the zod schemas as JSON Schema.
  *
- * C'est le CONTRAT avec le script d'extraction PDF en Python (jalon 5): zod est
- * la source de verite unique, le JSON Schema en est la projection commitee, et
- * tests/schema-export.test.ts echoue si le fichier commite n'est plus a jour.
+ * This is the CONTRACT with the Python PDF extraction script (milestone 5):
+ * zod is the single source of truth, the JSON Schema is its committed
+ * projection, and tests/schema-export.test.ts fails when the committed file is
+ * out of date.
  *
- * Les invariants croises (une note exige sa source, un prix exige sa date) ne
- * sont pas representables en JSON Schema. Ils sont rappeles en description et
- * appliques par les contraintes CHECK de la base.
+ * Cross-field invariants (a note requires its source, a price requires its
+ * date) cannot be expressed in JSON Schema. They are restated as a description
+ * and enforced by the database CHECK constraints.
  */
-const CIBLES = [
+const TARGETS = [
   {
-    schema: CuveeBaseSchema,
-    fichier: 'cuvee.schema.json',
+    schema: WineBaseSchema,
+    file: 'wine.schema.json',
     invariants: [
-      'note_degustation non null implique note_degustation_source non null',
-      'prix_ttc non null implique prix_date_releve non null',
-      'les pourcentages d assemblage totalisent 0 (non renseignes) ou ~100',
+      'a non-null tasting_note implies a non-null tasting_note_source',
+      'a non-null price_eur implies a non-null price_as_of',
+      'blend percentages add up to 0 (not provided) or ~100',
     ],
   },
   {
-    schema: FiltresLlmSchema,
-    fichier: 'filtres.schema.json',
+    schema: LlmFiltersSchema,
+    file: 'filters.schema.json',
     invariants: [
-      'prix_min <= prix_max',
-      'millesime_min <= millesime_max',
+      'price_min <= price_max',
+      'vintage_min <= vintage_max',
     ],
   },
 ] as const;
 
-export function rendre(cible: (typeof CIBLES)[number]): string {
-  const json = z.toJSONSchema(cible.schema, { io: 'input', unrepresentable: 'any' }) as Record<string, unknown>;
-  json['x-invariants'] = cible.invariants;
+export function render(target: (typeof TARGETS)[number]): string {
+  const json = z.toJSONSchema(target.schema, { io: 'input', unrepresentable: 'any' }) as Record<string, unknown>;
+  json['x-invariants'] = target.invariants;
   return JSON.stringify(json, null, 2) + '\n';
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  for (const cible of CIBLES) {
-    const chemin = fileURLToPath(new URL(`../../db/schema/${cible.fichier}`, import.meta.url));
-    await writeFile(chemin, rendre(cible), 'utf8');
-    console.log(`schema exporte: db/schema/${cible.fichier}`);
+  for (const target of TARGETS) {
+    const path = fileURLToPath(new URL(`../../db/schema/${target.file}`, import.meta.url));
+    await writeFile(path, render(target), 'utf8');
+    console.log(`schema exported: db/schema/${target.file}`);
   }
 }

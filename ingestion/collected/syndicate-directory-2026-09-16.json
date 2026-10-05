@@ -1,0 +1,458 @@
+{
+  "_source": {
+    "id": "syndicat_psl",
+    "type": "directory",
+    "label": "Annuaire des domaines du Syndicat de l'AOP Pic Saint-Loup",
+    "url": "https://www.pic-saint-loup.com/domaines/",
+    "method": "list from /wp-json/wp/v2/domaine (74 entries), then one HTML page per slug",
+    "retrieved_on": "2026-09-16",
+    "producers": 74,
+    "note": "Fields kept: slug, name, commune, website. The syndicate also publishes contacts, phone numbers, e-mails, addresses and descriptions: they are not kept here (personal data, editorial text)."
+  },
+  "estates": [
+    {
+      "slug": "aven-des-nymphes",
+      "name": "L'Aven des Nymphes",
+      "commune": "Les Matelles",
+      "website": "http://www.avendesnymphes.com"
+    },
+    {
+      "slug": "bergerie-du-capucin",
+      "name": "Bergerie du Capucin",
+      "commune": "LAURET",
+      "website": "http://www.bergerieducapucin.fr"
+    },
+    {
+      "slug": "bergerie-du-fenouillet",
+      "name": "Bergerie du Fenouillet",
+      "commune": "Vacquières",
+      "website": "http://fenouillet.com/"
+    },
+    {
+      "slug": "cave-cooperative-la-gravette-de-corconne",
+      "name": "Cave coopérative La Gravette de Corconne",
+      "commune": "CORCONNE",
+      "website": "https://www.la-gravette.com/"
+    },
+    {
+      "slug": "cave-cooperative-le-cellier-du-pic",
+      "name": "Cave cooperative Le Cellier Du Pic",
+      "commune": "ASSAS",
+      "website": "http://vigneronsdupic.net/"
+    },
+    {
+      "slug": "cave-cooperative-vignobles-des-3-chateaux",
+      "name": "Cave coopérative Vignobles des 3 Châteaux",
+      "commune": "ST MATHIEU DE TREVIERS",
+      "website": "http://www.vd3c.fr/"
+    },
+    {
+      "slug": "chateau-boisset",
+      "name": "Château Boisset",
+      "commune": "VALFLAUNES",
+      "website": "https://www.chateauboisset.fr/"
+    },
+    {
+      "slug": "chateau-de-cazeneuve",
+      "name": "Château de Cazeneuve",
+      "commune": "Lauret",
+      "website": "http://www.chateaucazeneuve.com/"
+    },
+    {
+      "slug": "chateau-de-la-salade-saint-henri",
+      "name": "Château de la Salade Saint Henri",
+      "commune": "ST MATHIEU DE TREVIERS",
+      "website": "https://www.chateaudelasaladesainthenri.com/"
+    },
+    {
+      "slug": "chateau-de-lancyre",
+      "name": "Château de Lancyre",
+      "commune": "Valflaunès",
+      "website": "http://www.chateaudelancyre.com/"
+    },
+    {
+      "slug": "chateau-de-lascaux",
+      "name": "Château de Lascaux",
+      "commune": "VACQUIERES",
+      "website": "http://www.chateau-lascaux.com/"
+    },
+    {
+      "slug": "chateau-de-lascours",
+      "name": "Château de Lascours",
+      "commune": "Sauteyrargues",
+      "website": "http://www.chateau-lascours.com/"
+    },
+    {
+      "slug": "chateau-de-leuziere",
+      "name": "Château L'Euziere",
+      "commune": null,
+      "website": "https://shop.vignobles-vellas.com/fr/95-chateau-l-euziere"
+    },
+    {
+      "slug": "chateau-de-valflaunes",
+      "name": "Château de Valflaunes",
+      "commune": "Valflaunès",
+      "website": "http://chateaudevalflaunes.fr"
+    },
+    {
+      "slug": "chateau-del-rang",
+      "name": "Château del rang",
+      "commune": "Claret",
+      "website": "https://www.chateaudelranq.fr/"
+    },
+    {
+      "slug": "chateau-des-moucheres",
+      "name": "Château des Mouchères",
+      "commune": "Saint-Mathieu-de-Tréviers",
+      "website": "http://www.chateaudesmoucheres.com/"
+    },
+    {
+      "slug": "chateau-la-roque",
+      "name": "Château la Roque",
+      "commune": "Fontanes",
+      "website": "http://www.chateau-laroque.fr/"
+    },
+    {
+      "slug": "chateau-lavabre",
+      "name": "Château Lavabre",
+      "commune": "Saint-Drézéry",
+      "website": "http://www.puech-haut.com/"
+    },
+    {
+      "slug": "chateau-montel",
+      "name": "Château Montel",
+      "commune": "Teyran",
+      "website": "http://chateau-montel.oxatis.com/"
+    },
+    {
+      "slug": "clos-des-reboussiers",
+      "name": "Clos des Reboussiers",
+      "commune": "Cazevieille",
+      "website": null
+    },
+    {
+      "slug": "clos-marie",
+      "name": "Clos Marie",
+      "commune": "Lauret",
+      "website": null
+    },
+    {
+      "slug": "domaine-chazalon",
+      "name": "Domaine Chazalon",
+      "commune": "Claret",
+      "website": "http://www.domaine-chazalon.com/"
+    },
+    {
+      "slug": "domaine-coste-ubesse",
+      "name": "Domaine Coste Ubesse",
+      "commune": "Saint-Mathieu-de-Tréviers",
+      "website": "https://coste-ubesse.com/"
+    },
+    {
+      "slug": "domaine-daigues-belles",
+      "name": "Domaine D'Aigues-Belles",
+      "commune": "Brouzet-lès-Quissac",
+      "website": "https://www.aigues-belles.com/"
+    },
+    {
+      "slug": "domaine-de-baubiac",
+      "name": "Domaine de Baubiac",
+      "commune": null,
+      "website": null
+    },
+    {
+      "slug": "domaine-de-figaret",
+      "name": "Domaine de Figaret",
+      "commune": "Guzargues",
+      "website": "https://shop.famillerambier.com/"
+    },
+    {
+      "slug": "domaine-de-la-matane",
+      "name": "Domaine de la Matane",
+      "commune": "Claret",
+      "website": "http://www.leclosdelamatane.fr"
+    },
+    {
+      "slug": "domaine-de-la-perriere",
+      "name": "Domaine de la Perriere",
+      "commune": "Assas",
+      "website": "https://domainedelaperriere-sauvaire.com/"
+    },
+    {
+      "slug": "domaine-de-la-triballe",
+      "name": "Domaine de la Triballe",
+      "commune": "Guzargues",
+      "website": "http://www.la-triballe.com"
+    },
+    {
+      "slug": "domaine-de-la-vieille",
+      "name": "Domaine de la vieille",
+      "commune": "Saint-Mathieu-de-Tréviers",
+      "website": "http://www.domainedelavieille.fr/"
+    },
+    {
+      "slug": "domaine-de-lhortus",
+      "name": "Domaine de L'Hortus",
+      "commune": "Valflaunès",
+      "website": "http://www.domaine-hortus.fr/"
+    },
+    {
+      "slug": "domaine-de-morties",
+      "name": "Domaine de Morties",
+      "commune": "Saint-Jean-de-Cuculles",
+      "website": "https://morties.com/"
+    },
+    {
+      "slug": "domaine-de-rocahlas",
+      "name": "Domaine de Rocahlas",
+      "commune": "Guzargues",
+      "website": null
+    },
+    {
+      "slug": "domaine-de-viastres",
+      "name": "Domaine de Viastres",
+      "commune": "Valflaunès",
+      "website": null
+    },
+    {
+      "slug": "domaine-de-villeneuve",
+      "name": "Domaine de Villeneuve",
+      "commune": "Claret",
+      "website": "http://www.domaine-de-villeneuve.com/"
+    },
+    {
+      "slug": "domaine-des-vabre",
+      "name": "Domaine Desvabre",
+      "commune": null,
+      "website": null
+    },
+    {
+      "slug": "domaine-du-gres",
+      "name": "Domaine du Gres",
+      "commune": "Claret",
+      "website": null
+    },
+    {
+      "slug": "domaine-estelle-pierre-clavel",
+      "name": "Domaine Estelle & Pierre Clavel",
+      "commune": "Assas",
+      "website": "http://www.vins-clavel.fr/"
+    },
+    {
+      "slug": "domaine-haut-lirou",
+      "name": "Domaine Haut-Lirou",
+      "commune": "Le Triadou",
+      "website": "https://shop.famillerambier.com"
+    },
+    {
+      "slug": "domaine-haut-maginiai",
+      "name": "Domaine Haut Maginiai",
+      "commune": "Claret",
+      "website": "https://www.haut-maginiai.com/"
+    },
+    {
+      "slug": "domaine-inebriati",
+      "name": "Domaine Inebriati",
+      "commune": "Vacquières",
+      "website": "https://www.inebriati.fr"
+    },
+    {
+      "slug": "domaine-la-costesse",
+      "name": "Domaine La Costesse",
+      "commune": "Vacquières",
+      "website": "http://www.domainelacostesse.com"
+    },
+    {
+      "slug": "domaine-les-grandes-costes",
+      "name": "Domaine les grandes Costes",
+      "commune": "Vacquières",
+      "website": "https://www.grandes-costes.com/"
+    },
+    {
+      "slug": "domaine-les-vigneaux",
+      "name": "Domaine les Vigneaux",
+      "commune": null,
+      "website": null
+    },
+    {
+      "slug": "domaine-mirabel",
+      "name": "Domaine Mirabel",
+      "commune": "Brouzet-lès-Quissac",
+      "website": null
+    },
+    {
+      "slug": "domaine-pech-tort",
+      "name": "Domaine Pech Tort",
+      "commune": "Valflaunès",
+      "website": "http://www.domaine-pech-tort.com/"
+    },
+    {
+      "slug": "domaine-pegaline",
+      "name": "Domaine Pegaline",
+      "commune": "Claret",
+      "website": "https://www.domainepegaline.com/"
+    },
+    {
+      "slug": "domaine-uma",
+      "name": "Domaine Uma",
+      "commune": "Valflaunès",
+      "website": "https://domaine-uma.com/"
+    },
+    {
+      "slug": "domaines-caussarelle-cammaous",
+      "name": "Domaines Caussarelle & Cammaous",
+      "commune": "Vacquières",
+      "website": "https://www.domainecammaousetcaussarelle.fr/"
+    },
+    {
+      "slug": "heritage-du-pic-st-loup",
+      "name": "Héritage du Pic Saint Loup",
+      "commune": "Saint-Mathieu-de-Tréviers",
+      "website": "https://www.heritage-du-pic-saint-loup.fr/"
+    },
+    {
+      "slug": "la-chouette-du-chai",
+      "name": "La chouette du chai",
+      "commune": "Cazevieille",
+      "website": "https://lachouetteduchai.com/contact/"
+    },
+    {
+      "slug": "la-cours-des-loups",
+      "name": "La cour des Loups",
+      "commune": null,
+      "website": null
+    },
+    {
+      "slug": "la-fournaca",
+      "name": "La Fournaca",
+      "commune": "Claret",
+      "website": "http://lafournaca.com/"
+    },
+    {
+      "slug": "laven-des-nymphes",
+      "name": "L'Aven des Nymphes",
+      "commune": null,
+      "website": "https://avendesnymphes.com/"
+    },
+    {
+      "slug": "le-chemin-des-reves",
+      "name": "Le Chemin des Rêves",
+      "commune": "Saint-Gély-du-Fesc",
+      "website": "https://chemin-des-reves.com/"
+    },
+    {
+      "slug": "le-clos-des-augustins",
+      "name": "Le Clos des Augustins",
+      "commune": "ST MATHIEU DE TREVIERS",
+      "website": "http://www.closdesaugustins.com"
+    },
+    {
+      "slug": "les-remparts-de-cuculles",
+      "name": "Les remparts de Cuculles",
+      "commune": "Saint-Jean-de-Cuculles",
+      "website": "https://www.remparts-cuculles.com/"
+    },
+    {
+      "slug": "les-traverses-de-fontanes",
+      "name": "Château Fontanès",
+      "commune": "Fontanes",
+      "website": null
+    },
+    {
+      "slug": "mas-bruguiere",
+      "name": "Mas Bruguière",
+      "commune": "Valflaunès",
+      "website": "http://mas-bruguiere.com/"
+    },
+    {
+      "slug": "mas-dauzieres",
+      "name": "Mas d'Auzières",
+      "commune": null,
+      "website": "https://mas-dauzieres.com/"
+    },
+    {
+      "slug": "mas-de-farjou",
+      "name": "Mas de Farjou",
+      "commune": "Claret",
+      "website": "https://www.masdefarjou.com/"
+    },
+    {
+      "slug": "mas-de-figuier",
+      "name": "Mas de Figuier",
+      "commune": "Vacquières",
+      "website": "http://www.masdefiguier.fr"
+    },
+    {
+      "slug": "mas-de-fournel",
+      "name": "Mas de Fournel",
+      "commune": "Valflaunès",
+      "website": null
+    },
+    {
+      "slug": "mas-de-jon",
+      "name": "Mas de Jon",
+      "commune": "Fontanes",
+      "website": "https://masdejon.fr/"
+    },
+    {
+      "slug": "mas-foulaquier",
+      "name": "Mas Foulaquier",
+      "commune": "Claret",
+      "website": "https://boutique.masfoulaquier.fr/"
+    },
+    {
+      "slug": "mas-gourdou",
+      "name": "Mas Gourdou",
+      "commune": "Valflaunès",
+      "website": "http://masgourdou.free.fr/"
+    },
+    {
+      "slug": "mas-pages",
+      "name": "Mas Pages",
+      "commune": "Vacquières",
+      "website": "https://mas-pages.plugwine.com/domaine/mas-pages"
+    },
+    {
+      "slug": "mas-peyrolle",
+      "name": "Mas Peyrolle",
+      "commune": "Vacquières",
+      "website": null
+    },
+    {
+      "slug": "mas-picas",
+      "name": "Mas Picas",
+      "commune": "Corconne",
+      "website": null
+    },
+    {
+      "slug": "mas-rigaud",
+      "name": "MAS RIGAUD",
+      "commune": "BROUZET-LES-QUISSAC",
+      "website": null
+    },
+    {
+      "slug": "mas-theleme",
+      "name": "Mas Theleme",
+      "commune": "Lauret",
+      "website": "http://mas-theleme.com/"
+    },
+    {
+      "slug": "roc-de-beauvoir",
+      "name": "Roc de Beauvoir",
+      "commune": "Saint-Mathieu-de-Tréviers",
+      "website": null
+    },
+    {
+      "slug": "saint-daumary",
+      "name": "Saint Daumary",
+      "commune": "Valflaunès",
+      "website": null
+    },
+    {
+      "slug": "zelige-caravent",
+      "name": "Zelige Caravent",
+      "commune": "Corconne",
+      "website": null
+    }
+  ]
+}

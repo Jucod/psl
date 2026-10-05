@@ -1,52 +1,52 @@
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
-import type { FournisseurEmbedding } from './index.js';
+import type { EmbeddingProvider } from './index.js';
 
-const CHEMIN = fileURLToPath(new URL('../../db/seed/embeddings.cache.json', import.meta.url));
+const CACHE_PATH = fileURLToPath(new URL('../../db/seed/embeddings.cache.json', import.meta.url));
 
 type Cache = Record<string, number[]>;
 
-function cle(provider: string, dimension: number, texte: string): string {
-  return createHash('sha256').update(`${provider}:${dimension}:${texte}`).digest('hex');
+function cacheKey(provider: string, dimension: number, text: string): string {
+  return createHash('sha256').update(`${provider}:${dimension}:${text}`).digest('hex');
 }
 
-async function lire(): Promise<Cache> {
+async function readCache(): Promise<Cache> {
   try {
-    return JSON.parse(await readFile(CHEMIN, 'utf8')) as Cache;
+    return JSON.parse(await readFile(CACHE_PATH, 'utf8')) as Cache;
   } catch {
     return {};
   }
 }
 
 /**
- * Embedde en passant par un cache commite, pour que `npm run setup` soit
- * reproductible et executable en CI sans cle API.
+ * Embeds through a committed cache, so that `npm run setup` is reproducible
+ * and can run in CI without an API key.
  *
- * Le provider local n'est PAS mis en cache: il est deterministe et instantane,
- * et un cache le rendrait insensible a une evolution du lexique, ce qui est
- * exactement le piege (on corrigerait le lexique sans que le classement bouge).
+ * The local provider is NOT cached: it is deterministic and instantaneous, and
+ * a cache would make it insensitive to a change in the lexicon, which is
+ * exactly the trap (we would fix the lexicon and the ranking would not move).
  */
-export async function embedAvecCache(
-  fournisseur: FournisseurEmbedding,
-  textes: readonly string[],
+export async function embedWithCache(
+  provider: EmbeddingProvider,
+  texts: readonly string[],
 ): Promise<number[][]> {
-  if (fournisseur.deterministe) return fournisseur.embed(textes);
+  if (provider.deterministic) return provider.embed(texts);
 
-  const cache = await lire();
-  const manquants: string[] = [];
-  for (const t of textes) {
-    if (!(cle(fournisseur.nom, fournisseur.dimension, t) in cache)) manquants.push(t);
+  const cache = await readCache();
+  const missing: string[] = [];
+  for (const t of texts) {
+    if (!(cacheKey(provider.name, provider.dimension, t) in cache)) missing.push(t);
   }
 
-  if (manquants.length > 0) {
-    const frais = await fournisseur.embed(manquants);
-    manquants.forEach((t, i) => {
-      cache[cle(fournisseur.nom, fournisseur.dimension, t)] = frais[i]!;
+  if (missing.length > 0) {
+    const fresh = await provider.embed(missing);
+    missing.forEach((t, i) => {
+      cache[cacheKey(provider.name, provider.dimension, t)] = fresh[i]!;
     });
-    await writeFile(CHEMIN, JSON.stringify(cache, null, 0) + '\n', 'utf8');
+    await writeFile(CACHE_PATH, JSON.stringify(cache, null, 0) + '\n', 'utf8');
   }
 
-  const relu = await lire();
-  return textes.map((t) => relu[cle(fournisseur.nom, fournisseur.dimension, t)]!);
+  const reread = await readCache();
+  return texts.map((t) => reread[cacheKey(provider.name, provider.dimension, t)]!);
 }

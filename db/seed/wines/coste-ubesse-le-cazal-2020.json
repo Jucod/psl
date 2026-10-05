@@ -1,0 +1,37 @@
+{
+  "id": "coste-ubesse-le-cazal-2020",
+  "producer_id": "domaine-coste-ubesse",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "Le Cazal",
+  "color": "red",
+  "vintage": 2020,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 90
+    },
+    {
+      "grape": "grenache",
+      "pct": 10
+    }
+  ],
+  "abv": null,
+  "aging": "Maceration courte d'une duree de 10 jours.",
+  "price_eur": 16.5,
+  "price_as_of": "2026-09-16",
+  "organic": true,
+  "certification": "Ecocert",
+  "tasting_note": "Rouge elegant et leger mais gourmand, aux aromes de fruits rouges et de reglisse, legerement epice. Syrah largement majoritaire completee d'un peu de grenache. Tout en rondeur, pret a boire mais capable de vieillir.",
+  "tasting_note_source": {
+    "id": "page-coste-ubesse-le-cazal-2020",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://coste-ubesse.com/product/le-cazal-aop-pic-saint-loup-bio/",
+    "authority": "Domaine Coste Ubesse",
+    "retrieved_on": "2026-09-16"
+  },
+  "producer_pairings": [
+    "viandes en sauce"
+  ],
+  "page_url": "https://coste-ubesse.com/product/le-cazal-aop-pic-saint-loup-bio/"
+}

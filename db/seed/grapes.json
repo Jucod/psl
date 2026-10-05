@@ -1,0 +1,13 @@
+{
+  "_source": "INAO names from the AOC Pic Saint-Loup specification. The final letter (N, G) is the INAO berry color code: N = noir (black), G = gris (grey).",
+  "grapes": [
+    { "code": "syrah",        "label": "Syrah N",           "synonyms": ["syrah n", "shiraz", "serine", "sirah"] },
+    { "code": "grenache",     "label": "Grenache N",        "synonyms": ["grenache n", "grenache noir", "garnacha", "alicante"] },
+    { "code": "mourvedre",    "label": "Mourvedre N",       "synonyms": ["mourvedre n", "monastrell", "mataro"] },
+    { "code": "cinsaut",      "label": "Cinsaut N",         "synonyms": ["cinsaut n", "cinsault", "cinsault n"] },
+    { "code": "carignan",     "label": "Carignan N",        "synonyms": ["carignan n", "carinena", "mazuelo"] },
+    { "code": "counoise",     "label": "Counoise N",        "synonyms": ["counoise n"] },
+    { "code": "morrastel",    "label": "Morrastel N",       "synonyms": ["morrastel n", "graciano"] },
+    { "code": "grenache-gris","label": "Grenache gris G",    "synonyms": ["grenache gris g", "garnacha gris"] }
+  ]
+}

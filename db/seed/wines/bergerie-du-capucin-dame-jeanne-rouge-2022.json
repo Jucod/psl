@@ -1,0 +1,46 @@
+{
+  "id": "bergerie-du-capucin-dame-jeanne-rouge-2022",
+  "producer_id": "bergerie-du-capucin",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "Dame Jeanne",
+  "color": "red",
+  "vintage": 2022,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": null
+    },
+    {
+      "grape": "grenache",
+      "pct": null
+    },
+    {
+      "grape": "mourvedre",
+      "pct": null
+    }
+  ],
+  "abv": 14.0,
+  "aging": "Vinification traditionnelle, maitrise des temperatures et longue maceration. Elevage en cuve.",
+  "price_eur": 19.0,
+  "price_as_of": "2026-09-16",
+  "organic": null,
+  "certification": null,
+  "tasting_note": "Rencontre avec les fruits des bois et les epices. Issue de l'alliance des trois cepages du Pic Saint-Loup, syrah, grenache et mourvedre. Sols argilo-calcaires sur sous-sols marneux, vignes de 20 ans. Elevage en cuve. A servir entre 15 et 16 C, a conserver 3 a 5 ans.",
+  "tasting_note_source": {
+    "id": "page-bergerie-du-capucin-dame-jeanne-rouge-2022",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://bergerieducapucin.fr/fr/dame-jeanne/72-aop-pic-saint-loup-dame-jeanne-rouge.html",
+    "authority": "Bergerie du Capucin",
+    "retrieved_on": "2026-09-16"
+  },
+  "producer_pairings": [
+    "aperitifs",
+    "plats releves ou epices",
+    "volailles",
+    "viandes blanches et rouges",
+    "grillades",
+    "desserts chocolates"
+  ],
+  "page_url": "https://bergerieducapucin.fr/fr/dame-jeanne/72-aop-pic-saint-loup-dame-jeanne-rouge.html"
+}

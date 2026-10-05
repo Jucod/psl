@@ -1,0 +1,35 @@
+{
+  "id": "morties-que-sera-sera-2024",
+  "producer_id": "domaine-de-morties",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "Que Sera Sera",
+  "color": "red",
+  "vintage": 2024,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 95
+    },
+    {
+      "grape": "grenache",
+      "pct": 5
+    }
+  ],
+  "abv": null,
+  "aging": "Vendanges manuelles, egrappage et pigeages, 20 a 25 jours de maceration. Elevage en pieces bourguignonnes de 400 litres pendant douze mois.",
+  "price_eur": 45.5,
+  "price_as_of": "2026-09-16",
+  "organic": null,
+  "certification": null,
+  "tasting_note": "Notes marquees de fumee alliees a des parfums de garrigue ensoleillee et de baies sauvages confiturees. La bouche est longue, les tanins fins et delicats laissent presager une tres bonne garde.",
+  "tasting_note_source": {
+    "id": "page-morties-que-sera-sera-2024",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://morties.com/products/que-sera-sera-vin-pic-saint-loup-morties-vente",
+    "authority": "Domaine de Morties",
+    "retrieved_on": "2026-09-16"
+  },
+  "producer_pairings": [],
+  "page_url": "https://morties.com/products/que-sera-sera-vin-pic-saint-loup-morties-vente"
+}

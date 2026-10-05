@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
-    // Une seule base partagee: pas de parallelisme entre fichiers.
+    // A single shared database: no parallelism across files.
     fileParallelism: false,
     setupFiles: ['tests/setup.ts'],
     testTimeout: 30_000,

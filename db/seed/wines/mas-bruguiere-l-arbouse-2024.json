@@ -1,0 +1,45 @@
+{
+  "id": "mas-bruguiere-l-arbouse-2024",
+  "producer_id": "mas-bruguiere",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "L'Arbouse",
+  "color": "red",
+  "vintage": 2024,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 50
+    },
+    {
+      "grape": "grenache",
+      "pct": 25
+    },
+    {
+      "grape": "mourvedre",
+      "pct": 25
+    }
+  ],
+  "abv": null,
+  "aging": "Extractions douces et elevage en grands contenants.",
+  "price_eur": 20.0,
+  "price_as_of": "2026-09-16",
+  "organic": true,
+  "certification": null,
+  "tasting_note": "Robe grenat d'intensite moyenne, ponctuee de reflets violines dans sa jeunesse. Nez expressif marque par le croquant du fruit rouge frais. Bouche equilibree et gourmande, ou la rondeur s'associe a une belle fraicheur aromatique. Potentiel de garde de 5 a 15 ans.",
+  "tasting_note_source": {
+    "id": "page-mas-bruguiere-l-arbouse-2024",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://mas-bruguiere.com/produit/l-arbouse-aop-pic-saint-loup-rouge/",
+    "authority": "Mas Bruguiere",
+    "retrieved_on": "2026-09-16"
+  },
+  "producer_pairings": [
+    "viandes mijotees",
+    "tajine d'agneau",
+    "magret de canard",
+    "cuisine mediterraneenne",
+    "pelardon"
+  ],
+  "page_url": "https://mas-bruguiere.com/produit/l-arbouse-aop-pic-saint-loup-rouge/"
+}

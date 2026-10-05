@@ -1,0 +1,39 @@
+{
+  "id": "mas-bruguiere-la-grenadiere-2024",
+  "producer_id": "mas-bruguiere",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "La Grenadiere",
+  "color": "red",
+  "vintage": 2024,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 90
+    },
+    {
+      "grape": "grenache",
+      "pct": 10
+    }
+  ],
+  "abv": null,
+  "aging": "Extractions douces et elevage en grands contenants.",
+  "price_eur": 30.0,
+  "price_as_of": "2026-09-16",
+  "organic": true,
+  "certification": null,
+  "tasting_note": "Robe grenat intense aux reflets pourpres. Nez equilibre melant fruits rouges et fruits noirs, avec de la profondeur. Cuvee issue des plus vieilles vignes du domaine, a servir apres un passage en carafe. Potentiel de garde de 15 a 25 ans.",
+  "tasting_note_source": {
+    "id": "page-mas-bruguiere-la-grenadiere-2024",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://mas-bruguiere.com/produit/vin-la-grenadiere-aop-pic-saint-loup-rouge/",
+    "authority": "Mas Bruguiere",
+    "retrieved_on": "2026-09-16"
+  },
+  "producer_pairings": [
+    "gibier",
+    "viandes longuement mijotees",
+    "agneau basse temperature"
+  ],
+  "page_url": "https://mas-bruguiere.com/produit/vin-la-grenadiere-aop-pic-saint-loup-rouge/"
+}

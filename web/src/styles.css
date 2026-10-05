@@ -1,42 +1,42 @@
-/* Palette definie en clair sur :root, redefinie pour le sombre. Aucune couleur
-   n'a sa seule definition dans un media query. */
+/* Palette defined in plain terms on :root, redefined for dark mode. No color
+   has its only definition inside a media query. */
 :root {
-  --fond: #faf8f5;
-  --fond-carte: #ffffff;
-  --fond-doux: #f2eee8;
-  --bord: #e2dbd1;
-  --texte: #211d19;
-  --texte-doux: #6b6259;
+  --bg: #faf8f5;
+  --bg-card: #ffffff;
+  --bg-soft: #f2eee8;
+  --border: #e2dbd1;
+  --text: #211d19;
+  --text-soft: #6b6259;
   --accent: #7d2b3a;
-  --accent-doux: #f3e6e8;
-  --alerte: #8a4b00;
-  --alerte-fond: #fdf1df;
+  --accent-soft: #f3e6e8;
+  --warning: #8a4b00;
+  --warning-bg: #fdf1df;
   --danger: #9b1c1c;
-  --danger-fond: #fdeaea;
+  --danger-bg: #fdeaea;
   --info: #1f4d5c;
-  --info-fond: #e6f1f4;
-  --rayon: 10px;
-  --ombre: 0 1px 2px rgba(33, 29, 25, .06), 0 4px 12px rgba(33, 29, 25, .04);
+  --info-bg: #e6f1f4;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(33, 29, 25, .06), 0 4px 12px rgba(33, 29, 25, .04);
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --fond: #171513;
-    --fond-carte: #201d1a;
-    --fond-doux: #262220;
-    --bord: #363029;
-    --texte: #ece7e1;
-    --texte-doux: #a49a8e;
+    --bg: #171513;
+    --bg-card: #201d1a;
+    --bg-soft: #262220;
+    --border: #363029;
+    --text: #ece7e1;
+    --text-soft: #a49a8e;
     --accent: #e08b99;
-    --accent-doux: #352327;
-    --alerte: #e0a55c;
-    --alerte-fond: #322616;
+    --accent-soft: #352327;
+    --warning: #e0a55c;
+    --warning-bg: #322616;
     --danger: #e98b8b;
-    --danger-fond: #35201f;
+    --danger-bg: #35201f;
     --info: #8cc4d4;
-    --info-fond: #1a2b31;
-    --ombre: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 12px rgba(0, 0, 0, .2);
+    --info-bg: #1a2b31;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 12px rgba(0, 0, 0, .2);
   }
 }
 
@@ -44,8 +44,8 @@
 
 body {
   margin: 0;
-  background: var(--fond);
-  color: var(--texte);
+  background: var(--bg);
+  color: var(--text);
   font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -59,70 +59,70 @@ img { max-width: 100%; }
   padding: 0 16px 48px;
 }
 
-/* ---------- entete ---------- */
-.entete {
+/* ---------- header ---------- */
+.page-header {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   align-items: flex-start;
   justify-content: space-between;
   padding: 32px 0 24px;
-  border-bottom: 1px solid var(--bord);
+  border-bottom: 1px solid var(--border);
   margin-bottom: 24px;
 }
-.entete h1 {
+.page-header h1 {
   margin: 0;
   font-size: 26px;
   letter-spacing: -.02em;
   font-weight: 620;
 }
-.entete p { margin: 4px 0 0; color: var(--texte-doux); font-size: 14px; }
+.page-header p { margin: 4px 0 0; color: var(--text-soft); font-size: 14px; }
 
-.alerte-globale {
+.global-warning {
   margin: 0;
   padding: 6px 11px;
   border-radius: 999px;
-  background: var(--alerte-fond);
-  color: var(--alerte);
+  background: var(--warning-bg);
+  color: var(--warning);
   border: 1px solid currentColor;
   font-size: 12.5px;
   font-weight: 560;
 }
 
-/* ---------- grille ---------- */
-.grille {
+/* ---------- layout ---------- */
+.layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
   gap: 28px;
   align-items: start;
 }
 @media (max-width: 900px) {
-  .grille { grid-template-columns: minmax(0, 1fr); }
-  .panneau { order: -1; }
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .panel { order: -1; }
 }
 
-/* ---------- saisie ---------- */
+/* ---------- input ---------- */
 form { margin: 0; }
 textarea {
   width: 100%;
   padding: 13px 14px;
-  border: 1px solid var(--bord);
-  border-radius: var(--rayon);
-  background: var(--fond-carte);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
   color: inherit;
   font: inherit;
   resize: vertical;
 }
 textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-.barre-envoi {
+.submit-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-top: 8px;
 }
-.compteur { color: var(--texte-doux); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.counter { color: var(--text-soft); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 
 button {
   font: inherit;
@@ -131,130 +131,130 @@ button {
   border: 1px solid transparent;
   transition: background-color .12s ease, border-color .12s ease;
 }
-.barre-envoi button {
+.submit-bar button {
   padding: 9px 18px;
   background: var(--accent);
-  color: var(--fond-carte);
+  color: var(--bg-card);
   font-weight: 560;
 }
-.barre-envoi button:disabled { opacity: .45; cursor: not-allowed; }
+.submit-bar button:disabled { opacity: .45; cursor: not-allowed; }
 
-.exemples { display: flex; flex-wrap: wrap; gap: 7px; margin: 14px 0 22px; }
-.exemple {
+.examples { display: flex; flex-wrap: wrap; gap: 7px; margin: 14px 0 22px; }
+.example {
   padding: 5px 11px;
-  background: var(--fond-doux);
-  border: 1px solid var(--bord);
-  color: var(--texte-doux);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
   font-size: 13px;
 }
-.exemple:hover { border-color: var(--accent); color: var(--accent); }
+.example:hover { border-color: var(--accent); color: var(--accent); }
 
-/* ---------- reponse ---------- */
-.texte-reponse {
+/* ---------- answer ---------- */
+.answer-text {
   white-space: pre-wrap;
-  background: var(--fond-carte);
-  border: 1px solid var(--bord);
-  border-radius: var(--rayon);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 16px 18px;
   margin: 0 0 18px;
-  box-shadow: var(--ombre);
+  box-shadow: var(--shadow);
 }
 
-.bandeau {
-  border-radius: var(--rayon);
+.banner {
+  border-radius: var(--radius);
   padding: 12px 15px;
   margin-bottom: 14px;
   font-size: 14px;
   border: 1px solid;
 }
-.bandeau ul { margin: 6px 0 0; padding-left: 20px; }
-.bandeau p { margin: 6px 0 0; }
-.bandeau-elargissement { background: var(--alerte-fond); border-color: var(--alerte); color: var(--alerte); }
-.bandeau-refus        { background: var(--danger-fond);  border-color: var(--danger);  color: var(--danger); }
-.bandeau-erreur       { background: var(--danger-fond);  border-color: var(--danger);  color: var(--danger); }
-.bandeau-degrade      { background: var(--info-fond);    border-color: var(--info);    color: var(--info); }
-.bandeau-accords      { background: var(--fond-doux);    border-color: var(--bord);    color: var(--texte-doux); }
-.bandeau-vide         { background: var(--fond-doux);    border-color: var(--bord);    color: var(--texte-doux); }
-.bandeau-indecidable  { background: var(--info-fond);    border-color: var(--info);    color: var(--info); }
-.bandeau .detail { opacity: .8; }
-.bandeau a { color: inherit; }
+.banner ul { margin: 6px 0 0; padding-left: 20px; }
+.banner p { margin: 6px 0 0; }
+.banner-relaxed { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); }
+.banner-refused        { background: var(--danger-bg);  border-color: var(--danger);  color: var(--danger); }
+.banner-error       { background: var(--danger-bg);  border-color: var(--danger);  color: var(--danger); }
+.banner-degraded      { background: var(--info-bg);    border-color: var(--info);    color: var(--info); }
+.banner-pairings      { background: var(--bg-soft);    border-color: var(--border);    color: var(--text-soft); }
+.banner-empty         { background: var(--bg-soft);    border-color: var(--border);    color: var(--text-soft); }
+.banner-undecidable  { background: var(--info-bg);    border-color: var(--info);    color: var(--info); }
+.banner .detail { opacity: .8; }
+.banner a { color: inherit; }
 
-/* ---------- cartes ---------- */
-.resultats { display: flex; flex-direction: column; gap: 14px; }
+/* ---------- cards ---------- */
+.results { display: flex; flex-direction: column; gap: 14px; }
 
-.carte {
-  background: var(--fond-carte);
-  border: 1px solid var(--bord);
-  border-radius: var(--rayon);
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 16px 18px;
-  box-shadow: var(--ombre);
+  box-shadow: var(--shadow);
 }
-.carte-entete { display: flex; gap: 12px; align-items: flex-start; }
-.carte-entete h3 { margin: 0; font-size: 16px; font-weight: 560; }
-.carte-entete .cuvee { color: var(--accent); font-weight: 620; }
-.carte-entete .millesime { color: var(--texte-doux); font-weight: 400; margin-left: 5px; }
+.card-header { display: flex; gap: 12px; align-items: flex-start; }
+.card-header h3 { margin: 0; font-size: 16px; font-weight: 560; }
+.card-header .wine-name { color: var(--accent); font-weight: 620; }
+.card-header .vintage { color: var(--text-soft); font-weight: 400; margin-left: 5px; }
 
-.rang {
+.rank {
   flex: 0 0 24px;
   height: 24px;
   display: grid;
   place-items: center;
   border-radius: 6px;
-  background: var(--accent-doux);
+  background: var(--accent-soft);
   color: var(--accent);
   font-size: 12.5px;
   font-weight: 620;
 }
 
-.sous-titre { margin: 5px 0 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; color: var(--texte-doux); }
+.subtitle { margin: 5px 0 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; color: var(--text-soft); }
 
-.pastille { padding: 2px 8px; border-radius: 999px; background: var(--fond-doux); border: 1px solid var(--bord); }
-.pastille-rouge { color: var(--accent); border-color: currentColor; }
-.pastille-bio   { color: #2f6b3a; border-color: currentColor; }
-@media (prefers-color-scheme: dark) { .pastille-bio { color: #82c295; } }
+.badge { padding: 2px 8px; border-radius: 999px; background: var(--bg-soft); border: 1px solid var(--border); }
+.badge-red { color: var(--accent); border-color: currentColor; }
+.badge-organic   { color: #2f6b3a; border-color: currentColor; }
+@media (prefers-color-scheme: dark) { .badge-organic { color: #82c295; } }
 
-.prix { margin-left: auto; text-align: right; white-space: nowrap; }
-.prix strong { display: block; font-size: 17px; font-variant-numeric: tabular-nums; }
-.prix small { color: var(--texte-doux); font-size: 11.5px; }
+.price { margin-left: auto; text-align: right; white-space: nowrap; }
+.price strong { display: block; font-size: 17px; font-variant-numeric: tabular-nums; }
+.price small { color: var(--text-soft); font-size: 11.5px; }
 
-.alerte-fixture {
+.fixture-warning {
   margin: 12px 0 0;
   padding: 8px 11px;
   border-radius: 7px;
-  background: var(--danger-fond);
+  background: var(--danger-bg);
   border: 1px solid var(--danger);
   color: var(--danger);
   font-size: 12.5px;
 }
 
-.faits {
+.facts {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 3px 14px;
   margin: 13px 0 0;
   font-size: 13.5px;
 }
-.faits dt { color: var(--texte-doux); }
-.faits dd { margin: 0; }
+.facts dt { color: var(--text-soft); }
+.facts dd { margin: 0; }
 
 .note {
   margin: 14px 0 0;
   padding: 12px 14px;
   border-left: 3px solid var(--accent);
-  background: var(--fond-doux);
+  background: var(--bg-soft);
   border-radius: 0 7px 7px 0;
   font-size: 14px;
 }
 .note p { margin: 0; }
-.note footer { margin-top: 7px; font-size: 12px; color: var(--texte-doux); }
+.note footer { margin-top: 7px; font-size: 12px; color: var(--text-soft); }
 .note a { color: var(--accent); }
-.note .date, .note .tronquee { color: var(--texte-doux); }
+.note .date, .note .truncated { color: var(--text-soft); }
 
-.correspondance {
+.match {
   margin: 0 !important;
   font-weight: 560;
 }
-.correspondance > span {
+.match > span {
   display: block;
   font-size: 11px;
   font-weight: 620;
@@ -264,75 +264,75 @@ button {
   margin-bottom: 3px;
 }
 
-.note-appellation { border-left-color: var(--info); background: var(--info-fond); }
-.avertissement-niveau { font-size: 12.5px; color: var(--info); margin-bottom: 7px !important; font-weight: 560; }
+.note-appellation { border-left-color: var(--info); background: var(--info-bg); }
+.level-warning { font-size: 12.5px; color: var(--info); margin-bottom: 7px !important; font-weight: 560; }
 
-.lien-fiche { margin: 11px 0 0; font-size: 13px; }
-.lien-fiche a { color: var(--accent); }
+.page-link { margin: 11px 0 0; font-size: 13px; }
+.page-link a { color: var(--accent); }
 
-.meta { margin: 14px 0 0; color: var(--texte-doux); font-size: 12.5px; }
+.meta { margin: 14px 0 0; color: var(--text-soft); font-size: 12.5px; }
 
-/* ---------- panneau de filtres ---------- */
-.panneau {
-  background: var(--fond-carte);
-  border: 1px solid var(--bord);
-  border-radius: var(--rayon);
+/* ---------- filter panel ---------- */
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 16px;
   position: sticky;
   top: 16px;
-  box-shadow: var(--ombre);
+  box-shadow: var(--shadow);
 }
-.panneau-entete h2 { margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: var(--texte-doux); }
-.aide { margin: 6px 0 16px; font-size: 12.5px; color: var(--texte-doux); line-height: 1.45; }
-.aide-vectoriel { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--bord); }
+.panel-header h2 { margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-soft); }
+.help { margin: 6px 0 16px; font-size: 12.5px; color: var(--text-soft); line-height: 1.45; }
+.help-vector { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--border); }
 
-.champ { display: block; margin-bottom: 12px; }
-.champ > span { display: block; font-size: 12px; color: var(--texte-doux); margin-bottom: 4px; }
-.champ input[type="number"], .champ select {
+.field { display: block; margin-bottom: 12px; }
+.field > span { display: block; font-size: 12px; color: var(--text-soft); margin-bottom: 4px; }
+.field input[type="number"], .field select {
   width: 100%;
   padding: 7px 9px;
-  border: 1px solid var(--bord);
+  border: 1px solid var(--border);
   border-radius: 7px;
-  background: var(--fond);
+  background: var(--bg);
   color: inherit;
   font: inherit;
   font-size: 13.5px;
 }
-.champ-double { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.champ-inline { display: flex; align-items: center; gap: 8px; }
-.champ-inline > span { margin: 0; font-size: 13px; color: var(--texte); }
-.champ-inline input { margin: 0; }
+.field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field-inline { display: flex; align-items: center; gap: 8px; }
+.field-inline > span { margin: 0; font-size: 13px; color: var(--text); }
+.field-inline input { margin: 0; }
 
-.jetons { display: flex; flex-wrap: wrap; gap: 5px; }
-.jeton {
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
   padding: 3px 9px;
   border-radius: 999px;
-  background: var(--accent-doux);
+  background: var(--accent-soft);
   color: var(--accent);
   border: 1px solid transparent;
   font-size: 12.5px;
 }
-.jeton:hover { border-color: currentColor; }
-.jeton-negatif { background: var(--danger-fond); color: var(--danger); }
-.jeton-derive { background: var(--fond); color: var(--texte-doux); border: 1px dashed var(--bord); cursor: default; }
+.chip:hover { border-color: currentColor; }
+.chip-negative { background: var(--danger-bg); color: var(--danger); }
+.chip-derived { background: var(--bg); color: var(--text-soft); border: 1px dashed var(--border); cursor: default; }
 
-.bouton-relancer {
+.rerun-button {
   width: 100%;
   margin-top: 6px;
   padding: 9px;
   background: var(--accent);
-  color: var(--fond-carte);
+  color: var(--bg-card);
   font-weight: 560;
 }
-.bouton-relancer:disabled { background: var(--fond-doux); color: var(--texte-doux); cursor: default; }
+.rerun-button:disabled { background: var(--bg-soft); color: var(--text-soft); cursor: default; }
 
-/* ---------- pied ---------- */
-.pied {
+/* ---------- footer ---------- */
+.page-footer {
   margin-top: 40px;
   padding-top: 18px;
-  border-top: 1px solid var(--bord);
-  color: var(--texte-doux);
+  border-top: 1px solid var(--border);
+  color: var(--text-soft);
   font-size: 12.5px;
 }
-.pied p { margin: 0 0 6px; }
-.sanitaire { font-weight: 620; color: var(--texte); text-transform: uppercase; letter-spacing: .02em; }
+.page-footer p { margin: 0 0 6px; }
+.health-notice { font-weight: 620; color: var(--text); text-transform: uppercase; letter-spacing: .02em; }

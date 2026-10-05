@@ -1,0 +1,35 @@
+{
+  "id": "mas-foulaquier-les-calades-2024",
+  "producer_id": "mas-foulaquier",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "Les Calades",
+  "color": "red",
+  "vintage": 2024,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 80
+    },
+    {
+      "grape": "grenache",
+      "pct": 20
+    }
+  ],
+  "abv": null,
+  "aging": "Macerations douces et longues en infusion, sans intrants oenologiques.",
+  "price_eur": 27.0,
+  "price_as_of": "2026-09-16",
+  "organic": null,
+  "certification": null,
+  "tasting_note": "Couleur dense et violine. Nez tres fruite (fruits noirs), camphre (eucalyptus) et epice (laurier), alliant gourmandise, souplesse et epice. Majorite de syrah. Terroir de Foulaquier, coteau d'eboulis calcaires sur argiles rouges au nord du Pic Saint-Loup, commune de Claret. Domaine conduit en biodynamie, vendange manuelle en caissettes de 20 kg.",
+  "tasting_note_source": {
+    "id": "page-mas-foulaquier-les-calades-2024",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://boutique.masfoulaquier.fr/products/calades-mas-foulaquier",
+    "authority": "Mas Foulaquier",
+    "retrieved_on": "2026-09-16"
+  },
+  "producer_pairings": [],
+  "page_url": "https://boutique.masfoulaquier.fr/products/calades-mas-foulaquier"
+}

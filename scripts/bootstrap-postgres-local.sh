@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Monte un Postgres + pgvector SANS Docker, sur une machine ou le paquet
-# postgresql-16 est deja installe. Sert de repli quand le daemon Docker
-# n'est pas disponible (conteneurs CI, environnements distants).
+# Sets up Postgres + pgvector WITHOUT Docker, on a machine where the
+# postgresql-16 package is already installed. Fallback for when the Docker
+# daemon is not available (CI containers, remote environments).
 #
-# Sur un poste de dev normal: utilise `docker compose up -d` a la place.
+# On a regular dev machine, use `docker compose up -d` instead.
 set -euo pipefail
 
 PGVECTOR_VERSION="${PGVECTOR_VERSION:-v0.8.0}"
@@ -16,11 +16,11 @@ if ! pg_isready -q 2>/dev/null; then
 fi
 pg_isready
 
-echo "==> Extension pgvector"
+echo "==> pgvector extension"
 if ! ls "/usr/share/postgresql/${PG_MAJOR}/extension/" 2>/dev/null | grep -q '^vector\.control$'; then
-  echo "    absente, compilation depuis les sources"
+  echo "    missing, building from source"
   command -v pg_config >/dev/null || {
-    echo "    il manque postgresql-server-dev-${PG_MAJOR}" >&2
+    echo "    postgresql-server-dev-${PG_MAJOR} is missing" >&2
     echo "    apt-get update && apt-get install -y postgresql-server-dev-${PG_MAJOR} build-essential" >&2
     exit 1
   }
@@ -31,7 +31,7 @@ if ! ls "/usr/share/postgresql/${PG_MAJOR}/extension/" 2>/dev/null | grep -q '^v
   rm -rf "${tmp}"
 fi
 
-echo "==> Role et base"
+echo "==> Role and database"
 su postgres -c "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='psl'\"" | grep -q 1 \
   || su postgres -c "psql -c \"CREATE ROLE psl LOGIN PASSWORD 'psl' SUPERUSER\""
 su postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname='psl'\"" | grep -q 1 \
@@ -39,4 +39,4 @@ su postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname='psl'\"" | g
 
 PGPASSWORD=psl psql -h 127.0.0.1 -U psl -d psl -c "CREATE EXTENSION IF NOT EXISTS vector" >/dev/null
 echo "==> pgvector $(PGPASSWORD=psl psql -h 127.0.0.1 -U psl -d psl -tAc "SELECT extversion FROM pg_extension WHERE extname='vector'")"
-echo "==> pret: postgres://psl:psl@127.0.0.1:5432/psl"
+echo "==> ready: postgres://psl:psl@127.0.0.1:5432/psl"

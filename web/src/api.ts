@@ -1,26 +1,26 @@
-import type { Catalogue, Filtres, ReponseRecherche } from './types.ts';
+import type { Catalog, Filters, SearchResponse } from './types.ts';
 
-async function json<T>(reponse: Response): Promise<T> {
-  const corps = await reponse.json();
-  if (!reponse.ok && !corps.statut) throw new Error(corps.message ?? `HTTP ${reponse.status}`);
-  return corps as T;
+async function json<T>(response: Response): Promise<T> {
+  const body = await response.json();
+  if (!response.ok && !body.status) throw new Error(body.message ?? `HTTP ${response.status}`);
+  return body as T;
 }
 
-export async function chargerCatalogue(): Promise<Catalogue> {
-  return json<Catalogue>(await fetch('/api/catalogue'));
+export async function loadCatalog(): Promise<Catalog> {
+  return json<Catalog>(await fetch('/api/catalog'));
 }
 
 /**
- * `filtres` non nul court-circuite l'appel LLM 1: c'est le chemin emprunte
- * quand l'utilisateur corrige les filtres a la main. La demande initiale reste
- * envoyee pour le journal, mais elle n'est plus interpretee.
+ * Non-null `filters` bypass LLM call 1: that is the path taken when the user
+ * corrects the filters by hand. The original request is still sent for the
+ * log, but it is no longer interpreted.
  */
-export async function rechercher(message: string, filtres?: Filtres): Promise<ReponseRecherche> {
-  return json<ReponseRecherche>(
-    await fetch('/api/recherche', {
+export async function search(message: string, filters?: Filters): Promise<SearchResponse> {
+  return json<SearchResponse>(
+    await fetch('/api/search', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(filtres ? { message, filtres } : { message }),
+      body: JSON.stringify(filters ? { message, filters } : { message }),
     }),
   );
 }

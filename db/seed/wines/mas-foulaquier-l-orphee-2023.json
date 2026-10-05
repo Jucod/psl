@@ -1,0 +1,35 @@
+{
+  "id": "mas-foulaquier-l-orphee-2023",
+  "producer_id": "mas-foulaquier",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "L'Orphee",
+  "color": "red",
+  "vintage": 2023,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 50
+    },
+    {
+      "grape": "grenache",
+      "pct": 50
+    }
+  ],
+  "abv": null,
+  "aging": "Macerations douces et longues en infusion, sans intrants oenologiques. Elevage en beton, bois et amphore pendant trois printemps.",
+  "price_eur": 20.0,
+  "price_as_of": "2026-09-16",
+  "organic": null,
+  "certification": null,
+  "tasting_note": "Couleur dense, vin assez puissant. Nez tres fruite (fruits rouges) et epice (curry, thym, garrigue), alliant gourmandise, souplesse et puissance aromatique. Syrah et grenache a parts egales. Terroir de Foulaquier, coteau d'eboulis calcaires sur argiles rouges au nord du Pic Saint-Loup, commune de Claret. Domaine conduit en biodynamie, vendange manuelle en caissettes de 20 kg.",
+  "tasting_note_source": {
+    "id": "page-mas-foulaquier-l-orphee-2023",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://boutique.masfoulaquier.fr/products/lorphee-2023-pic-saint-loup-fruite-et-epice-20",
+    "authority": "Mas Foulaquier",
+    "retrieved_on": "2026-09-16"
+  },
+  "producer_pairings": [],
+  "page_url": "https://boutique.masfoulaquier.fr/products/lorphee-2023-pic-saint-loup-fruite-et-epice-20"
+}

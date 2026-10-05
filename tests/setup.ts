@@ -1,10 +1,10 @@
 import { beforeAll } from 'vitest';
 
-// Les tests tournent sur la base de developpement, fixtures comprises: sans
-// notes de degustation, il n'y a rien a classer et le jalon 2 ne serait pas
-// testable. Les cas qui verifient le comportement SANS fixture le font
-// explicitement, en passant autoriserFixtures: false au moteur.
-process.env.PSL_AUTORISER_FIXTURES = '1';
+// Tests run against the development database, fixtures included: without
+// tasting notes there is nothing to rank and milestone 2 could not be tested.
+// The cases that check the behavior WITHOUT fixtures do it explicitly, by
+// passing allowFixtures: false to the engine.
+process.env.PSL_ALLOW_FIXTURES = '1';
 process.env.PSL_EMBEDDING_PROVIDER ??= 'local';
 process.env.PSL_LLM_PROVIDER ??= 'local';
 process.env.DATABASE_URL ??= 'postgres://psl:psl@127.0.0.1:5432/psl';
@@ -12,49 +12,49 @@ process.env.DATABASE_URL ??= 'postgres://psl:psl@127.0.0.1:5432/psl';
 beforeAll(async () => {
   const { db } = await import('../src/db/client.js');
   try {
-    await db().query('SELECT 1 FROM cuvees LIMIT 1');
+    await db().query('SELECT 1 FROM wines LIMIT 1');
   } catch {
     throw new Error(
-      'base non initialisee. Lance: bash scripts/bootstrap-postgres-local.sh && npm run setup',
+      'database not initialized. Run: bash scripts/bootstrap-postgres-local.sh && npm run setup',
     );
   }
 
-  // Modifier src/config/lexique.ts change la vectorisation des notes, mais pas
-  // les vecteurs deja stockes. Le moteur detecte l'ecart et refuse alors de
-  // classer au vectoriel, ce qui fait echouer les cas de classement avec un
-  // message trompeur. Le provider local est deterministe, instantane et hors
-  // ligne: on recalcule plutot que d'exiger de l'operateur qu'il y pense.
-  const { fournisseurEmbedding } = await import('../src/embeddings/index.js');
-  const { verifierSignature, enregistrerSignature } = await import('../src/embeddings/signature.js');
-  const fournisseur = fournisseurEmbedding();
+  // Editing src/config/lexicon.ts changes how notes are vectorized, but not
+  // the vectors already stored. The engine detects the mismatch and then
+  // refuses to rank by vector, which makes the ranking cases fail with a
+  // misleading message. The local provider is deterministic, instantaneous and
+  // offline: recomputing beats expecting the operator to think of it.
+  const { embeddingProvider } = await import('../src/embeddings/index.js');
+  const { checkSignature, recordSignature } = await import('../src/embeddings/signature.js');
+  const provider = embeddingProvider();
 
-  const etat = await verifierSignature(db(), fournisseur);
-  if (!etat.aJour) {
-    if (!fournisseur.deterministe) {
+  const status = await checkSignature(db(), provider);
+  if (!status.upToDate) {
+    if (!provider.deterministic) {
       throw new Error(
-        `embeddings perimes et provider "${fournisseur.nom}" facturant a l'appel: ` +
-        `lance "npm run db:embed" volontairement. Detail: ${etat.message}`,
+        `stale embeddings and provider "${provider.name}" bills per call: ` +
+        `run "npm run db:embed" deliberately. Detail: ${status.message}`,
       );
     }
-    const { versVecteur } = await import('../src/db/client.js');
-    const cuvees = await db().query<{ id: string; embedding_source: string }>(
-      `SELECT id, embedding_source FROM cuvees
-        WHERE embedding_niveau = 'cuvee' AND embedding_source IS NOT NULL`,
+    const { toVector } = await import('../src/db/client.js');
+    const wines = await db().query<{ id: string; embedding_text: string }>(
+      `SELECT id, embedding_text FROM wines
+        WHERE embedding_level = 'wine' AND embedding_text IS NOT NULL`,
     );
-    const vecteurs = await fournisseur.embed(cuvees.rows.map((r) => r.embedding_source));
-    for (const [i, r] of cuvees.rows.entries()) {
-      await db().query('UPDATE cuvees SET embedding = $1 WHERE id = $2', [versVecteur(vecteurs[i]!), r.id]);
+    const vectors = await provider.embed(wines.rows.map((r) => r.embedding_text));
+    for (const [i, r] of wines.rows.entries()) {
+      await db().query('UPDATE wines SET embedding = $1 WHERE id = $2', [toVector(vectors[i]!), r.id]);
     }
-    const profils = await db().query<{ appellation_id: string; couleur: string; texte_profil: string }>(
-      'SELECT appellation_id, couleur, texte_profil FROM appellation_profils',
+    const profiles = await db().query<{ appellation_id: string; color: string; profile_text: string }>(
+      'SELECT appellation_id, color, profile_text FROM appellation_profiles',
     );
-    const vp = await fournisseur.embed(profils.rows.map((r) => r.texte_profil));
-    for (const [i, r] of profils.rows.entries()) {
+    const vp = await provider.embed(profiles.rows.map((r) => r.profile_text));
+    for (const [i, r] of profiles.rows.entries()) {
       await db().query(
-        'UPDATE appellation_profils SET embedding = $1 WHERE appellation_id = $2 AND couleur = $3',
-        [versVecteur(vp[i]!), r.appellation_id, r.couleur],
+        'UPDATE appellation_profiles SET embedding = $1 WHERE appellation_id = $2 AND color = $3',
+        [toVector(vp[i]!), r.appellation_id, r.color],
       );
     }
-    await enregistrerSignature(db(), fournisseur);
+    await recordSignature(db(), provider);
   }
 });

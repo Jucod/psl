@@ -1,78 +1,78 @@
 import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { createHmac } from 'node:crypto';
-import { config } from './config/domaine.js';
+import { config } from './config/domain.js';
 import { env } from './config/env.js';
 import { db } from './db/client.js';
-import { fournisseurEmbedding } from './embeddings/index.js';
-import { construireIndexCepages, codeCepage } from './ingest/util.js';
-import { fournisseurLlm, type EntreeFormulation, type Usage } from './llm/index.js';
-import { texteVectoriel } from './llm/parseur.js';
-import { rechercher } from './moteur/recherche.js';
-import { choisirExtrait } from './moteur/justification.js';
-import type { ResultatRecherche } from './moteur/types.js';
-import { FILTRES_VIDES, parserFiltresPartiels, type Filtres } from './schema/filtres.js';
+import { embeddingProvider } from './embeddings/index.js';
+import { buildGrapeIndex, grapeCode } from './ingest/util.js';
+import { llmProvider, type FormulationInput, type Usage } from './llm/index.js';
+import { vectorText } from './llm/parser.js';
+import { search } from './engine/search.js';
+import { pickExcerpt } from './engine/justification.js';
+import type { SearchResult } from './engine/types.js';
+import { EMPTY_FILTERS, parsePartialFilters, type Filters } from './schema/filters.js';
 
-const CHEMIN_CEPAGES = fileURLToPath(new URL('../db/seed/cepages.json', import.meta.url));
+const GRAPES_PATH = fileURLToPath(new URL('../db/seed/grapes.json', import.meta.url));
 
-export interface EntreePipeline {
+export interface PipelineInput {
   message: string;
-  /** Filtres corriges a la main dans l'UI. Court-circuite l'appel LLM 1. */
-  filtresImposes?: unknown;
+  /** Filters corrected by hand in the UI. Bypasses LLM call 1. */
+  forcedFilters?: unknown;
   ip?: string;
 }
 
-export interface SortiePipeline {
-  statut: ResultatRecherche['statut'] | 'message_trop_long' | 'schema_invalide';
-  texte: string;
-  recherche: ResultatRecherche | null;
-  degrade: boolean;
-  raisonDegrade: string | null;
+export interface PipelineOutput {
+  status: SearchResult['status'] | 'message_too_long' | 'invalid_schema';
+  text: string;
+  search: SearchResult | null;
+  degraded: boolean;
+  degradedReason: string | null;
   usage: Usage;
-  latence_ms: number;
-  providerLlm: string;
-  fixturesActives: boolean;
+  latency_ms: number;
+  llmProvider: string;
+  fixturesEnabled: boolean;
 }
 
-let indexCepages: ReadonlyMap<string, string> | null = null;
-async function cepages(): Promise<ReadonlyMap<string, string>> {
-  if (!indexCepages) {
-    const doc = JSON.parse(await readFile(CHEMIN_CEPAGES, 'utf8'));
-    indexCepages = construireIndexCepages(doc.cepages);
+let grapeIndex: ReadonlyMap<string, string> | null = null;
+async function grapes(): Promise<ReadonlyMap<string, string>> {
+  if (!grapeIndex) {
+    const doc = JSON.parse(await readFile(GRAPES_PATH, 'utf8'));
+    grapeIndex = buildGrapeIndex(doc.grapes);
   }
-  return indexCepages;
+  return grapeIndex;
 }
 
 /**
- * Normalise les valeurs avant le moteur: "shiraz" et "Syrah N" doivent devenir
- * "syrah" avant de toucher un WHERE, sinon le filtre rate en silence.
- * C'est ici, et pas dans le moteur, parce que c'est une question de vocabulaire
- * metier: le moteur reste ignorant du domaine.
+ * Normalizes values before the engine: "shiraz" and "Syrah N" must become
+ * "syrah" before touching a WHERE, otherwise the filter misses silently.
+ * It happens here, and not in the engine, because it is a matter of business
+ * vocabulary: the engine stays ignorant of the domain.
  */
-export async function normaliserFiltres(
-  f: Filtres,
-): Promise<{ filtres: Filtres; inconnus: string[] }> {
-  const index = await cepages();
-  const inconnus: string[] = [];
+export async function normalizeFilters(
+  f: Filters,
+): Promise<{ filters: Filters; unknown: string[] }> {
+  const index = await grapes();
+  const unknown: string[] = [];
 
   /**
-   * `signaler` distingue les deux sens, et la distinction compte.
+   * `report` distinguishes the two directions, and the distinction matters.
    *
-   * Un cepage inconnu DEMANDE est une contrainte que le catalogue ne peut pas
-   * satisfaire: le supprimer faisait repondre trois rouges a "avez-vous du
-   * chardonnay ?". Il doit produire un refus.
+   * An unknown variety that is REQUESTED is a constraint the catalog cannot
+   * satisfy: dropping it made the system answer three reds to "avez-vous du
+   * chardonnay ?". It must produce a refusal.
    *
-   * Un cepage inconnu EXCLU est une contrainte satisfaite par construction:
-   * "un rouge sans chardonnay" a pour bonne reponse trois rouges, pas un refus.
-   * Refuser la revenait a ne pas repondre a une demande qu'on honore
-   * trivialement, sur une formulation de caviste parfaitement banale.
+   * An unknown variety that is EXCLUDED is a constraint satisfied by
+   * construction: the right answer to "un rouge sans chardonnay" is three
+   * reds, not a refusal. Refusing it amounted to not answering a request we
+   * trivially honor, on a perfectly ordinary wine-merchant phrasing.
    */
-  const normaliserListe = (liste: string[], signaler: boolean) => {
+  const normalizeList = (list: string[], report: boolean) => {
     const codes: string[] = [];
-    for (const denomination of liste) {
-      const code = codeCepage(denomination, index);
+    for (const name of list) {
+      const code = grapeCode(name, index);
       if (code === null) {
-        if (signaler) inconnus.push(denomination);
+        if (report) unknown.push(name);
       } else {
         codes.push(code);
       }
@@ -81,67 +81,67 @@ export async function normaliserFiltres(
   };
 
   return {
-    filtres: {
+    filters: {
       ...f,
-      cepages_inclus: normaliserListe(f.cepages_inclus, true),
-      cepages_exclus: normaliserListe(f.cepages_exclus, false),
+      grapes_included: normalizeList(f.grapes_included, true),
+      grapes_excluded: normalizeList(f.grapes_excluded, false),
     },
-    inconnus: [...new Set(inconnus)],
+    unknown: [...new Set(unknown)],
   };
 }
 
 /**
- * Refus construit depuis l'encepagement du cahier des charges. Comme le refus
- * de couleur, c'est un resultat de requete, et il cite sa source.
+ * Refusal built from the permitted varieties of the specification. Like the
+ * color refusal, it is a query result, and it cites its source.
  */
-async function refuserCepagesInconnus(
-  inconnus: string[],
+async function refuseUnknownGrapes(
+  unknown: string[],
   appellation: string | null,
-): Promise<ResultatRecherche['refus']> {
+): Promise<SearchResult['refusal']> {
   if (!appellation) {
-    return { message: `Cepage inconnu du catalogue : ${inconnus.join(', ')}.`, source: null };
+    return { message: `Cepage inconnu du catalogue : ${unknown.join(', ')}.`, source: null };
   }
 
   const { rows } = await db().query(
-    `SELECT a.nom, a.encepagement, s.id, s.type, s.label, s.url, s.autorite,
-            s.date_releve::text AS date_releve
+    `SELECT a.name, a.grape_rules, s.id, s.type, s.label, s.url, s.authority,
+            s.retrieved_on::text AS retrieved_on
        FROM appellations a JOIN sources s ON s.id = a.source_id
       WHERE a.id = $1`,
     [appellation],
   );
-  const ligne = rows[0];
-  if (!ligne) {
-    return { message: `Cepage inconnu du catalogue : ${inconnus.join(', ')}.`, source: null };
+  const row = rows[0];
+  if (!row) {
+    return { message: `Cepage inconnu du catalogue : ${unknown.join(', ')}.`, source: null };
   }
 
-  const autorises = new Set<string>();
-  for (const bloc of Object.values(ligne.encepagement ?? {})) {
-    for (const cle of ['principaux', 'accessoires']) {
-      for (const c of (bloc as any)?.[cle] ?? []) autorises.add(String(c));
+  const permitted = new Set<string>();
+  for (const block of Object.values(row.grape_rules ?? {})) {
+    for (const key of ['main', 'secondary']) {
+      for (const g of (block as any)?.[key] ?? []) permitted.add(String(g));
     }
   }
 
   return {
     message:
-      `${inconnus.join(', ')} : ce cepage n'entre pas dans l'encepagement de ` +
-      `l'appellation ${ligne.nom}` +
-      (autorises.size
-        ? `, qui n'autorise que ${[...autorises].sort().join(', ')}.`
+      `${unknown.join(', ')} : ce cepage n'entre pas dans l'encepagement de ` +
+      `l'appellation ${row.name}` +
+      (permitted.size
+        ? `, qui n'autorise que ${[...permitted].sort().join(', ')}.`
         : '.'),
     source: {
-      id: ligne.id, type: ligne.type, label: ligne.label, url: ligne.url,
-      autorite: ligne.autorite ?? null, date_releve: ligne.date_releve,
+      id: row.id, type: row.type, label: row.label, url: row.url,
+      authority: row.authority ?? null, retrieved_on: row.retrieved_on,
     },
   };
 }
 
-/** Appellation retenue quand la demande n'en cite aucune. */
-export async function appellationParDefaut(): Promise<string | null> {
+/** Appellation used when the request names none. */
+export async function defaultAppellation(): Promise<string | null> {
   const { rows } = await db().query<{ id: string }>(
     'SELECT id FROM appellations ORDER BY id LIMIT 2',
   );
-  // Une seule appellation au catalogue: on la prend par defaut et l'UI
-  // l'affiche comme un filtre modifiable. Plusieurs: on ne devine pas.
+  // A single appellation in the catalog: we take it by default and the UI
+  // shows it as an editable filter. Several: we do not guess.
   return rows.length === 1 ? rows[0]!.id : null;
 }
 
@@ -149,170 +149,172 @@ export function hashIp(ip: string): string {
   return createHmac('sha256', env.ipHashSecret()).update(ip).digest('hex').slice(0, 32);
 }
 
-export async function executerPipeline(entree: EntreePipeline): Promise<SortiePipeline> {
-  const debut = Date.now();
-  const llm = fournisseurLlm();
-  const fixtures = env.autoriserFixtures();
+export async function runPipeline(input: PipelineInput): Promise<PipelineOutput> {
+  const start = Date.now();
+  const llm = llmProvider();
+  const fixtures = env.allowFixtures();
 
-  const base: Omit<SortiePipeline, 'statut' | 'texte' | 'recherche'> = {
-    degrade: false,
-    raisonDegrade: null,
-    usage: { tokens_in: 0, tokens_out: 0, cout_eur: 0 },
-    latence_ms: 0,
-    providerLlm: llm.nom,
-    fixturesActives: fixtures,
+  const base: Omit<PipelineOutput, 'status' | 'text' | 'search'> = {
+    degraded: false,
+    degradedReason: null,
+    usage: { tokens_in: 0, tokens_out: 0, cost_eur: 0 },
+    latency_ms: 0,
+    llmProvider: llm.name,
+    fixturesEnabled: fixtures,
   };
 
-  const maxLongueur = env.maxLongueurMessage();
-  if (entree.message.length > maxLongueur) {
+  const maxLength = env.maxMessageLength();
+  if (input.message.length > maxLength) {
     return {
       ...base,
-      statut: 'message_trop_long',
-      texte: `Message trop long (${entree.message.length} caracteres, maximum ${maxLongueur}).`,
-      recherche: null,
-      latence_ms: Date.now() - debut,
+      status: 'message_too_long',
+      text: `Message trop long (${input.message.length} caracteres, maximum ${maxLength}).`,
+      search: null,
+      latency_ms: Date.now() - start,
     };
   }
 
-  const defaut = await appellationParDefaut();
+  const fallbackAppellation = await defaultAppellation();
 
-  // --- appel 1, ou filtres imposes par l'utilisateur -----------------------
-  let filtres: Filtres;
-  let degrade = false;
-  let raisonDegrade: string | null = null;
+  // --- call 1, or filters forced by the user ---------------------------------
+  let filters: Filters;
+  let degraded = false;
+  let degradedReason: string | null = null;
   const usage: Usage = { ...base.usage };
 
-  if (entree.filtresImposes !== undefined) {
-    const valide = parserFiltresPartiels(entree.filtresImposes);
-    if (!valide.success) {
+  if (input.forcedFilters !== undefined) {
+    const valid = parsePartialFilters(input.forcedFilters);
+    if (!valid.success) {
       return {
         ...base,
-        statut: 'schema_invalide',
-        texte:
+        status: 'invalid_schema',
+        text:
           'Filtres invalides : ' +
-          valide.error.issues.map((i) => `${i.path.join('.')} ${i.message}`).join(', '),
-        recherche: null,
-        latence_ms: Date.now() - debut,
+          valid.error.issues.map((i) => `${i.path.join('.')} ${i.message}`).join(', '),
+        search: null,
+        latency_ms: Date.now() - start,
       };
     }
-    filtres = valide.data;
+    filters = valid.data;
   } else {
-    const extraction = await llm.extraireFiltres(entree.message, defaut);
-    filtres = extraction.filtres;
-    degrade = extraction.degrade;
-    raisonDegrade = extraction.raisonDegrade;
+    const extraction = await llm.extractFilters(input.message, fallbackAppellation);
+    filters = extraction.filters;
+    degraded = extraction.degraded;
+    degradedReason = extraction.degradedReason;
     usage.tokens_in += extraction.usage.tokens_in;
     usage.tokens_out += extraction.usage.tokens_out;
-    usage.cout_eur += extraction.usage.cout_eur;
+    usage.cost_eur += extraction.usage.cost_eur;
   }
 
-  if (filtres.appellation === null && defaut) filtres = { ...filtres, appellation: defaut };
+  if (filters.appellation === null && fallbackAppellation) {
+    filters = { ...filters, appellation: fallbackAppellation };
+  }
 
-  const normalisation = await normaliserFiltres(filtres);
-  filtres = normalisation.filtres;
+  const normalization = await normalizeFilters(filters);
+  filters = normalization.filters;
 
-  if (normalisation.inconnus.length > 0) {
-    const refus = await refuserCepagesInconnus(normalisation.inconnus, filtres.appellation);
-    const recherche: ResultatRecherche = {
-      statut: 'refus_hors_catalogue', refus,
-      filtresDemandes: filtres, filtresAppliques: filtres,
-      relachements: [], classement: 'lexicographique', resultats: [],
-      accordsPourLePlat: [], tailleCatalogue: 0, avertissements: [],
-      filtresIndecidables: [],
+  if (normalization.unknown.length > 0) {
+    const refusal = await refuseUnknownGrapes(normalization.unknown, filters.appellation);
+    const result: SearchResult = {
+      status: 'refused', refusal,
+      requestedFilters: filters, appliedFilters: filters,
+      relaxations: [], ranking: 'lexicographic', results: [],
+      dishPairings: [], catalogSize: 0, warnings: [],
+      undecidableFilters: [],
     };
-    const { texte } = await llm.formuler(entreeFormulation(recherche));
+    const { text } = await llm.formulate(toFormulationInput(result));
     return {
-      ...base, statut: 'refus_hors_catalogue', texte, recherche,
-      degrade, raisonDegrade, usage, latence_ms: Date.now() - debut,
+      ...base, status: 'refused', text, search: result,
+      degraded, degradedReason, usage, latency_ms: Date.now() - start,
     };
   }
 
-  // --- vecteur de la partie floue ------------------------------------------
-  // Arithmetique de vecteurs: souhaite moins refuse. Une note qui contient les
-  // termes refuses voit son cosinus baisser, ce qu'un simple descripteur
-  // oppose ne produit pas quand toutes les notes contiennent le terme nie.
-  const textes = texteVectoriel(filtres);
-  let vecteur: number[] | null = null;
-  if (textes) {
-    const fournisseur = fournisseurEmbedding();
-    const aEmbedder = [textes.inclus || ' ', ...(textes.exclus ? [textes.exclus] : [])];
-    const [vIn, vEx] = await fournisseur.embed(aEmbedder);
-    vecteur = vEx ? combiner(vIn!, vEx, config.poidsRejet) : (vIn ?? null);
+  // --- vector of the fuzzy part -----------------------------------------------
+  // Vector arithmetic: wanted minus rejected. A note that contains the rejected
+  // terms sees its cosine drop, which a mere opposite descriptor does not
+  // achieve when every note contains the negated term.
+  const texts = vectorText(filters);
+  let vector: number[] | null = null;
+  if (texts) {
+    const provider = embeddingProvider();
+    const toEmbed = [texts.included || ' ', ...(texts.excluded ? [texts.excluded] : [])];
+    const [wanted, rejected] = await provider.embed(toEmbed);
+    vector = rejected ? combine(wanted!, rejected, config.rejectionWeight) : (wanted ?? null);
   }
 
-  // --- requete SQL, executee par le code, jamais par le modele --------------
-  const recherche = await rechercher(filtres, {
-    vecteurRequete: vecteur,
-    autoriserFixtures: fixtures,
+  // --- SQL query, executed by the code, never by the model ---------------------
+  const result = await search(filters, {
+    queryVector: vector,
+    allowFixtures: fixtures,
   });
 
-  // --- justification: quelle phrase de la note motive le classement ? -------
-  // Fait ici et non dans le moteur: c'est une question de restitution, et le
-  // pipeline detient deja le vecteur de requete. Cela garde intacte la barriere
-  // de type de EntreeFormulation, qui ne doit jamais voir les descripteurs.
-  if (vecteur) {
-    const fournisseur = fournisseurEmbedding();
+  // --- justification: which sentence of the note motivates the ranking? --------
+  // Done here and not in the engine: it is a matter of rendering, and the
+  // pipeline already holds the query vector. This keeps the type barrier of
+  // FormulationInput intact, which must never see the descriptors.
+  if (vector) {
+    const provider = embeddingProvider();
     await Promise.all(
-      recherche.resultats.map(async (c) => {
-        if (!c.note_degustation) return;
-        c.extrait_pertinent = await choisirExtrait(c.note_degustation, vecteur, fournisseur);
+      result.results.map(async (w) => {
+        if (!w.tasting_note) return;
+        w.relevant_excerpt = await pickExcerpt(w.tasting_note, vector, provider);
       }),
     );
   }
 
-  // --- appel 2 --------------------------------------------------------------
-  const { texte, usage: usage2 } = await llm.formuler(entreeFormulation(recherche));
+  // --- call 2 -------------------------------------------------------------------
+  const { text, usage: usage2 } = await llm.formulate(toFormulationInput(result));
   usage.tokens_in += usage2.tokens_in;
   usage.tokens_out += usage2.tokens_out;
-  usage.cout_eur += usage2.cout_eur;
+  usage.cost_eur += usage2.cost_eur;
 
   return {
     ...base,
-    statut: recherche.statut,
-    texte,
-    recherche,
-    degrade,
-    raisonDegrade,
+    status: result.status,
+    text,
+    search: result,
+    degraded,
+    degradedReason,
     usage,
-    latence_ms: Date.now() - debut,
+    latency_ms: Date.now() - start,
   };
 }
 
 /**
- * Construit l'entree de l'appel 2 champ par champ.
+ * Builds the input of call 2 field by field.
  *
- * Un spread `{ ...recherche }` laissait `filtresDemandes` - donc les
- * descripteurs, et une appellation en texte libre - PHYSIQUEMENT present dans
- * l'objet remis au modele. TypeScript ne verifie pas les proprietes en trop sur
- * un spread : la "barriere de type" n'existait qu'a la lecture, et seule la
- * liste blanche de donneesFormulation protegeait vraiment. Enumerer rend la
- * barriere reelle au runtime.
+ * A spread `{ ...result }` left `requestedFilters` - hence the descriptors,
+ * and a free-text appellation - PHYSICALLY present in the object handed to
+ * the model. TypeScript does not check excess properties on a spread: the
+ * "type barrier" only existed on paper, and only the allowlist of
+ * formulationPayload really protected anything. Enumerating makes the barrier
+ * real at runtime.
  */
-function entreeFormulation(recherche: ResultatRecherche): EntreeFormulation {
+function toFormulationInput(result: SearchResult): FormulationInput {
   return {
-    recherche: {
-      statut: recherche.statut,
-      refus: recherche.refus,
-      relachements: recherche.relachements,
-      classement: recherche.classement,
-      resultats: recherche.resultats,
-      accordsPourLePlat: recherche.accordsPourLePlat,
-      tailleCatalogue: recherche.tailleCatalogue,
-      avertissements: recherche.avertissements,
-      filtresIndecidables: recherche.filtresIndecidables,
-      filtresAppliques: {},
+    search: {
+      status: result.status,
+      refusal: result.refusal,
+      relaxations: result.relaxations,
+      ranking: result.ranking,
+      results: result.results,
+      dishPairings: result.dishPairings,
+      catalogSize: result.catalogSize,
+      warnings: result.warnings,
+      undecidableFilters: result.undecidableFilters,
+      appliedFilters: {},
     },
   };
 }
 
-/** normalise(a - poids * b). Retourne null si le resultat est degenere. */
-export function combiner(a: number[], b: number[], poids: number): number[] | null {
-  const v = a.map((x, i) => x - poids * (b[i] ?? 0));
-  let somme = 0;
-  for (const x of v) somme += x * x;
-  const norme = Math.sqrt(somme);
-  if (norme < 1e-9) return null;
-  return v.map((x) => x / norme);
+/** normalize(a - weight * b). Returns null when the result is degenerate. */
+export function combine(a: number[], b: number[], weight: number): number[] | null {
+  const v = a.map((x, i) => x - weight * (b[i] ?? 0));
+  let sum = 0;
+  for (const x of v) sum += x * x;
+  const norm = Math.sqrt(sum);
+  if (norm < 1e-9) return null;
+  return v.map((x) => x / norm);
 }
 
-export { FILTRES_VIDES, config };
+export { EMPTY_FILTERS, config };

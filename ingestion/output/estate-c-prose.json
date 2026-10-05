@@ -1,0 +1,34 @@
+{
+  "id": "estate-c-prose-l-enclos-2020",
+  "producer_id": "estate-c-prose",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "L'Enclos",
+  "color": null,
+  "vintage": 2020,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 80.0
+    },
+    {
+      "grape": "mourvedre",
+      "pct": 20.0
+    }
+  ],
+  "abv": 14.5,
+  "aging": "vingt-quatre mois en demi-muids",
+  "price_eur": null,
+  "price_as_of": null,
+  "organic": null,
+  "certification": null,
+  "tasting_note": "Une robe grenat dense. Au nez, la mure et le cassis dominent, releves d'une note de reglisse. En bouche, le vin est puissant et charpente, les tanins sont fermes, la longueur est remarquable. A attendre trois ans.",
+  "tasting_note_source": {
+    "id": "sheet-estate-c-prose",
+    "type": "tech_sheet",
+    "label": "Fiche technique estate-c-prose",
+    "url": "https://example.invalid/sheets/estate-c-prose.pdf",
+    "retrieved_on": "2026-09-15"
+  },
+  "producer_pairings": [],
+  "page_url": "https://example.invalid/sheets/estate-c-prose.pdf"
+}

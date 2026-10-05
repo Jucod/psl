@@ -1,0 +1,38 @@
+{
+  "id": "estate-a-table-cuvee-le-serre-2021",
+  "producer_id": "estate-a-table",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "Cuvee Le Serre",
+  "color": "red",
+  "vintage": 2021,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 70.0
+    },
+    {
+      "grape": "grenache",
+      "pct": 20.0
+    },
+    {
+      "grape": "mourvedre",
+      "pct": 10.0
+    }
+  ],
+  "abv": 14.0,
+  "aging": "15 mois en foudre de chene",
+  "price_eur": null,
+  "price_as_of": null,
+  "organic": true,
+  "certification": "Agriculture biologique",
+  "tasting_note": "Robe pourpre soutenue. Le nez livre des fruits noirs compotes et une pointe de poivre blanc. La bouche est ample, portee par des tanins serres mais polis, et se prolonge sur une finale saline.",
+  "tasting_note_source": {
+    "id": "sheet-estate-a-table",
+    "type": "tech_sheet",
+    "label": "Fiche technique estate-a-table",
+    "url": "https://example.invalid/sheets/estate-a-table.pdf",
+    "retrieved_on": "2026-09-15"
+  },
+  "producer_pairings": [],
+  "page_url": "https://example.invalid/sheets/estate-a-table.pdf"
+}

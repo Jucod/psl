@@ -1,57 +1,57 @@
 import { env } from '../config/env.js';
-import type { Filtres } from '../schema/filtres.js';
-import type { ResultatRecherche } from '../moteur/types.js';
-import { LlmLocal } from './local.js';
-import { LlmAnthropic } from './anthropic.js';
+import type { Filters } from '../schema/filters.js';
+import type { SearchResult } from '../engine/types.js';
+import { LocalLlm } from './local.js';
+import { AnthropicLlm } from './anthropic.js';
 
 export interface Usage {
   tokens_in: number;
   tokens_out: number;
-  cout_eur: number;
+  cost_eur: number;
 }
 
-export interface ResultatExtraction {
-  filtres: Filtres;
-  /** Vrai quand le modele a echoue et qu'on est retombe sur le parseur regle. */
-  degrade: boolean;
-  /** Raison du passage en degrade, pour le journal et l'UI. */
-  raisonDegrade: string | null;
+export interface ExtractionResult {
+  filters: Filters;
+  /** True when the model failed and we fell back to the rule-based parser. */
+  degraded: boolean;
+  /** Why we went degraded, for the log and the UI. */
+  degradedReason: string | null;
   usage: Usage;
 }
 
-export interface FournisseurLlm {
-  readonly nom: string;
-  /** Appel 1: langage naturel -> filtres valides contre le schema strict. */
-  extraireFiltres(message: string, appellationParDefaut: string | null): Promise<ResultatExtraction>;
-  /** Appel 2: lignes retournees -> texte. Voir la contrainte de type ci-dessous. */
-  formuler(entree: EntreeFormulation): Promise<{ texte: string; usage: Usage }>;
+export interface LlmProvider {
+  readonly name: string;
+  /** Call 1: natural language -> filters validated against the strict schema. */
+  extractFilters(message: string, defaultAppellation: string | null): Promise<ExtractionResult>;
+  /** Call 2: returned rows -> text. See the type constraint below. */
+  formulate(input: FormulationInput): Promise<{ text: string; usage: Usage }>;
 }
 
 /**
- * Entree de l'appel 2.
+ * Input of call 2.
  *
- * Ce type est une BARRIERE, pas une commodite: il ne contient ni le message de
- * l'utilisateur, ni les descripteurs extraits. C'est ce qui rend inoperant
- * "decris-moi ce vin comme une soiree d'ete": le registre demande n'a aucun
- * chemin jusqu'au prompt de formulation. Ne pas ajouter de champ de texte
- * libre ici sans relire le §7 du brief (loi Evin).
+ * This type is a BARRIER, not a convenience: it contains neither the user's
+ * message nor the extracted descriptors. That is what defuses "decris-moi ce
+ * vin comme une soiree d'ete" ("describe this wine like a summer evening"):
+ * the requested register has no path to the formulation prompt. Do not add a
+ * free-text field here without re-reading §7 of the brief (Loi Evin).
  */
-export interface EntreeFormulation {
-  readonly recherche: Omit<ResultatRecherche, 'filtresDemandes' | 'filtresAppliques'> & {
-    readonly filtresAppliques: Readonly<Record<string, unknown>>;
+export interface FormulationInput {
+  readonly search: Omit<SearchResult, 'requestedFilters' | 'appliedFilters'> & {
+    readonly appliedFilters: Readonly<Record<string, unknown>>;
   };
 }
 
-export function fournisseurLlm(): FournisseurLlm {
-  const nom = env.providerLlm();
-  switch (nom) {
+export function llmProvider(): LlmProvider {
+  const name = env.llmProvider();
+  switch (name) {
     case 'local':
-      return new LlmLocal();
+      return new LocalLlm();
     case 'anthropic':
-      return new LlmAnthropic(env.modeleLlm());
+      return new AnthropicLlm(env.llmModel());
     default:
-      throw new Error(`PSL_LLM_PROVIDER="${nom}" inconnu. Valeurs: local, anthropic.`);
+      throw new Error(`Unknown PSL_LLM_PROVIDER="${name}". Values: local, anthropic.`);
   }
 }
 
-export const USAGE_NUL: Usage = Object.freeze({ tokens_in: 0, tokens_out: 0, cout_eur: 0 });
+export const ZERO_USAGE: Usage = Object.freeze({ tokens_in: 0, tokens_out: 0, cost_eur: 0 });

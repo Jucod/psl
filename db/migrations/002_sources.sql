@@ -1,23 +1,23 @@
--- Tracabilite. Tout element descriptif affiche pointe vers une ligne d'ici.
--- L'URL et la date de releve vivent ICI et nulle part ailleurs: pas de
--- duplication, pas de derive entre deux copies de la meme URL.
+-- Traceability. Every descriptive element shown to a visitor points to a row
+-- in this table. The URL and the retrieval date live HERE and nowhere else:
+-- no duplication, no drift between two copies of the same URL.
 CREATE TABLE sources (
   id             text PRIMARY KEY,
   type           text NOT NULL CHECK (type IN (
-                   'cahier_des_charges',
-                   'fiche_technique',
-                   'annuaire',
-                   'page_domaine',
-                   -- Donnee de developpement, jamais publiable. Le moteur
-                   -- refuse de servir une cuvee adossee a ce type sauf flag
-                   -- explicite. Voir src/moteur/recherche.ts.
-                   'fixture_dev'
+                   'specification',  -- the appellation's official specification (INAO)
+                   'tech_sheet',
+                   'directory',
+                   'producer_page',
+                   -- Development data, never publishable. The engine masks the
+                   -- fields backed by this type unless explicitly allowed.
+                   -- See src/engine/search.ts.
+                   'dev_fixture'
                  )),
   label          text NOT NULL,
   url            text NOT NULL,
-  autorite       text,
-  date_releve    date NOT NULL,
-  contenu_sha256 text,
+  authority      text,
+  retrieved_on   date NOT NULL,
+  content_sha256 text,
   created_at     timestamptz NOT NULL DEFAULT now()
 );
 

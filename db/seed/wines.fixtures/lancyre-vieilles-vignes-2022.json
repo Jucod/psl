@@ -1,0 +1,33 @@
+{
+  "_warning": "DEVELOPMENT FIXTURE. These fields were NOT collected from a producer tech sheet. They exist to make ranking and the API testable offline. Never deploy publicly with PSL_ALLOW_FIXTURES=1. Replace this file with the values of the real sheet, then delete it.",
+  "id": "lancyre-vieilles-vignes-2022",
+  "tasting_note": "Robe grenat profond. Nez concentre de fruits noirs et d'epices, notes de garrigue et de thym. Bouche dense et charpentee, tanins presents et serres, belle longueur. Vin de garde a attendre deux a trois ans.",
+  "tasting_note_source": {
+    "id": "fixture-dev-notes",
+    "type": "dev_fixture",
+    "label": "FIXTURE DE DEVELOPPEMENT - note, prix et assemblage non verifies",
+    "url": "https://example.invalid/fixture-de-developpement",
+    "retrieved_on": "2026-09-15"
+  },
+  "producer_pairings": [
+    "gibier a plume",
+    "agneau",
+    "daube"
+  ],
+  "price_eur": 19.0,
+  "price_as_of": "2026-09-15",
+  "abv": 14.0,
+  "organic": true,
+  "certification": "AB",
+  "aging": "12 mois en cuve",
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 65.0
+    },
+    {
+      "grape": "grenache",
+      "pct": 35.0
+    }
+  ]
+}

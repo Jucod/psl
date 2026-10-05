@@ -1,23 +1,23 @@
-import { migrer } from '../db/migrate.js';
-import { fermer } from '../db/client.js';
+import { migrate } from '../db/migrate.js';
+import { closeDb } from '../db/client.js';
 
 const args = new Set(process.argv.slice(2));
 
-const appliquees = await migrer({
-  avecIndexVectoriel: args.has('--avec-index-vectoriel'),
+const applied = await migrate({
+  withVectorIndex: args.has('--with-vector-index'),
   reset: args.has('--reset'),
 });
 
-if (appliquees.length === 0) {
-  console.log('migrations: rien a appliquer');
+if (applied.length === 0) {
+  console.log('migrations: nothing to apply');
 } else {
-  for (const m of appliquees) console.log(`migrations: ${m}`);
+  for (const m of applied) console.log(`migrations: ${m}`);
 }
 
-if (!args.has('--avec-index-vectoriel')) {
+if (!args.has('--with-vector-index')) {
   console.log(
-    'note: 900_ivfflat.sql non appliquee (index vectoriel inutile sous ~5 000 lignes).',
+    'note: 900_ivfflat.sql not applied (a vector index is useless below ~5,000 rows).',
   );
 }
 
-await fermer();
+await closeDb();

@@ -1,55 +1,55 @@
-import { db, fermer, versVecteur } from '../db/client.js';
-import { config } from '../config/domaine.js';
-import { fournisseurEmbedding } from '../embeddings/index.js';
-import { embedAvecCache } from '../embeddings/cache.js';
-import { enregistrerSignature } from '../embeddings/signature.js';
+import { db, closeDb, toVector } from '../db/client.js';
+import { config } from '../config/domain.js';
+import { embeddingProvider } from '../embeddings/index.js';
+import { embedWithCache } from '../embeddings/cache.js';
+import { recordSignature } from '../embeddings/signature.js';
 
 const pool = db();
-const fournisseur = fournisseurEmbedding();
-console.log(`embeddings: provider "${fournisseur.nom}", ${config.dimensionEmbedding} dims`);
+const provider = embeddingProvider();
+console.log(`embeddings: provider "${provider.name}", ${config.embeddingDimension} dims`);
 
-// --- profils d'appellation (niveau APPELLATION) ------------------------------
-const profils = await pool.query<{ appellation_id: string; couleur: string; texte_profil: string }>(
-  'SELECT appellation_id, couleur, texte_profil FROM appellation_profils ORDER BY appellation_id, couleur',
+// --- appellation profiles (APPELLATION level) -------------------------------
+const profiles = await pool.query<{ appellation_id: string; color: string; profile_text: string }>(
+  'SELECT appellation_id, color, profile_text FROM appellation_profiles ORDER BY appellation_id, color',
 );
-if (profils.rowCount) {
-  const vecteurs = await embedAvecCache(fournisseur, profils.rows.map((r) => r.texte_profil));
-  for (const [i, r] of profils.rows.entries()) {
+if (profiles.rowCount) {
+  const vectors = await embedWithCache(provider, profiles.rows.map((r) => r.profile_text));
+  for (const [i, r] of profiles.rows.entries()) {
     await pool.query(
-      'UPDATE appellation_profils SET embedding = $1 WHERE appellation_id = $2 AND couleur = $3',
-      [versVecteur(vecteurs[i]!), r.appellation_id, r.couleur],
+      'UPDATE appellation_profiles SET embedding = $1 WHERE appellation_id = $2 AND color = $3',
+      [toVector(vectors[i]!), r.appellation_id, r.color],
     );
   }
 }
-console.log(`  profils d appellation : ${profils.rowCount}`);
+console.log(`  appellation profiles      : ${profiles.rowCount}`);
 
-// --- cuvees (niveau CUVEE uniquement) ---------------------------------------
-// On n'embedde QUE les cuvees qui portent une note de producteur. Les autres
-// gardent embedding NULL et embedding_niveau='appellation': la recherche
-// utilisera le vecteur du profil AOC et l'annoncera. Concatener le profil dans
-// le vecteur de chaque cuvee les rendrait colineaires et ecraserait le
-// classement, ce qui est precisement le piege du jalon 2.
-const cuvees = await pool.query<{ id: string; embedding_source: string }>(
-  `SELECT id, embedding_source FROM cuvees
-    WHERE embedding_niveau = 'cuvee' AND embedding_source IS NOT NULL
+// --- wines (WINE level only) -------------------------------------------------
+// Only wines carrying a producer note are embedded. The others keep a NULL
+// embedding and embedding_level='appellation': search will use the vector of
+// the AOC profile and say so. Concatenating the profile into every wine's
+// vector would make them collinear and flatten the ranking, which is exactly
+// the trap milestone 2 is about.
+const wines = await pool.query<{ id: string; embedding_text: string }>(
+  `SELECT id, embedding_text FROM wines
+    WHERE embedding_level = 'wine' AND embedding_text IS NOT NULL
     ORDER BY id`,
 );
-if (cuvees.rowCount) {
-  const vecteurs = await embedAvecCache(fournisseur, cuvees.rows.map((r) => r.embedding_source));
-  for (const [i, r] of cuvees.rows.entries()) {
-    await pool.query('UPDATE cuvees SET embedding = $1 WHERE id = $2', [
-      versVecteur(vecteurs[i]!), r.id,
+if (wines.rowCount) {
+  const vectors = await embedWithCache(provider, wines.rows.map((r) => r.embedding_text));
+  for (const [i, r] of wines.rows.entries()) {
+    await pool.query('UPDATE wines SET embedding = $1 WHERE id = $2', [
+      toVector(vectors[i]!), r.id,
     ]);
   }
 }
 
-const sansNote = await pool.query<{ n: string }>(
-  `SELECT count(*)::text AS n FROM cuvees WHERE embedding_niveau = 'appellation'`,
+const withoutNote = await pool.query<{ n: string }>(
+  `SELECT count(*)::text AS n FROM wines WHERE embedding_level = 'appellation'`,
 );
-console.log(`  cuvees avec note      : ${cuvees.rowCount}`);
-console.log(`  cuvees sur profil AOC : ${sansNote.rows[0]!.n}`);
+console.log(`  wines with a note         : ${wines.rowCount}`);
+console.log(`  wines on the AOC profile  : ${withoutNote.rows[0]!.n}`);
 
-const signature = await enregistrerSignature(pool, fournisseur);
-console.log(`  signature             : ${signature}`);
+const signature = await recordSignature(pool, provider);
+console.log(`  signature                 : ${signature}`);
 
-await fermer();
+await closeDb();

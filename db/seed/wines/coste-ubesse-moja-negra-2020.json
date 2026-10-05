@@ -1,0 +1,35 @@
+{
+  "id": "coste-ubesse-moja-negra-2020",
+  "producer_id": "domaine-coste-ubesse",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "Moja Negra",
+  "color": "red",
+  "vintage": 2020,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": null
+    },
+    {
+      "grape": "grenache",
+      "pct": null
+    }
+  ],
+  "abv": null,
+  "aging": "5 semaines en cuves beton semi-enterrees, elevage separe des gouttes et des presses (13 mois) avant assemblage.",
+  "price_eur": 19.0,
+  "price_as_of": "2026-09-16",
+  "organic": true,
+  "certification": "Ecocert",
+  "tasting_note": "Aromes de garrigue et de fleurs blanches de ciste. Le velours de la syrah, ses notes de reglisse, de fruits rouges et de violette, ponctuees d'un soupcon de pruneau apporte par le grenache.",
+  "tasting_note_source": {
+    "id": "page-coste-ubesse-moja-negra-2020",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://coste-ubesse.com/product/moja-negra-2020-aop-pic-saint-loup-bio-syrah-grenache/",
+    "authority": "Domaine Coste Ubesse",
+    "retrieved_on": "2026-09-16"
+  },
+  "producer_pairings": [],
+  "page_url": "https://coste-ubesse.com/product/moja-negra-2020-aop-pic-saint-loup-bio-syrah-grenache/"
+}

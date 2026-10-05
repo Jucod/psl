@@ -1,0 +1,39 @@
+{
+  "id": "morties-pic-saint-loup-2024",
+  "producer_id": "domaine-de-morties",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "Pic Saint Loup",
+  "color": "red",
+  "vintage": 2024,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 50
+    },
+    {
+      "grape": "grenache",
+      "pct": 40
+    },
+    {
+      "grape": "carignan",
+      "pct": 10
+    }
+  ],
+  "abv": null,
+  "aging": "Vendange manuelle en caissette, egrappage et foulage, infusion lente avec quelques remontages. Elevage en cuve.",
+  "price_eur": 23.5,
+  "price_as_of": "2026-09-16",
+  "organic": null,
+  "certification": null,
+  "tasting_note": "Robe sombre aux reflets de jeunesse. Nez franc laissant entrevoir des aromes epices et poivres soutenus par des notes de garrigue. Bouche equilibree, finale fraiche avec des tanins presents qui s'affineront avec le temps.",
+  "tasting_note_source": {
+    "id": "page-morties-pic-saint-loup-2024",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://morties.com/products/pic-saint-loup-aop-pic-saint-loup-rouge-2020-domaine-mortiess",
+    "authority": "Domaine de Morties",
+    "retrieved_on": "2026-09-16"
+  },
+  "producer_pairings": [],
+  "page_url": "https://morties.com/products/pic-saint-loup-aop-pic-saint-loup-rouge-2020-domaine-mortiess"
+}

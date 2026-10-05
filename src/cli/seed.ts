@@ -1,46 +1,46 @@
-import { db, fermer } from '../db/client.js';
+import { db, closeDb } from '../db/client.js';
 import { env } from '../config/env.js';
-import { ingererReferentiel } from '../ingest/referentiel.js';
-import { ingererCuvees } from '../ingest/cuvees.js';
+import { ingestReference } from '../ingest/reference.js';
+import { ingestWines } from '../ingest/wines.js';
 
-const autoriserFixtures = env.autoriserFixtures();
+const allowFixtures = env.allowFixtures();
 
 const client = await db().connect();
 try {
   await client.query('BEGIN');
-  const ref = await ingererReferentiel(client);
-  const cuv = await ingererCuvees(client, autoriserFixtures);
+  const ref = await ingestReference(client);
+  const wines = await ingestWines(client, allowFixtures);
   await client.query('COMMIT');
 
-  console.log('referentiel :', ref);
-  console.log('cuvees      :', { ...cuv, quarantaine: cuv.quarantaine.length });
+  console.log('reference :', ref);
+  console.log('wines     :', { ...wines, quarantine: wines.quarantine.length });
 
-  if (cuv.quarantaine.length > 0) {
+  if (wines.quarantine.length > 0) {
     console.warn(
-      `\n  QUARANTAINE  ${cuv.quarantaine.length} note(s) contiennent ce qui\n` +
-      '  ressemble a une instruction adressee a un systeme. Elles sont ingerees,\n' +
-      '  mais A RELIRE A LA MAIN avant toute demo:\n',
+      `\n  QUARANTINE  ${wines.quarantine.length} note(s) contain what looks like\n` +
+      '  an instruction addressed to a system. They are ingested, but MUST BE\n' +
+      '  REVIEWED BY HAND before any demo:\n',
     );
-    for (const q of cuv.quarantaine) {
-      console.warn(`    ${q.cuvee_id} [${q.motifs.join(', ')}]`);
-      console.warn(`      ${q.extrait}…`);
+    for (const q of wines.quarantine) {
+      console.warn(`    ${q.wineId} [${q.patterns.join(', ')}]`);
+      console.warn(`      ${q.excerpt}…`);
     }
     console.warn('');
   }
 
-  if (autoriserFixtures) {
+  if (allowFixtures) {
     console.warn(
-      '\n  ATTENTION  PSL_AUTORISER_FIXTURES=1\n' +
-      `  ${cuv.fixturesAppliquees} cuvee(s) portent des notes, prix et assemblages de\n` +
-      '  DEVELOPPEMENT, non releves sur une fiche technique de producteur.\n' +
-      '  Interdit sur une demo publique. Remets la variable a 0.\n',
+      '\n  WARNING  PSL_ALLOW_FIXTURES=1\n' +
+      `  ${wines.fixturesApplied} wine(s) carry DEVELOPMENT notes, prices and blends,\n` +
+      '  not taken from a producer tech sheet.\n' +
+      '  Forbidden on a public demo. Set the variable back to 0.\n',
     );
-  } else if (cuv.surProfilAppellation === cuv.cuvees && cuv.cuvees > 0) {
+  } else if (wines.onAppellationProfile === wines.wines && wines.wines > 0) {
     console.log(
-      '\n  note: aucune cuvee ne porte de note de degustation sourcee.\n' +
-      '  Le systeme repondra depuis le profil d appellation en l annonçant.\n' +
-      '  C est le comportement attendu tant que les fiches producteurs ne sont\n' +
-      '  pas indexees: il ne comble jamais le vide.\n',
+      '\n  note: no wine carries a sourced tasting note.\n' +
+      '  The system will answer from the appellation profile and say so.\n' +
+      '  That is the expected behavior until producer sheets are indexed:\n' +
+      '  it never fills the gap.\n',
     );
   }
 } catch (e) {
@@ -48,5 +48,5 @@ try {
   throw e;
 } finally {
   client.release();
-  await fermer();
+  await closeDb();
 }

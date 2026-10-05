@@ -1,33 +1,33 @@
-import { normaliser } from '../config/lexique.js';
+import { normalize } from '../config/lexicon.js';
 
 /** "Chateau de Lancyre" -> "chateau-de-lancyre" */
-export function slug(texte: string): string {
-  return normaliser(texte)
+export function slug(text: string): string {
+  return normalize(text)
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 120);
 }
 
 /**
- * Normalise une denomination de cepage vers son code.
- * "Syrah N", "shiraz", "SYRAH" -> "syrah". Retourne null si inconnu, pour que
- * l'ingestion echoue bruyamment plutot que de perdre un filtre en silence.
+ * Normalizes a grape variety name to its code.
+ * "Syrah N", "shiraz", "SYRAH" -> "syrah". Returns null when unknown, so that
+ * ingestion fails loudly rather than silently losing a filter.
  */
-export function codeCepage(
-  denomination: string,
+export function grapeCode(
+  name: string,
   index: ReadonlyMap<string, string>,
 ): string | null {
-  return index.get(normaliser(denomination).trim()) ?? null;
+  return index.get(normalize(name).trim()) ?? null;
 }
 
-export function construireIndexCepages(
-  cepages: readonly { code: string; libelle: string; synonymes: string[] }[],
+export function buildGrapeIndex(
+  grapes: readonly { code: string; label: string; synonyms: string[] }[],
 ): Map<string, string> {
   const index = new Map<string, string>();
-  for (const c of cepages) {
-    index.set(normaliser(c.code), c.code);
-    index.set(normaliser(c.libelle), c.code);
-    for (const s of c.synonymes) index.set(normaliser(s), c.code);
+  for (const g of grapes) {
+    index.set(normalize(g.code), g.code);
+    index.set(normalize(g.label), g.code);
+    for (const s of g.synonyms) index.set(normalize(s), g.code);
   }
   return index;
 }

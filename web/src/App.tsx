@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { chargerCatalogue, rechercher } from './api.ts';
-import { CarteResultat } from './composants/CarteResultat.tsx';
+import { loadCatalog, search } from './api.ts';
+import { ResultCard } from './components/ResultCard.tsx';
 import {
-  BandeauAccords, BandeauDegrade, BandeauElargissement, BandeauIndecidable, BandeauRefus,
-} from './composants/Bandeaux.tsx';
-import { PanneauFiltres } from './composants/PanneauFiltres.tsx';
-import type { Catalogue, Filtres, ReponseRecherche } from './types.ts';
+  PairingsBanner, DegradedBanner, RelaxationBanner, UndecidableBanner, RefusalBanner,
+} from './components/Banners.tsx';
+import { FilterPanel } from './components/FilterPanel.tsx';
+import type { Catalog, Filters, SearchResponse } from './types.ts';
 
-const EXEMPLES = [
+const EXAMPLES = [
   'un rouge pas trop tannique pour un gigot, autour de 20 euros',
   'un vin blanc du Pic Saint-Loup',
   'un rouge bio en dessous de 12 euros',
@@ -15,139 +15,144 @@ const EXEMPLES = [
   'un rose pour l apero',
 ];
 
+const RANKING_LABELS: Record<string, string> = {
+  vector: 'vectoriel',
+  lexicographic: 'lexicographique',
+};
+
 export function App() {
   const [message, setMessage] = useState('');
-  const [reponse, setReponse] = useState<ReponseRecherche | null>(null);
-  const [filtres, setFiltres] = useState<Filtres | null>(null);
-  const [modifie, setModifie] = useState(false);
-  const [chargement, setChargement] = useState(false);
-  const [erreur, setErreur] = useState<string | null>(null);
-  const [catalogue, setCatalogue] = useState<Catalogue | null>(null);
-  const champ = useRef<HTMLTextAreaElement>(null);
+  const [response, setResponse] = useState<SearchResponse | null>(null);
+  const [filters, setFilters] = useState<Filters | null>(null);
+  const [modified, setModified] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [catalog, setCatalog] = useState<Catalog | null>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => { chargerCatalogue().then(setCatalogue).catch(() => {}); }, []);
+  useEffect(() => { loadCatalog().then(setCatalog).catch(() => {}); }, []);
 
-  const lancer = useCallback(async (texte: string, filtresImposes?: Filtres) => {
-    setChargement(true);
-    setErreur(null);
+  const run = useCallback(async (text: string, forcedFilters?: Filters) => {
+    setLoading(true);
+    setError(null);
     try {
-      const r = await rechercher(texte, filtresImposes);
-      setReponse(r);
-      if (r.recherche) {
-        setFiltres(r.recherche.filtresAppliques);
-        setModifie(false);
+      const r = await search(text, forcedFilters);
+      setResponse(r);
+      if (r.search) {
+        setFilters(r.search.appliedFilters);
+        setModified(false);
       }
     } catch (e) {
-      setErreur(e instanceof Error ? e.message : String(e));
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setChargement(false);
+      setLoading(false);
     }
   }, []);
 
-  const soumettre = (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim()) void lancer(message.trim());
+    if (message.trim()) void run(message.trim());
   };
 
   return (
     <div className="app">
-      <header className="entete">
+      <header className="page-header">
         <div>
           <h1>Pic Saint-Loup</h1>
           <p>Recherche par description, sur le catalogue des domaines de l'appellation.</p>
         </div>
-        {reponse?.fixtures_actives && (
-          <p className="alerte-globale">
+        {response?.fixtures_enabled && (
+          <p className="global-warning">
             Mode developpement : notes, prix et assemblages non sourcés.
           </p>
         )}
       </header>
 
-      <main className="grille">
+      <main className="layout">
         <section className="conversation">
-          <form onSubmit={soumettre}>
+          <form onSubmit={submit}>
             <textarea
-              ref={champ}
+              ref={input}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) soumettre(e);
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit(e);
               }}
               placeholder="Decrivez ce que vous cherchez…"
               rows={3}
               maxLength={400}
             />
-            <div className="barre-envoi">
-              <span className="compteur">{message.length}/400</span>
-              <button type="submit" disabled={chargement || !message.trim()}>
-                {chargement ? 'Recherche…' : 'Chercher'}
+            <div className="submit-bar">
+              <span className="counter">{message.length}/400</span>
+              <button type="submit" disabled={loading || !message.trim()}>
+                {loading ? 'Recherche…' : 'Chercher'}
               </button>
             </div>
           </form>
 
-          <div className="exemples">
-            {EXEMPLES.map((ex) => (
-              <button key={ex} className="exemple" onClick={() => { setMessage(ex); void lancer(ex); }}>
+          <div className="examples">
+            {EXAMPLES.map((ex) => (
+              <button key={ex} className="example" onClick={() => { setMessage(ex); void run(ex); }}>
                 {ex}
               </button>
             ))}
           </div>
 
-          {erreur && <div className="bandeau bandeau-erreur">{erreur}</div>}
+          {error && <div className="banner banner-error">{error}</div>}
 
-          {reponse && (
-            <div className="reponse">
-              {reponse.degrade && <BandeauDegrade raison={reponse.raison_degrade ?? null} />}
-              {reponse.recherche && <BandeauRefus recherche={reponse.recherche} />}
-              {reponse.recherche && <BandeauIndecidable recherche={reponse.recherche} />}
-              {reponse.recherche && <BandeauElargissement recherche={reponse.recherche} />}
+          {response && (
+            <div className="answer">
+              {response.degraded && <DegradedBanner reason={response.degraded_reason ?? null} />}
+              {response.search && <RefusalBanner search={response.search} />}
+              {response.search && <UndecidableBanner search={response.search} />}
+              {response.search && <RelaxationBanner search={response.search} />}
 
-              {/* Le bandeau de refus porte deja le message et sa source:
-                  reafficher le texte brut en dessous le dirait deux fois. */}
-              {reponse.recherche?.statut !== 'refus_hors_catalogue' && (
-                <p className="texte-reponse">{reponse.texte}</p>
+              {/* The refusal banner already carries the message and its source:
+                  showing the raw text below it would say it twice. */}
+              {response.search?.status !== 'refused' && (
+                <p className="answer-text">{response.text}</p>
               )}
 
-              {reponse.recherche?.statut === 'vide' &&
-                reponse.recherche.filtresIndecidables.length === 0 && (
-                <div className="bandeau bandeau-vide">
+              {response.search?.status === 'empty' &&
+                response.search.undecidableFilters.length === 0 && (
+                <div className="banner banner-empty">
                   <strong>Aucune reference.</strong> Le catalogue compte{' '}
-                  {reponse.recherche.tailleCatalogue} cuvee(s) pour cette appellation et
+                  {response.search.catalogSize} cuvee(s) pour cette appellation et
                   cette couleur. Rien n'est propose par defaut.
                 </div>
               )}
 
-              <div className="resultats">
-                {reponse.recherche?.resultats.map((c, i) => (
-                  <CarteResultat key={c.id} c={c} rang={i + 1} />
+              <div className="results">
+                {response.search?.results.map((w, i) => (
+                  <ResultCard key={w.id} wine={w} rank={i + 1} labels={catalog?.labels} />
                 ))}
               </div>
 
-              {reponse.recherche && <BandeauAccords recherche={reponse.recherche} />}
+              {response.search && <PairingsBanner search={response.search} />}
 
-              {reponse.recherche && reponse.recherche.resultats.length > 0 && (
+              {response.search && response.search.results.length > 0 && (
                 <p className="meta">
-                  Classement {reponse.recherche.classement}
-                  {reponse.latence_ms !== undefined && ` · ${reponse.latence_ms} ms`}
+                  Classement {RANKING_LABELS[response.search.ranking] ?? response.search.ranking}
+                  {response.latency_ms !== undefined && ` · ${response.latency_ms} ms`}
                 </p>
               )}
             </div>
           )}
         </section>
 
-        {filtres && (
-          <PanneauFiltres
-            filtres={filtres}
-            catalogue={catalogue}
-            onChange={(f) => { setFiltres(f); setModifie(true); }}
-            onRelancer={() => void lancer(message, filtres)}
-            modifie={modifie}
+        {filters && (
+          <FilterPanel
+            filters={filters}
+            catalog={catalog}
+            onChange={(f) => { setFilters(f); setModified(true); }}
+            onRerun={() => void run(message, filters)}
+            modified={modified}
           />
         )}
       </main>
 
-      <footer className="pied">
-        <p className="sanitaire">L'abus d'alcool est dangereux pour la sante. A consommer avec moderation.</p>
+      <footer className="page-footer">
+        <p className="health-notice">L'abus d'alcool est dangereux pour la sante. A consommer avec moderation.</p>
         <p>
           Les descriptions proviennent des fiches techniques des domaines et du cahier
           des charges INAO de l'appellation. Chaque element affiche porte sa source.

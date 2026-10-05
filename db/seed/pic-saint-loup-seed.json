@@ -1,13 +1,13 @@
 {
   "_meta": {
     "version": "0.1",
-    "note": "Couche referentiel uniquement. Aucune note de degustation ni prix par cuvee n'est inventee ici. Les champs marques TODO se remplissent depuis les fiches techniques des domaines.",
+    "note": "Reference layer only. No tasting note or per-wine price is invented here. Fields marked TODO are filled in from the estates' tech sheets.",
     "sources": [
       {
         "id": "inao_cdc_psl",
         "label": "Cahier des charges AOC Pic Saint-Loup",
         "url": "https://extranet.inao.gouv.fr/fichier/PNOCDCPicStLoup.pdf",
-        "autorite": "INAO"
+        "authority": "INAO"
       },
       {
         "id": "syndicat_psl",
@@ -29,12 +29,12 @@
   "appellations": [
     {
       "id": "aoc-pic-saint-loup",
-      "nom": "Pic Saint-Loup",
-      "statut": "AOC/AOP",
-      "reconnaissance_aoc": "2016",
+      "name": "Pic Saint-Loup",
+      "status": "AOC/AOP",
+      "aoc_recognized": "2016",
       "region": "Languedoc",
-      "couleurs_autorisees": [
-        "rouge",
+      "permitted_colors": [
+        "red",
         "rose"
       ],
       "source": "inao_cdc_psl",
@@ -61,633 +61,633 @@
           "Corconne"
         ]
       },
-      "encepagement": {
-        "rouge": {
-          "principaux": [
+      "grape_rules": {
+        "red": {
+          "main": [
             "syrah N",
             "grenache N",
             "mourvedre N"
           ],
-          "accessoires": [
+          "secondary": [
             "cinsaut N",
             "carignan N",
             "counoise N",
             "morrastel N"
           ],
-          "regles_assemblage": {
+          "blend_rules": {
             "syrah_min_pct": 50,
-            "accessoires_max_pct": 10,
-            "cepages_principaux_min": 2
+            "secondary_max_pct": 10,
+            "main_grapes_min": 2
           }
         },
         "rose": {
-          "principaux": [
+          "main": [
             "syrah N",
             "grenache N",
             "mourvedre N"
           ],
-          "accessoires": [
+          "secondary": [
             "cinsaut N",
             "counoise N",
             "morrastel N",
             "grenache gris G"
           ],
-          "regles_assemblage": {
+          "blend_rules": {
             "syrah_min_pct": 30,
             "cinsault_max_pct": 30,
-            "autres_accessoires_max_pct": 10,
-            "cepages_principaux_min": 2
+            "other_secondary_max_pct": 10,
+            "main_grapes_min": 2
           }
         }
       },
       "production": {
-        "titre_alcoometrique_naturel_min_pct": 12,
-        "richesse_sucre_min_g_par_l": 202,
-        "rendement_hl_ha": 45,
-        "rendement_butoir_hl_ha": 50,
-        "elevage_rouge_min": "jusqu'au 31 juillet de l'annee suivant la recolte",
-        "mise_en_marche_rouge": "a partir du 1er septembre de l'annee suivant la recolte",
-        "millesime_obligatoire_etiquette": true,
-        "cepages_interdits_sur_etiquette": true
+        "natural_abv_min_pct": 12,
+        "sugar_min_g_per_l": 202,
+        "yield_hl_ha": 45,
+        "yield_cap_hl_ha": 50,
+        "red_aging_min": "jusqu'au 31 juillet de l'annee suivant la recolte",
+        "red_release_from": "a partir du 1er septembre de l'annee suivant la recolte",
+        "vintage_required_on_label": true,
+        "grapes_forbidden_on_label": true
       },
       "terroir": {
-        "altitude_moyenne_m": 150,
+        "altitude_mean_m": 150,
         "altitude_min_m": 80,
         "altitude_max_m": 300,
-        "temperature_moyenne_c": 12.3,
-        "pluviometrie_mm_an": [
+        "mean_temperature_c": 12.3,
+        "rainfall_mm_per_year": [
           900,
           1000
         ],
-        "sols": "alternance de bancs calcaires tendres et de marnes, marnes noires, cones de dejection",
-        "particularite": "un des terroirs les plus frais et les plus humides du vignoble languedocien, forte amplitude thermique jour/nuit en aout et septembre"
+        "soils": "alternance de bancs calcaires tendres et de marnes, marnes noires, cones de dejection",
+        "feature": "un des terroirs les plus frais et les plus humides du vignoble languedocien, forte amplitude thermique jour/nuit en aout et septembre"
       },
-      "profil_organoleptique_officiel": {
+      "official_sensory_profile": {
         "_source": "inao_cdc_psl, section X-2",
-        "_usage": "corpus de reference pour la recherche semantique. A citer comme source dans l'UI.",
-        "rouge": {
-          "robe": "grenat",
-          "aromes": [
+        "_usage": "reference corpus for semantic search. To be cited as a source in the UI.",
+        "red": {
+          "appearance": "grenat",
+          "aromas": [
             "fruits rouges",
             "reglisse"
           ],
-          "bouche": "elegance, equilibre, fraicheur",
+          "palate": "elegance, equilibre, fraicheur",
           "structure": "charpente presente, tanins fins",
-          "garde": "potentiel de garde, developpe des notes de fruits rouges melees d'epices en vieillissant"
+          "aging_potential": "potentiel de garde, developpe des notes de fruits rouges melees d'epices en vieillissant"
         },
         "rose": {
-          "robe": "intensite moyenne a faible",
-          "bouche": "frais et friand, attaque ronde",
-          "aromes": [
+          "appearance": "intensite moyenne a faible",
+          "palate": "frais et friand, attaque ronde",
+          "aromas": [
             "petits fruits rouges"
           ]
         }
       },
-      "accords_mets": {
-        "_statut": "DERIVE du profil organoleptique officiel, pas une donnee source",
-        "_regle": "l'agent doit presenter ces accords comme une suggestion basee sur le profil d'appellation, jamais comme une caracteristique du vin precis tant que la fiche technique du domaine n'est pas indexee",
-        "rouge": {
-          "viandes": [
+      "food_pairings": {
+        "_status": "DERIVED from the official sensory profile, not source data",
+        "_rule": "the agent must present these pairings as a suggestion based on the appellation profile, never as a characteristic of the specific wine as long as the estate's tech sheet is not indexed",
+        "red": {
+          "meat": [
             "agneau de garrigue",
             "gibier a plume",
             "daube",
             "grillades de boeuf",
             "magret"
           ],
-          "fromages": [
+          "cheese": [
             "pelardon",
             "tomme de brebis",
             "roquefort jeune"
           ],
-          "poissons": [],
-          "commentaire_poisson": "profil tannique peu adapte au poisson. Orienter vers le rose de l'appellation.",
-          "ancrage": "tanins fins et fraicheur supportent les viandes rouges et le gibier sans ecraser; notes de reglisse et d'epices repondent aux herbes de garrigue"
+          "fish": [],
+          "fish_comment": "profil tannique peu adapte au poisson. Orienter vers le rose de l'appellation.",
+          "rationale": "tanins fins et fraicheur supportent les viandes rouges et le gibier sans ecraser; notes de reglisse et d'epices repondent aux herbes de garrigue"
         },
         "rose": {
-          "viandes": [
+          "meat": [
             "charcuterie",
             "volaille froide"
           ],
-          "fromages": [
+          "cheese": [
             "chevre frais",
             "pelardon jeune"
           ],
-          "poissons": [
+          "fish": [
             "poissons grilles",
             "brandade",
             "tielle",
             "bourride"
           ],
-          "ancrage": "attaque ronde et fraicheur, intensite moderee, ne domine pas les chairs fines"
+          "rationale": "attaque ronde et fraicheur, intensite moderee, ne domine pas les chairs fines"
         },
-        "blanc": {
-          "_note": "l'AOC Pic Saint-Loup ne couvre pas les blancs. Un blanc du secteur sort en AOC Languedoc ou en IGP. L'agent doit le dire explicitement plutot que de recommander un blanc sous l'etiquette Pic Saint-Loup."
+        "white": {
+          "_note": "the Pic Saint-Loup AOC does not cover white wines. A white from the area is released as AOC Languedoc or IGP. The agent must say so explicitly rather than recommend a white under the Pic Saint-Loup label."
         }
       }
     }
   ],
-  "producteurs": {
-    "_statut": "Annuaire complet du Syndicat de l'AOP Pic Saint-Loup, releve le 2026-09-16 via https://www.pic-saint-loup.com/domaine/<slug>/ (une fiche par producteur, listee par /wp-json/wp/v2/domaine). Nom, commune et site sont repris tels que publies par le syndicat ; contacts et telephones, donnees personnelles que le code n'utilise pas, ne sont pas conserves. Aucune donnee de cuvee ici.",
+  "producers": {
+    "_status": "Full directory of the Syndicat de l'AOP Pic Saint-Loup, collected on 2026-09-16 from https://www.pic-saint-loup.com/domaine/<slug>/ (one page per producer, listed by /wp-json/wp/v2/domaine). Name, commune and website are copied as published by the syndicate; contacts and phone numbers, personal data the code does not use, are not kept. No wine data here.",
     "_source": "syndicat_psl",
-    "_date_releve": "2026-09-16",
-    "_couverture": {
-      "producteurs": 74,
-      "avec_commune": 67,
-      "avec_site_web": 56,
-      "avec_telephone": 72
+    "_retrieved_on": "2026-09-16",
+    "_coverage": {
+      "producers": 74,
+      "with_commune": 67,
+      "with_website": 56,
+      "with_phone": 72
     },
-    "_note_communes": "Quelques communes (Teyran, Saint-Drezery) sortent de la liste des 17 communes de l'AOC: ce sont des adherents dont le siege est hors aire, pas une erreur de releve. 7 fiches du syndicat ne portent pas de commune exploitable.",
-    "domaines": [
+    "_communes_note": "A few communes (Teyran, Saint-Drezery) are outside the 17 communes of the AOC: these are members headquartered outside the area, not a collection error. 7 syndicate pages carry no usable commune.",
+    "estates": [
       {
-        "nom": "Bergerie du Capucin",
+        "name": "Bergerie du Capucin",
         "commune": "Lauret",
-        "site": "http://www.bergerieducapucin.fr",
-        "type": "domaine"
+        "website": "http://www.bergerieducapucin.fr",
+        "type": "estate"
       },
       {
-        "nom": "Bergerie du Fenouillet",
+        "name": "Bergerie du Fenouillet",
         "commune": "Vacquières",
-        "site": "http://fenouillet.com/",
-        "type": "domaine"
+        "website": "http://fenouillet.com/",
+        "type": "estate"
       },
       {
-        "nom": "Château Boisset",
+        "name": "Château Boisset",
         "commune": "Valflaunès",
-        "site": "https://www.chateauboisset.fr/",
-        "type": "domaine"
+        "website": "https://www.chateauboisset.fr/",
+        "type": "estate"
       },
       {
-        "nom": "Château Fontanès",
+        "name": "Château Fontanès",
         "commune": "Fontanès",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Château L'Euziere",
+        "name": "Château L'Euziere",
         "commune": null,
-        "site": "https://shop.vignobles-vellas.com/fr/95-chateau-l-euziere",
-        "type": "domaine"
+        "website": "https://shop.vignobles-vellas.com/fr/95-chateau-l-euziere",
+        "type": "estate"
       },
       {
-        "nom": "Château Lavabre",
+        "name": "Château Lavabre",
         "commune": "Saint-Drézéry",
-        "site": "http://www.puech-haut.com/",
-        "type": "domaine"
+        "website": "http://www.puech-haut.com/",
+        "type": "estate"
       },
       {
-        "nom": "Château Montel",
+        "name": "Château Montel",
         "commune": "Teyran",
-        "site": "http://chateau-montel.oxatis.com/",
-        "type": "domaine"
+        "website": "http://chateau-montel.oxatis.com/",
+        "type": "estate"
       },
       {
-        "nom": "Château de Cazeneuve",
+        "name": "Château de Cazeneuve",
         "commune": "Lauret",
-        "site": "http://www.chateaucazeneuve.com/",
-        "type": "domaine"
+        "website": "http://www.chateaucazeneuve.com/",
+        "type": "estate"
       },
       {
-        "nom": "Château de Lancyre",
+        "name": "Château de Lancyre",
         "commune": "Valflaunès",
-        "site": "http://www.chateaudelancyre.com/",
-        "type": "domaine"
+        "website": "http://www.chateaudelancyre.com/",
+        "type": "estate"
       },
       {
-        "nom": "Château de Lascaux",
+        "name": "Château de Lascaux",
         "commune": "Vacquières",
-        "site": "http://www.chateau-lascaux.com/",
-        "type": "domaine"
+        "website": "http://www.chateau-lascaux.com/",
+        "type": "estate"
       },
       {
-        "nom": "Château de Lascours",
+        "name": "Château de Lascours",
         "commune": "Sauteyrargues",
-        "site": "http://www.chateau-lascours.com/",
-        "type": "domaine"
+        "website": "http://www.chateau-lascours.com/",
+        "type": "estate"
       },
       {
-        "nom": "Château de Valflaunes",
+        "name": "Château de Valflaunes",
         "commune": "Valflaunès",
-        "site": "http://chateaudevalflaunes.fr",
-        "type": "domaine"
+        "website": "http://chateaudevalflaunes.fr",
+        "type": "estate"
       },
       {
-        "nom": "Château de la Salade Saint Henri",
+        "name": "Château de la Salade Saint Henri",
         "commune": "Saint-Mathieu-de-Tréviers",
-        "site": "https://www.chateaudelasaladesainthenri.com/",
-        "type": "domaine"
+        "website": "https://www.chateaudelasaladesainthenri.com/",
+        "type": "estate"
       },
       {
-        "nom": "Château del rang",
+        "name": "Château del rang",
         "commune": "Claret",
-        "site": "https://www.chateaudelranq.fr/",
-        "type": "domaine"
+        "website": "https://www.chateaudelranq.fr/",
+        "type": "estate"
       },
       {
-        "nom": "Château des Mouchères",
+        "name": "Château des Mouchères",
         "commune": "Saint-Mathieu-de-Tréviers",
-        "site": "http://www.chateaudesmoucheres.com/",
-        "type": "domaine"
+        "website": "http://www.chateaudesmoucheres.com/",
+        "type": "estate"
       },
       {
-        "nom": "Château la Roque",
+        "name": "Château la Roque",
         "commune": "Fontanès",
-        "site": "http://www.chateau-laroque.fr/",
-        "type": "domaine"
+        "website": "http://www.chateau-laroque.fr/",
+        "type": "estate"
       },
       {
-        "nom": "Clos Marie",
+        "name": "Clos Marie",
         "commune": "Lauret",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Clos des Reboussiers",
+        "name": "Clos des Reboussiers",
         "commune": "Cazevieille",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Domaine Chazalon",
+        "name": "Domaine Chazalon",
         "commune": "Claret",
-        "site": "http://www.domaine-chazalon.com/",
-        "type": "domaine"
+        "website": "http://www.domaine-chazalon.com/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine Coste Ubesse",
+        "name": "Domaine Coste Ubesse",
         "commune": "Saint-Mathieu-de-Tréviers",
-        "site": "https://coste-ubesse.com/",
-        "type": "domaine"
+        "website": "https://coste-ubesse.com/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine D'Aigues-Belles",
+        "name": "Domaine D'Aigues-Belles",
         "commune": "Brouzet-lès-Quissac",
-        "site": "https://www.aigues-belles.com/",
-        "type": "domaine"
+        "website": "https://www.aigues-belles.com/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine Desvabre",
+        "name": "Domaine Desvabre",
         "commune": null,
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Domaine Estelle & Pierre Clavel",
+        "name": "Domaine Estelle & Pierre Clavel",
         "commune": "Assas",
-        "site": "http://www.vins-clavel.fr/",
-        "type": "domaine"
+        "website": "http://www.vins-clavel.fr/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine Haut Maginiai",
+        "name": "Domaine Haut Maginiai",
         "commune": "Claret",
-        "site": "https://www.haut-maginiai.com/",
-        "type": "domaine"
+        "website": "https://www.haut-maginiai.com/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine Haut-Lirou",
+        "name": "Domaine Haut-Lirou",
         "commune": "Le Triadou",
-        "site": "https://shop.famillerambier.com",
-        "type": "domaine"
+        "website": "https://shop.famillerambier.com",
+        "type": "estate"
       },
       {
-        "nom": "Domaine Inebriati",
+        "name": "Domaine Inebriati",
         "commune": "Vacquières",
-        "site": "https://www.inebriati.fr",
-        "type": "domaine"
+        "website": "https://www.inebriati.fr",
+        "type": "estate"
       },
       {
-        "nom": "Domaine La Costesse",
+        "name": "Domaine La Costesse",
         "commune": "Vacquières",
-        "site": "http://www.domainelacostesse.com",
-        "type": "domaine"
+        "website": "http://www.domainelacostesse.com",
+        "type": "estate"
       },
       {
-        "nom": "Domaine Mirabel",
+        "name": "Domaine Mirabel",
         "commune": "Brouzet-lès-Quissac",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Domaine Pech Tort",
+        "name": "Domaine Pech Tort",
         "commune": "Valflaunès",
-        "site": "http://www.domaine-pech-tort.com/",
-        "type": "domaine"
+        "website": "http://www.domaine-pech-tort.com/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine Pegaline",
+        "name": "Domaine Pegaline",
         "commune": "Claret",
-        "site": "https://www.domainepegaline.com/",
-        "type": "domaine"
+        "website": "https://www.domainepegaline.com/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine Uma",
+        "name": "Domaine Uma",
         "commune": "Valflaunès",
-        "site": "https://domaine-uma.com/",
-        "type": "domaine"
+        "website": "https://domaine-uma.com/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine de Baubiac",
+        "name": "Domaine de Baubiac",
         "commune": null,
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Domaine de Figaret",
+        "name": "Domaine de Figaret",
         "commune": "Guzargues",
-        "site": "https://shop.famillerambier.com/",
-        "type": "domaine"
+        "website": "https://shop.famillerambier.com/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine de L'Hortus",
+        "name": "Domaine de L'Hortus",
         "commune": "Valflaunès",
-        "site": "http://www.domaine-hortus.fr/",
-        "type": "domaine"
+        "website": "http://www.domaine-hortus.fr/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine de Morties",
+        "name": "Domaine de Morties",
         "commune": "Saint-Jean-de-Cuculles",
-        "site": "https://morties.com/",
-        "type": "domaine"
+        "website": "https://morties.com/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine de Rocahlas",
+        "name": "Domaine de Rocahlas",
         "commune": "Guzargues",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Domaine de Viastres",
+        "name": "Domaine de Viastres",
         "commune": "Valflaunès",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Domaine de Villeneuve",
+        "name": "Domaine de Villeneuve",
         "commune": "Claret",
-        "site": "http://www.domaine-de-villeneuve.com/",
-        "type": "domaine"
+        "website": "http://www.domaine-de-villeneuve.com/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine de la Matane",
+        "name": "Domaine de la Matane",
         "commune": "Claret",
-        "site": "http://www.leclosdelamatane.fr",
-        "type": "domaine"
+        "website": "http://www.leclosdelamatane.fr",
+        "type": "estate"
       },
       {
-        "nom": "Domaine de la Perriere",
+        "name": "Domaine de la Perriere",
         "commune": "Assas",
-        "site": "https://domainedelaperriere-sauvaire.com/",
-        "type": "domaine"
+        "website": "https://domainedelaperriere-sauvaire.com/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine de la Triballe",
+        "name": "Domaine de la Triballe",
         "commune": "Guzargues",
-        "site": "http://www.la-triballe.com",
-        "type": "domaine"
+        "website": "http://www.la-triballe.com",
+        "type": "estate"
       },
       {
-        "nom": "Domaine de la vieille",
+        "name": "Domaine de la vieille",
         "commune": "Saint-Mathieu-de-Tréviers",
-        "site": "http://www.domainedelavieille.fr/",
-        "type": "domaine"
+        "website": "http://www.domainedelavieille.fr/",
+        "type": "estate"
       },
       {
-        "nom": "Domaine du Gres",
+        "name": "Domaine du Gres",
         "commune": "Claret",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Domaine les Vigneaux",
+        "name": "Domaine les Vigneaux",
         "commune": null,
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Domaine les grandes Costes",
+        "name": "Domaine les grandes Costes",
         "commune": "Vacquières",
-        "site": "https://www.grandes-costes.com/",
-        "type": "domaine"
+        "website": "https://www.grandes-costes.com/",
+        "type": "estate"
       },
       {
-        "nom": "Domaines Caussarelle & Cammaous",
+        "name": "Domaines Caussarelle & Cammaous",
         "commune": "Vacquières",
-        "site": "https://www.domainecammaousetcaussarelle.fr/",
-        "type": "domaine"
+        "website": "https://www.domainecammaousetcaussarelle.fr/",
+        "type": "estate"
       },
       {
-        "nom": "Héritage du Pic Saint Loup",
+        "name": "Héritage du Pic Saint Loup",
         "commune": "Saint-Mathieu-de-Tréviers",
-        "site": "https://www.heritage-du-pic-saint-loup.fr/",
-        "type": "domaine"
+        "website": "https://www.heritage-du-pic-saint-loup.fr/",
+        "type": "estate"
       },
       {
-        "nom": "L'Aven des Nymphes",
+        "name": "L'Aven des Nymphes",
         "commune": "Les Matelles",
-        "site": "http://www.avendesnymphes.com",
-        "type": "domaine"
+        "website": "http://www.avendesnymphes.com",
+        "type": "estate"
       },
       {
-        "nom": "L'Aven des Nymphes",
+        "name": "L'Aven des Nymphes",
         "commune": null,
-        "site": "https://avendesnymphes.com/",
-        "type": "domaine"
+        "website": "https://avendesnymphes.com/",
+        "type": "estate"
       },
       {
-        "nom": "La Fournaca",
+        "name": "La Fournaca",
         "commune": "Claret",
-        "site": "http://lafournaca.com/",
-        "type": "domaine"
+        "website": "http://lafournaca.com/",
+        "type": "estate"
       },
       {
-        "nom": "La chouette du chai",
+        "name": "La chouette du chai",
         "commune": "Cazevieille",
-        "site": "https://lachouetteduchai.com/contact/",
-        "type": "domaine"
+        "website": "https://lachouetteduchai.com/contact/",
+        "type": "estate"
       },
       {
-        "nom": "La cour des Loups",
+        "name": "La cour des Loups",
         "commune": null,
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Le Chemin des Rêves",
+        "name": "Le Chemin des Rêves",
         "commune": "Saint-Gély-du-Fesc",
-        "site": "https://chemin-des-reves.com/",
-        "type": "domaine"
+        "website": "https://chemin-des-reves.com/",
+        "type": "estate"
       },
       {
-        "nom": "Le Clos des Augustins",
+        "name": "Le Clos des Augustins",
         "commune": "Saint-Mathieu-de-Tréviers",
-        "site": "http://www.closdesaugustins.com",
-        "type": "domaine"
+        "website": "http://www.closdesaugustins.com",
+        "type": "estate"
       },
       {
-        "nom": "Les remparts de Cuculles",
+        "name": "Les remparts de Cuculles",
         "commune": "Saint-Jean-de-Cuculles",
-        "site": "https://www.remparts-cuculles.com/",
-        "type": "domaine"
+        "website": "https://www.remparts-cuculles.com/",
+        "type": "estate"
       },
       {
-        "nom": "MAS RIGAUD",
+        "name": "MAS RIGAUD",
         "commune": "Brouzet-lès-Quissac",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Mas Bruguière",
+        "name": "Mas Bruguière",
         "commune": "Valflaunès",
-        "site": "http://mas-bruguiere.com/",
-        "type": "domaine"
+        "website": "http://mas-bruguiere.com/",
+        "type": "estate"
       },
       {
-        "nom": "Mas Foulaquier",
+        "name": "Mas Foulaquier",
         "commune": "Claret",
-        "site": "https://boutique.masfoulaquier.fr/",
-        "type": "domaine"
+        "website": "https://boutique.masfoulaquier.fr/",
+        "type": "estate"
       },
       {
-        "nom": "Mas Gourdou",
+        "name": "Mas Gourdou",
         "commune": "Valflaunès",
-        "site": "http://masgourdou.free.fr/",
-        "type": "domaine"
+        "website": "http://masgourdou.free.fr/",
+        "type": "estate"
       },
       {
-        "nom": "Mas Pages",
+        "name": "Mas Pages",
         "commune": "Vacquières",
-        "site": "https://mas-pages.plugwine.com/domaine/mas-pages",
-        "type": "domaine"
+        "website": "https://mas-pages.plugwine.com/domaine/mas-pages",
+        "type": "estate"
       },
       {
-        "nom": "Mas Peyrolle",
+        "name": "Mas Peyrolle",
         "commune": "Vacquières",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Mas Picas",
+        "name": "Mas Picas",
         "commune": "Corconne",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Mas Theleme",
+        "name": "Mas Theleme",
         "commune": "Lauret",
-        "site": "http://mas-theleme.com/",
-        "type": "domaine"
+        "website": "http://mas-theleme.com/",
+        "type": "estate"
       },
       {
-        "nom": "Mas d'Auzières",
+        "name": "Mas d'Auzières",
         "commune": null,
-        "site": "https://mas-dauzieres.com/",
-        "type": "domaine"
+        "website": "https://mas-dauzieres.com/",
+        "type": "estate"
       },
       {
-        "nom": "Mas de Farjou",
+        "name": "Mas de Farjou",
         "commune": "Claret",
-        "site": "https://www.masdefarjou.com/",
-        "type": "domaine"
+        "website": "https://www.masdefarjou.com/",
+        "type": "estate"
       },
       {
-        "nom": "Mas de Figuier",
+        "name": "Mas de Figuier",
         "commune": "Vacquières",
-        "site": "http://www.masdefiguier.fr",
-        "type": "domaine"
+        "website": "http://www.masdefiguier.fr",
+        "type": "estate"
       },
       {
-        "nom": "Mas de Fournel",
+        "name": "Mas de Fournel",
         "commune": "Valflaunès",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Mas de Jon",
+        "name": "Mas de Jon",
         "commune": "Fontanès",
-        "site": "https://masdejon.fr/",
-        "type": "domaine"
+        "website": "https://masdejon.fr/",
+        "type": "estate"
       },
       {
-        "nom": "Roc de Beauvoir",
+        "name": "Roc de Beauvoir",
         "commune": "Saint-Mathieu-de-Tréviers",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Saint Daumary",
+        "name": "Saint Daumary",
         "commune": "Valflaunès",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       },
       {
-        "nom": "Zelige Caravent",
+        "name": "Zelige Caravent",
         "commune": "Corconne",
-        "site": null,
-        "type": "domaine"
+        "website": null,
+        "type": "estate"
       }
     ],
-    "caves_cooperatives": [
+    "cooperatives": [
       {
-        "nom": "Cave cooperative Le Cellier Du Pic",
+        "name": "Cave cooperative Le Cellier Du Pic",
         "commune": "Assas",
-        "site": "http://vigneronsdupic.net/",
-        "type": "cave_cooperative",
+        "website": "http://vigneronsdupic.net/",
+        "type": "cooperative",
         "communes": [
           "Assas"
         ]
       },
       {
-        "nom": "Cave coopérative La Gravette de Corconne",
+        "name": "Cave coopérative La Gravette de Corconne",
         "commune": "Corconne",
-        "site": "https://www.la-gravette.com/",
-        "type": "cave_cooperative",
+        "website": "https://www.la-gravette.com/",
+        "type": "cooperative",
         "communes": [
           "Corconne"
         ]
       },
       {
-        "nom": "Cave coopérative Vignobles des 3 Châteaux",
+        "name": "Cave coopérative Vignobles des 3 Châteaux",
         "commune": "Saint-Mathieu-de-Tréviers",
-        "site": "http://www.vd3c.fr/",
-        "type": "cave_cooperative",
+        "website": "http://www.vd3c.fr/",
+        "type": "cooperative",
         "communes": [
           "Saint-Mathieu-de-Tréviers"
         ]
       }
     ]
   },
-  "schema_cuvee": {
-    "_usage": "structure cible d'une ligne produit. Rien ici n'est pre-rempli: chaque champ vient de la fiche technique du domaine.",
+  "wine_schema": {
+    "_usage": "target shape of a product row. Nothing here is pre-filled: every field comes from the estate's tech sheet.",
     "id": "string",
-    "domaine_id": "string",
-    "nom_cuvee": "string",
+    "producer_id": "string",
+    "name": "string",
     "appellation_id": "string",
-    "couleur": "rouge | rose",
-    "millesime": "integer",
-    "assemblage": [
+    "color": "red | rose",
+    "vintage": "integer",
+    "blend": [
       {
-        "cepage": "string",
+        "grape": "string",
         "pct": "number | null"
       }
     ],
-    "degre": "number | null",
-    "elevage": "string | null",
-    "prix_ttc": "number | null",
-    "prix_date_releve": "date | null",
-    "bio": "boolean | null",
-    "note_degustation_producteur": "string | null",
-    "note_degustation_source_url": "string | null",
-    "accords_producteur": [
+    "abv": "number | null",
+    "aging": "string | null",
+    "price_eur": "number | null",
+    "price_as_of": "date | null",
+    "organic": "boolean | null",
+    "producer_tasting_note": "string | null",
+    "tasting_note_source_url": "string | null",
+    "producer_pairings": [
       "string"
     ],
-    "embedding_source": "concatenation de note_degustation_producteur + profil appellation",
-    "_contrainte": "si note_degustation_producteur est null, l'agent repond depuis le profil d'appellation et l'annonce. Il ne comble jamais le vide."
+    "embedding_text": "concatenation of producer_tasting_note + appellation profile",
+    "_constraint": "if producer_tasting_note is null, the agent answers from the appellation profile and says so. It never fills the gap."
   },
-  "plan_ingestion": [
-    "1. Parser l'annuaire du syndicat (une page) pour obtenir nom, commune et URL de chaque domaine.",
-    "2. Pour chaque site, localiser les fiches techniques PDF (souvent /nos-vins, /la-cave, espace pro).",
-    "3. Extraire texte + tableaux, produire un JSON conforme a schema_cuvee, versionne en git.",
-    "4. Relire manuellement le premier lot. Le taux d'erreur du parsing est l'indicateur a mesurer, c'est ce que tu montreras au client.",
-    "5. Indexer: champs structures en colonnes Postgres, embedding_source en pgvector.",
-    "6. Respecter robots.txt, rate-limiter, identifier le user-agent. Les fiches techniques sont publiques mais restent la propriete du domaine: citer la source dans l'UI, ne pas republier le texte integral."
+  "ingestion_plan": [
+    "1. Parse the syndicate directory (one page) to get the name, commune and URL of each estate.",
+    "2. For each website, locate the PDF tech sheets (often /nos-vins, /la-cave, trade area).",
+    "3. Extract text + tables, produce a JSON matching wine_schema, versioned in git.",
+    "4. Review the first batch by hand. The parsing error rate is the metric to measure; it is what you will show the client.",
+    "5. Index: structured fields as Postgres columns, embedding_text in pgvector.",
+    "6. Honor robots.txt, rate-limit, identify the user-agent. Tech sheets are public but remain the estate's property: cite the source in the UI, do not republish the full text."
   ]
 }

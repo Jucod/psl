@@ -2,71 +2,71 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import type pg from 'pg';
-import type { FournisseurEmbedding } from './index.js';
+import type { EmbeddingProvider } from './index.js';
 
-const CHEMIN_LEXIQUE = fileURLToPath(new URL('../config/lexique.ts', import.meta.url));
+const LEXICON_PATH = fileURLToPath(new URL('../config/lexicon.ts', import.meta.url));
 
 /**
- * Empreinte de tout ce qui influence la valeur d'un vecteur: le provider, la
- * dimension, et le lexique (qui pilote l'expansion en familles du provider
- * local). Si l'un des trois bouge, les vecteurs stockes ne sont plus
- * comparables a un vecteur de requete calcule maintenant.
+ * Fingerprint of everything that influences the value of a vector: the
+ * provider, the dimension, and the lexicon (which drives the local provider's
+ * expansion into families). If any of the three moves, the stored vectors are
+ * no longer comparable to a query vector computed now.
  */
-export async function signatureEmbedding(f: FournisseurEmbedding): Promise<string> {
-  const lexique = await readFile(CHEMIN_LEXIQUE, 'utf8');
+export async function embeddingSignature(p: EmbeddingProvider): Promise<string> {
+  const lexicon = await readFile(LEXICON_PATH, 'utf8');
   return createHash('sha256')
-    .update(`${f.nom}:${f.dimension}:`)
-    .update(createHash('sha256').update(lexique).digest('hex'))
+    .update(`${p.name}:${p.dimension}:`)
+    .update(createHash('sha256').update(lexicon).digest('hex'))
     .digest('hex')
     .slice(0, 32);
 }
 
-export async function enregistrerSignature(
+export async function recordSignature(
   client: pg.Pool | pg.PoolClient,
-  f: FournisseurEmbedding,
+  p: EmbeddingProvider,
 ): Promise<string> {
-  const signature = await signatureEmbedding(f);
+  const signature = await embeddingSignature(p);
   await client.query(
-    `INSERT INTO embedding_etat (cle, signature, provider, dimension, calcule_le)
-     VALUES ('cuvees', $1, $2, $3, now())
-     ON CONFLICT (cle) DO UPDATE SET
+    `INSERT INTO embedding_state (key, signature, provider, dimension, computed_at)
+     VALUES ('wines', $1, $2, $3, now())
+     ON CONFLICT (key) DO UPDATE SET
        signature = EXCLUDED.signature, provider = EXCLUDED.provider,
-       dimension = EXCLUDED.dimension, calcule_le = now()`,
-    [signature, f.nom, f.dimension],
+       dimension = EXCLUDED.dimension, computed_at = now()`,
+    [signature, p.name, p.dimension],
   );
   return signature;
 }
 
-export interface EtatEmbedding {
-  aJour: boolean;
+export interface EmbeddingStatus {
+  upToDate: boolean;
   message: string | null;
 }
 
 /**
- * Verifie que les vecteurs stockes ont ete calcules avec la configuration
- * courante. En cas d'ecart, le moteur refuse de classer au vectoriel plutot
- * que de produire un ordre faux avec l'air d'aller bien.
+ * Checks that the stored vectors were computed with the current
+ * configuration. On a mismatch, the engine refuses to rank by vector rather
+ * than produce a wrong order that looks fine.
  */
-export async function verifierSignature(
+export async function checkSignature(
   client: pg.Pool | pg.PoolClient,
-  f: FournisseurEmbedding,
-): Promise<EtatEmbedding> {
-  const attendue = await signatureEmbedding(f);
-  const { rows } = await client.query<{ signature: string; provider: string; calcule_le: Date }>(
-    `SELECT signature, provider, calcule_le FROM embedding_etat WHERE cle = 'cuvees'`,
+  p: EmbeddingProvider,
+): Promise<EmbeddingStatus> {
+  const expected = await embeddingSignature(p);
+  const { rows } = await client.query<{ signature: string; provider: string; computed_at: Date }>(
+    `SELECT signature, provider, computed_at FROM embedding_state WHERE key = 'wines'`,
   );
 
   if (rows.length === 0) {
-    return { aJour: false, message: 'aucun embedding calcule. Lance: npm run db:embed' };
+    return { upToDate: false, message: 'no embedding computed yet. Run: npm run db:embed' };
   }
-  if (rows[0]!.signature !== attendue) {
+  if (rows[0]!.signature !== expected) {
     return {
-      aJour: false,
+      upToDate: false,
       message:
-        `les vecteurs en base datent du ${rows[0]!.calcule_le.toISOString().slice(0, 16)} ` +
-        `et ont ete calcules avec une autre configuration (provider ou lexique modifie). ` +
-        `Classement vectoriel desactive. Relance: npm run db:embed`,
+        `the vectors in the database date from ${rows[0]!.computed_at.toISOString().slice(0, 16)} ` +
+        `and were computed with another configuration (provider or lexicon changed). ` +
+        `Vector ranking disabled. Run again: npm run db:embed`,
     };
   }
-  return { aJour: true, message: null };
+  return { upToDate: true, message: null };
 }

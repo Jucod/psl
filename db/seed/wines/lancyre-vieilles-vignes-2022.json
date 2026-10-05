@@ -1,0 +1,20 @@
+{
+  "_provenance": "Wine name and estate consistently attested by several independent wine-shop listings. The producer's tech sheet could NOT be retrieved (network egress blocked on the estates' websites). Every descriptive, price or blend field stays null here and lives in db/seed/wines.fixtures/, marked dev_fixture.",
+  "id": "lancyre-vieilles-vignes-2022",
+  "producer_id": "chateau-de-lancyre",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "Vieilles Vignes",
+  "color": "red",
+  "vintage": 2022,
+  "blend": [],
+  "abv": null,
+  "aging": null,
+  "price_eur": null,
+  "price_as_of": null,
+  "organic": null,
+  "certification": null,
+  "tasting_note": null,
+  "tasting_note_source": null,
+  "producer_pairings": [],
+  "page_url": "https://www.chateaudelancyre.com/vieilles-vignes"
+}

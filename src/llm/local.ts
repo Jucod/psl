@@ -1,188 +1,189 @@
 import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
-import { construireIndexCepages } from '../ingest/util.js';
-import type { Filtres } from '../schema/filtres.js';
-import type { Resultat } from '../moteur/types.js';
-import { parser } from './parseur.js';
-import { USAGE_NUL, type EntreeFormulation, type FournisseurLlm, type ResultatExtraction } from './index.js';
+import { buildGrapeIndex } from '../ingest/util.js';
+import type { WineResult } from '../engine/types.js';
+import { parseMessage } from './parser.js';
+import { ZERO_USAGE, type ExtractionResult, type FormulationInput, type LlmProvider } from './index.js';
 
-const CHEMIN_CEPAGES = fileURLToPath(new URL('../../db/seed/cepages.json', import.meta.url));
+const GRAPES_PATH = fileURLToPath(new URL('../../db/seed/grapes.json', import.meta.url));
 
 /**
- * Provider sans reseau ni cle API.
+ * Provider with no network and no API key.
  *
- * Appel 1 : parseur deterministe (src/llm/parseur.ts).
- * Appel 2 : gabarit qui ne fait que concatener des champs venus de la base.
+ * Call 1: deterministic parser (src/llm/parser.ts).
+ * Call 2: a template that only concatenates fields coming from the database.
  *
- * Ce n'est pas qu'un bouche-trou. Il demontre que les garanties du contrat de
- * comportement (§3 du brief) tiennent SANS modele: pas d'invention possible
- * puisqu'aucun texte n'est genere, refus et elargissements produits par des
- * requetes, tracabilite integrale. Le LLM, ensuite, n'ameliore que la
- * formulation. C'est l'argument a montrer a un prospect: le moteur ne depend
- * pas de la bonne volonte du modele.
+ * It is not just a stopgap. It demonstrates that the guarantees of the
+ * behavior contract (§3 of the brief) hold WITHOUT a model: no invention is
+ * possible since no text is generated, refusals and relaxations are produced
+ * by queries, traceability is complete. The LLM, afterwards, only improves the
+ * wording. That is the argument to show a prospect: the engine does not
+ * depend on the model's goodwill.
  */
-export class LlmLocal implements FournisseurLlm {
-  readonly nom = 'local';
+export class LocalLlm implements LlmProvider {
+  readonly name = 'local';
   private index: ReadonlyMap<string, string> | null = null;
 
-  private async indexCepages(): Promise<ReadonlyMap<string, string>> {
+  private async grapeIndex(): Promise<ReadonlyMap<string, string>> {
     if (!this.index) {
-      const doc = JSON.parse(await readFile(CHEMIN_CEPAGES, 'utf8'));
-      this.index = construireIndexCepages(doc.cepages);
+      const doc = JSON.parse(await readFile(GRAPES_PATH, 'utf8'));
+      this.index = buildGrapeIndex(doc.grapes);
     }
     return this.index;
   }
 
-  async extraireFiltres(
+  async extractFilters(
     message: string,
-    appellationParDefaut: string | null,
-  ): Promise<ResultatExtraction> {
-    const filtres = parser(message, {
-      appellationParDefaut,
-      indexCepages: await this.indexCepages(),
+    defaultAppellation: string | null,
+  ): Promise<ExtractionResult> {
+    const filters = parseMessage(message, {
+      defaultAppellation,
+      grapeIndex: await this.grapeIndex(),
     });
-    return { filtres, degrade: false, raisonDegrade: null, usage: USAGE_NUL };
+    return { filters, degraded: false, degradedReason: null, usage: ZERO_USAGE };
   }
 
-  async formuler(entree: EntreeFormulation): Promise<{ texte: string; usage: typeof USAGE_NUL }> {
-    return { texte: formulerParGabarit(entree), usage: USAGE_NUL };
+  async formulate(input: FormulationInput): Promise<{ text: string; usage: typeof ZERO_USAGE }> {
+    return { text: formulateFromTemplate(input), usage: ZERO_USAGE };
   }
 }
 
 const EUROS = (n: number) => `${n.toFixed(2).replace(/\.00$/, '')} €`;
 
 /**
- * Formulation par gabarit. Aucune phrase n'est produite a partir d'autre chose
- * que des valeurs lues en base. Loi Evin: uniquement des references objectives
- * (cepage, elevage, degre, prix, descripteurs recopies de la fiche). Aucun
- * registre evocateur possible, il n'y a pas de generation.
+ * Template-based formulation. No sentence is produced from anything other
+ * than values read from the database. Loi Evin: objective references only
+ * (grape variety, aging, alcohol content, price, descriptors copied from the
+ * sheet). No evocative register is possible, there is no generation.
+ *
+ * The text is addressed to visitors, hence in French.
  */
-export function formulerParGabarit(entree: EntreeFormulation): string {
-  const r = entree.recherche;
-  const lignes: string[] = [];
+export function formulateFromTemplate(input: FormulationInput): string {
+  const s = input.search;
+  const lines: string[] = [];
 
-  if (r.statut === 'refus_hors_catalogue' && r.refus) {
-    lignes.push(r.refus.message);
-    if (r.refus.source) {
-      lignes.push(`Source : ${r.refus.source.label} (${r.refus.source.url}).`);
+  if (s.status === 'refused' && s.refusal) {
+    lines.push(s.refusal.message);
+    if (s.refusal.source) {
+      lines.push(`Source : ${s.refusal.source.label} (${s.refusal.source.url}).`);
     }
-    return lignes.join('\n');
+    return lines.join('\n');
   }
 
-  if (r.relachements.length > 0) {
-    // Nuance qui compte: "j'ai elargi" annonce un resultat obtenu grace a
-    // l'elargissement. Quand il n'a rien donne, le dire ainsi laisse croire
-    // qu'on a trouve quelque chose.
-    const indecidables = new Set(r.filtresIndecidables.map((f) => f.champ));
-    const utiles = r.relachements.filter((x) => !indecidables.has(x.champ));
-    // Annoncer "j'ai elargi le budget" quand aucun prix n'est connu est du
-    // theatre: l'elargissement n'avait aucune chance de changer quoi que ce
-    // soit, et le dire donne l'illusion d'un effort qui n'a pas eu lieu.
-    if (utiles.length > 0) {
-      lignes.push(
-        r.statut === 'vide'
+  if (s.relaxations.length > 0) {
+    // A nuance that matters: "j'ai elargi" (I widened) announces a result
+    // obtained thanks to the relaxation. When it yielded nothing, putting it
+    // that way suggests we found something.
+    const undecidable = new Set(s.undecidableFilters.map((f) => f.field));
+    const useful = s.relaxations.filter((x) => !undecidable.has(x.field));
+    // Announcing "I widened the budget" when no price is known is theater:
+    // the relaxation had no chance of changing anything, and saying so gives
+    // the illusion of an effort that did not take place.
+    if (useful.length > 0) {
+      lines.push(
+        s.status === 'empty'
           ? `Aucun resultat avec vos criteres initiaux. J'ai essaye d'elargir (` +
-            utiles.map((x) => x.annonce).join(', ') + '), sans resultat.'
+            useful.map((x) => x.announcement).join(', ') + '), sans resultat.'
           : `Aucun resultat avec vos criteres initiaux. J'ai elargi : ` +
-            utiles.map((x) => x.annonce).join(', ') + '.',
+            useful.map((x) => x.announcement).join(', ') + '.',
       );
     }
   }
 
-  if (r.statut === 'vide') {
-    if (r.filtresIndecidables.length > 0) {
-      // Nuance decisive: le catalogue ne CONTREDIT pas le critere, il ne le
-      // connait pas. L'annoncer comme une absence serait une affirmation sans
-      // fondement, exactement ce que le systeme existe pour eviter.
-      const noms = r.filtresIndecidables.map((f) => f.libelle.toLowerCase()).join(', ');
-      lignes.push(
-        `Je ne peux pas repondre sur ce critere : aucune des ${r.tailleCatalogue} ` +
-        `cuvee(s) du catalogue ne porte l'information demandee (${noms}). ` +
+  if (s.status === 'empty') {
+    if (s.undecidableFilters.length > 0) {
+      // A decisive nuance: the catalog does not CONTRADICT the criterion, it
+      // does not know it. Announcing it as an absence would be an unfounded
+      // statement, exactly what the system exists to avoid.
+      const names = s.undecidableFilters.map((f) => f.label.toLowerCase()).join(', ');
+      lines.push(
+        `Je ne peux pas repondre sur ce critere : aucune des ${s.catalogSize} ` +
+        `cuvee(s) du catalogue ne porte l'information demandee (${names}). ` +
         `Ce n'est pas une absence de correspondance, c'est une donnee manquante.`,
       );
     } else {
-      lignes.push(
-        r.tailleCatalogue === 0
+      lines.push(
+        s.catalogSize === 0
           ? `Le catalogue ne contient aucune cuvee correspondant a cette appellation et cette couleur.`
-          : `Aucune des ${r.tailleCatalogue} cuvee(s) du catalogue ne satisfait ces criteres.`,
+          : `Aucune des ${s.catalogSize} cuvee(s) du catalogue ne satisfait ces criteres.`,
       );
     }
-    return lignes.join('\n');
+    return lines.join('\n');
   }
 
-  lignes.push(
-    r.resultats.length === 1
+  lines.push(
+    s.results.length === 1
       ? 'Une reference correspond :'
-      : `${r.resultats.length} references correspondent :`,
+      : `${s.results.length} references correspondent :`,
   );
 
-  for (const [i, c] of r.resultats.entries()) {
-    const identite =
-      `${i + 1}. ${c.domaine}, ${c.nom_cuvee}${c.millesime ? ` ${c.millesime}` : ''}` +
-      (c.prix_ttc !== null ? ` — ${EUROS(c.prix_ttc)}` : '');
+  for (const [i, w] of s.results.entries()) {
+    const identity =
+      `${i + 1}. ${w.producer}, ${w.name}${w.vintage ? ` ${w.vintage}` : ''}` +
+      (w.price_eur !== null ? ` — ${EUROS(w.price_eur)}` : '');
 
-    if (c.note_degustation) {
-      // Justification citee de la fiche, pas reformulee. On prefere la phrase
-      // qui motive le classement au debut de la note, qui parle de la robe.
-      const citation = c.extrait_pertinent ?? c.note_degustation;
-      lignes.push(`${identite}. ${extrait(citation, 130)}`);
-      // La tracabilite ne depend PAS du canal de rendu. L'interface affiche la
-      // source dans la carte, mais ce texte part aussi en CLI, dans le journal
-      // et dans tout copier-coller: un element descriptif sans sa source est
-      // une violation du contrat, pas une redondance evitee.
-      if (c.note_source) {
-        lignes.push(
-          `   Source : ${c.note_source.label} — ${c.note_source.url}` +
-          (c.fixture ? '  [DONNEE DE DEVELOPPEMENT, non relevee sur une fiche]' : ''),
+    if (w.tasting_note) {
+      // Justification quoted from the sheet, not reworded. We prefer the
+      // sentence that motivates the ranking to the beginning of the note,
+      // which talks about the color.
+      const quote = w.relevant_excerpt ?? w.tasting_note;
+      lines.push(`${identity}. ${excerpt(quote, 130)}`);
+      // Traceability does NOT depend on the rendering channel. The interface
+      // shows the source in the card, but this text also goes to the CLI, to
+      // the log and into any copy-paste: a descriptive element without its
+      // source is a breach of the contract, not an avoided redundancy.
+      if (w.note_source) {
+        lines.push(
+          `   Source : ${w.note_source.label} — ${w.note_source.url}` +
+          (w.fixture ? '  [DONNEE DE DEVELOPPEMENT, non relevee sur une fiche]' : ''),
         );
       }
-    } else if (c.profil_appellation) {
-      // Separation des niveaux: dit explicitement qu'on decrit l'appellation.
-      lignes.push(
-        `${identite}. Aucune fiche technique indexee pour cette cuvee ; ` +
+    } else if (w.appellation_profile) {
+      // Level separation: says explicitly that we are describing the appellation.
+      lines.push(
+        `${identity}. Aucune fiche technique indexee pour cette cuvee ; ` +
         `le profil ci-contre est celui de l'appellation.`,
       );
-      lignes.push(`   Source du profil : ${c.profil_appellation.source.label} — ${c.profil_appellation.source.url}`);
+      lines.push(`   Source du profil : ${w.appellation_profile.source.label} — ${w.appellation_profile.source.url}`);
     } else {
-      lignes.push(`${identite}. Aucun element descriptif indexe.`);
+      lines.push(`${identity}. Aucun element descriptif indexe.`);
     }
   }
 
-  // Les accords, les sources et les avertissements de fixture sont rendus par
-  // l'interface, chacun a sa place. Les repeter ici doublait la longueur de la
-  // page sans rien ajouter.
-  return lignes.join('\n');
+  // Pairings, sources and fixture warnings are rendered by the interface, each
+  // in its own place. Repeating them here doubled the length of the page
+  // without adding anything.
+  return lines.join('\n');
 }
 
-/** Conserve pour les sorties texte (CLI, journal), ou aucune carte n'existe. */
-export function decrireFaits(c: Resultat): string {
-  const faits: string[] = [];
-  if (c.assemblage.length > 0) {
-    faits.push(
-      c.assemblage
-        .map((a) => (a.pct === null ? a.cepage : `${a.cepage} ${a.pct}%`))
+/** Kept for text outputs (CLI, log), where no card exists. */
+export function describeFacts(w: WineResult): string {
+  const facts: string[] = [];
+  if (w.blend.length > 0) {
+    facts.push(
+      w.blend
+        .map((b) => (b.pct === null ? b.grape : `${b.grape} ${b.pct}%`))
         .join(', '),
     );
   }
-  if (c.degre !== null) faits.push(`${c.degre}%`);
-  if (c.elevage) faits.push(`elevage : ${c.elevage}`);
-  if (c.certification) faits.push(c.certification);
-  if (c.prix_ttc !== null) {
-    faits.push(
-      `${EUROS(c.prix_ttc)}${c.prix_date_releve ? ` (prix releve le ${c.prix_date_releve})` : ''}`,
+  if (w.abv !== null) facts.push(`${w.abv}%`);
+  if (w.aging) facts.push(`elevage : ${w.aging}`);
+  if (w.certification) facts.push(w.certification);
+  if (w.price_eur !== null) {
+    facts.push(
+      `${EUROS(w.price_eur)}${w.price_as_of ? ` (prix releve le ${w.price_as_of})` : ''}`,
     );
   }
-  return faits.length ? faits.join(' · ') : 'aucune caracteristique technique indexee';
+  return facts.length ? facts.join(' · ') : 'aucune caracteristique technique indexee';
 }
 
 /**
- * "On cite, on ne republie pas." Les fiches techniques sont publiques mais
- * restent la propriete du domaine: on en donne un extrait et le lien, pas le
- * texte integral.
+ * "We quote, we do not republish." Technical sheets are public but remain the
+ * estate's property: we give an excerpt and the link, not the full text.
  */
-export function extrait(texte: string, max = 200): string {
-  if (texte.length <= max) return texte;
-  const coupe = texte.slice(0, max);
-  const dernier = Math.max(coupe.lastIndexOf('. '), coupe.lastIndexOf(', '));
-  return (dernier > max * 0.5 ? coupe.slice(0, dernier) : coupe).trimEnd() + '…';
+export function excerpt(text: string, max = 200): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const last = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf(', '));
+  return (last > max * 0.5 ? cut.slice(0, last) : cut).trimEnd() + '…';
 }

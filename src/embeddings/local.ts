@@ -1,68 +1,67 @@
-import { FAMILLE_PAR_MOT, tokeniser } from '../config/lexique.js';
-import type { FournisseurEmbedding } from './index.js';
+import { FAMILY_BY_STEM, tokenize } from '../config/lexicon.js';
+import type { EmbeddingProvider } from './index.js';
 
 /**
- * Provider d'embedding deterministe, hors ligne, sans cle API.
+ * Deterministic, offline embedding provider that needs no API key.
  *
- * Ce n'est pas un modele: c'est un sac de mots projete par hachage signe
- * ("hashing trick"), enrichi des familles de descripteurs declarees dans
- * src/config/lexique.ts. Le lexique fait le travail qu'un modele pre-entraine
- * ferait autrement: rapprocher "souple" de "fondu" et de "soyeux".
+ * It is not a model: it is a bag of words projected by signed hashing (the
+ * "hashing trick"), enriched with the descriptor families declared in
+ * src/config/lexicon.ts. The lexicon does the job a pre-trained model would
+ * otherwise do: bringing "souple" close to "fondu" and "soyeux".
  *
- * Pourquoi ça suffit ici: le corpus fait quelques centaines de notes de
- * degustation, un vocabulaire etroit et tres code. Sur ce terrain un sac de
- * mots synonymise se comporte honorablement, il est instantane, il ne coute
- * rien et il est reproductible au bit pres, ce qui rend les tests de
- * classement deterministes.
+ * Why it is enough here: the corpus is a few hundred tasting notes, with a
+ * narrow and highly codified vocabulary. On that ground a synonym-aware bag of
+ * words behaves honorably, it is instantaneous, it costs nothing and it is
+ * reproducible to the bit, which makes ranking tests deterministic.
  *
- * Ses limites, a connaitre: aucune comprehension de la negation ("pas
- * tannique" et "tannique" partagent la meme dimension), aucune notion d'ordre,
- * aucune generalisation hors lexique. Basculer sur un vrai modele
- * (PSL_EMBEDDING_PROVIDER=openai) des que le corpus depasse le lexique.
- * La negation est traitee en amont, par le parseur de filtres, qui la
- * transforme en contrainte explicite plutot qu'en signal vectoriel.
+ * Its limits, to be aware of: no understanding of negation ("pas tannique" and
+ * "tannique" share the same dimension), no notion of order, no generalization
+ * outside the lexicon. Switch to a real model (PSL_EMBEDDING_PROVIDER=openai)
+ * as soon as the corpus outgrows the lexicon.
+ * Negation is handled upstream, by the filter parser, which turns it into an
+ * explicit constraint rather than a vector signal.
  */
-export class EmbeddingLocal implements FournisseurEmbedding {
-  readonly nom = 'local';
-  readonly deterministe = true;
+export class LocalEmbedding implements EmbeddingProvider {
+  readonly name = 'local';
+  readonly deterministic = true;
 
-  /** Un token de famille pese plus que sa forme de surface: la synonymie prime. */
-  private static readonly POIDS_SURFACE = 1.0;
-  private static readonly POIDS_FAMILLE = 1.6;
+  /** A family token weighs more than its surface form: synonymy comes first. */
+  private static readonly SURFACE_WEIGHT = 1.0;
+  private static readonly FAMILY_WEIGHT = 1.6;
 
   constructor(readonly dimension: number) {}
 
-  async embed(textes: readonly string[]): Promise<number[][]> {
-    return textes.map((t) => this.vecteur(t));
+  async embed(texts: readonly string[]): Promise<number[][]> {
+    return texts.map((t) => this.vector(t));
   }
 
-  vecteur(texte: string): number[] {
+  vector(text: string): number[] {
     const v = new Array<number>(this.dimension).fill(0);
-    const tokens = tokeniser(texte);
+    const tokens = tokenize(text);
 
     for (const token of tokens) {
-      this.ajouter(v, token, EmbeddingLocal.POIDS_SURFACE);
-      const famille = FAMILLE_PAR_MOT.get(token);
-      if (famille) this.ajouter(v, `famille:${famille}`, EmbeddingLocal.POIDS_FAMILLE);
+      this.add(v, token, LocalEmbedding.SURFACE_WEIGHT);
+      const family = FAMILY_BY_STEM.get(token);
+      if (family) this.add(v, `family:${family}`, LocalEmbedding.FAMILY_WEIGHT);
     }
 
-    let somme = 0;
-    for (const x of v) somme += x * x;
-    const norme = Math.sqrt(somme);
-    if (norme === 0) return v;
-    return v.map((x) => x / norme);
+    let sum = 0;
+    for (const x of v) sum += x * x;
+    const norm = Math.sqrt(sum);
+    if (norm === 0) return v;
+    return v.map((x) => x / norm);
   }
 
-  private ajouter(v: number[], token: string, poids: number): void {
+  private add(v: number[], token: string, weight: number): void {
     const h = fnv1a(token);
     const index = h % this.dimension;
-    // Second hachage pour le signe: limite les collisions constructives.
-    const signe = fnv1a(`${token}#signe`) % 2 === 0 ? 1 : -1;
-    v[index] = (v[index] ?? 0) + signe * poids;
+    // Second hash for the sign: limits constructive collisions.
+    const sign = fnv1a(`${token}#sign`) % 2 === 0 ? 1 : -1;
+    v[index] = (v[index] ?? 0) + sign * weight;
   }
 }
 
-/** FNV-1a 32 bits. Stable entre versions de Node, contrairement a un hash natif. */
+/** 32-bit FNV-1a. Stable across Node versions, unlike a native hash. */
 function fnv1a(s: string): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < s.length; i++) {
