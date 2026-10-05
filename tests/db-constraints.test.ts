@@ -1,6 +1,12 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { db, closeDb } from '../src/db/client.js';
 
+// Asserting on SQLSTATE and constraint name, never on the message: Postgres
+// localizes its messages (lc_messages), and "foreign key constraint" does not
+// appear on a French server.
+const FOREIGN_KEY_VIOLATION = '23503';
+const CHECK_VIOLATION = '23514';
+
 /**
  * The guarantees of the behavior contract (§3 of the brief) are enforced as
  * Postgres constraints, not as prompt instructions. These tests check that the
@@ -16,7 +22,7 @@ describe('database guardrails', () => {
         `INSERT INTO wines (id, producer_id, appellation_id, color, name, embedding_level)
          VALUES ('test-white','mas-bruguiere','aoc-pic-saint-loup','white','Test','appellation')`,
       ),
-    ).rejects.toThrow(/foreign key constraint/i);
+    ).rejects.toMatchObject({ code: FOREIGN_KEY_VIOLATION, constraint: 'wines_appellation_id_color_fkey' });
   });
 
   it('rejects a tasting note without a citable source', async () => {
@@ -25,13 +31,13 @@ describe('database guardrails', () => {
         `UPDATE wines SET tasting_note_source_id = NULL
           WHERE tasting_note IS NOT NULL`,
       ),
-    ).rejects.toThrow(/note_requires_source/);
+    ).rejects.toMatchObject({ code: CHECK_VIOLATION, constraint: 'note_requires_source' });
   });
 
   it('rejects a price without the date it was observed', async () => {
     await expect(
       db().query(`UPDATE wines SET price_as_of = NULL WHERE price_eur IS NOT NULL`),
-    ).rejects.toThrow(/price_requires_date/);
+    ).rejects.toMatchObject({ code: CHECK_VIOLATION, constraint: 'price_requires_date' });
   });
 
   it('rejects a description level inconsistent with the presence of the note', async () => {
@@ -45,7 +51,7 @@ describe('database guardrails', () => {
       // Claiming to describe the wine while no note describes it.
       await expect(
         client.query(`UPDATE wines SET embedding_level = 'wine' WHERE id = 'test-level'`),
-      ).rejects.toThrow(/level_consistent/);
+      ).rejects.toMatchObject({ code: CHECK_VIOLATION, constraint: 'level_consistent' });
     } finally {
       await client.query('ROLLBACK');
       client.release();
@@ -55,7 +61,7 @@ describe('database guardrails', () => {
   it('forbids promoting a food pairing to source data', async () => {
     await expect(
       db().query(`UPDATE appellation_pairings SET status = 'source'`),
-    ).rejects.toThrow(/appellation_pairings_status_check|check constraint/i);
+    ).rejects.toMatchObject({ code: CHECK_VIOLATION, constraint: 'appellation_pairings_status_check' });
   });
 
   it('every wine described at wine level carries a source', async () => {
