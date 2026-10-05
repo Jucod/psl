@@ -1,91 +1,92 @@
-# Jalon 5 — extraction des fiches techniques
+# Milestone 5: tech sheet extraction
 
-Fiche technique PDF → JSON conforme à `db/schema/cuvee.schema.json`.
+PDF tech sheet → JSON matching `db/schema/wine.schema.json`.
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r ingestion/requirements.txt
 
-.venv/bin/python ingestion/extraire.py ingestion/fiches/*.pdf --sortie ingestion/sortie
-.venv/bin/python ingestion/mesure.py
+.venv/bin/python ingestion/extract.py ingestion/sheets/*.pdf --output ingestion/output
+.venv/bin/python ingestion/measure.py
 ```
 
-## Pourquoi Python ici, et seulement ici
+## Why Python here, and only here
 
-Le runtime est en TypeScript. Python n'intervient que sur l'extraction PDF,
-où `pdfplumber` et l'OCR n'ont pas d'équivalent côté Node.
+The runtime is TypeScript. Python only steps in for PDF extraction, where
+`pdfplumber` and OCR have no equivalent on the Node side.
 
-**Le périmètre s'arrête à « PDF → JSON ».** Ce script ne connaît ni Postgres,
-ni les embeddings, ni l'API : il lit un fichier et en écrit un autre. Dès qu'il
-touche à la base, le split devient deux toolchains à maintenir pour une seule
-personne, et le coût dépasse le bénéfice.
+**The scope stops at "PDF → JSON".** This script knows neither Postgres, nor
+embeddings, nor the API: it reads one file and writes another. As soon as it
+touches the database, the split becomes two toolchains to maintain for a
+single person, and the cost outweighs the benefit.
 
-Le contrat entre les deux langages est un fichier : `db/schema/cuvee.schema.json`,
-généré depuis zod par `npm run schema:export` et commité. `extraire.py` valide
-sa sortie contre lui avant d'écrire. Un schéma modifié sans réexport fait
-échouer `tests/schema-export.test.ts`.
+The contract between the two languages is a file: `db/schema/wine.schema.json`,
+generated from zod by `npm run schema:export` and committed. `extract.py`
+validates its output against it before writing. A schema changed without being
+exported again makes `tests/schema-export.test.ts` fail.
 
-## Le garde-fou qui compte
+## The guardrail that matters
 
-`Extracteur.verbatim()` refuse toute valeur textuelle absente de la couche texte
-du PDF. Un champ rejeté vaut `null` : **on préfère un trou à une invention.**
+`Extractor.verbatim()` rejects any text value absent from the PDF's text
+layer. A rejected field is `null`: **a gap is better than an invention.**
 
-C'est le seul endroit du pipeline où une hallucination passerait inaperçue. Tout
-le reste du système travaille sur des données déjà en base, protégées par les
-contraintes Postgres. Ici, on fabrique la donnée — et le jour où l'extraction
-passera par un modèle vision, c'est cette fonction, et elle seule, qui empêchera
-une note de dégustation d'être écrite plutôt que lue.
+It is the only place in the pipeline where a hallucination would go unnoticed.
+The rest of the system works on data already in the database, protected by the
+Postgres constraints. Here, the data is being made, and the day extraction goes
+through a vision model, it is this function, and it alone, that will prevent a
+tasting note from being written rather than read.
 
-## Le taux d'erreur est le livrable
+## The error rate is the deliverable
 
-`mesure.py` compare la sortie à un jeu relu à la main (`attendu/`) et distingue
-quatre issues par champ :
+`measure.py` compares the output with a set checked by hand (`expected/`) and
+tells four outcomes apart per field:
 
 | | |
 |---|---|
-| `exact` | la valeur extraite est celle relevée à la main |
-| `divergent` | une valeur a été extraite, mais fausse |
-| `manquant` | rien n'a été extrait alors qu'il y avait quelque chose |
-| `superflu` | quelque chose a été extrait alors qu'il n'y avait rien |
+| `exact` | the extracted value is the one collected by hand |
+| `divergent` | a value was extracted, but it is wrong |
+| `missing` | nothing was extracted although there was something |
+| `spurious` | something was extracted although there was nothing |
 
-`divergent` est le cas grave et il est compté à part : **une donnée fausse coûte
-plus cher qu'une donnée absente.** Un champ vide part en relecture ; un champ
-faux passe pour correct.
+`divergent` is the serious case and it is counted separately: **wrong data
+costs more than missing data.** An empty field goes to review; a wrong field
+passes for correct.
 
-C'est cette sortie qu'on montre au client, pas une qualité supposée.
+This output is what is shown to the client, not an assumed quality.
 
-## Ce que l'extracteur ne fait pas, volontairement
+## What the extractor deliberately does not do
 
-La fiche `domaine-c-prose` n'écrit jamais la couleur du vin. Un relecteur humain
-la déduit de « robe grenat », « mûre », « tanins fermes ». L'extracteur ne le
-fait pas, et c'est **compté comme une erreur, pas excusé**.
+The `estate-c-prose` sheet never states the wine's color. A human reviewer
+infers it from "robe grenat", "mûre", "tanins fermes". The extractor does not,
+and it is **counted as an error, not excused**.
 
-Déduire aurait produit un champ qui a l'air correct et que personne ne
-revérifie. Ne pas déduire produit un trou, qui remonte dans le rapport et part
-en relecture. La déduction, si elle est souhaitée, est une étape de revue
-séparée et tracée comme telle — pas un effet de bord de l'extraction.
+Inferring would have produced a field that looks right and that nobody checks
+again. Not inferring produces a gap, which shows up in the report and goes to
+review. Inference, if wanted, is a separate review step traced as such, not a
+side effect of extraction.
 
-## Le corpus de test
+## The test corpus
 
-`fiches/` contient trois PDF fabriqués par `fabriquer_fiches_test.mjs`
-(Chromium en impression PDF), avec des mises en page volontairement
-différentes : tableau, lignes étiquetées, prose sans intitulés normalisés.
-C'est la réalité d'un corpus de soixante domaines : chacun a son gabarit.
+`sheets/` contains three PDFs produced by `make_test_sheets.mjs` (Chromium
+printing to PDF), with deliberately different layouts: a table, labeled lines,
+prose without standard headings. That is the reality of a corpus of sixty
+estates: each one has its own template.
 
-**Limite à énoncer avant de montrer un chiffre :** ces fiches ont été
-fabriquées ici, donc mesurer l'extracteur dessus est en partie circulaire. Le
-taux obtenu sur ce corpus n'est pas prédictif du réel. Le banc de mesure est le
-livrable ; le chiffre ne vaudra que sur de vraies fiches, relues à la main.
+**Limit to state before showing a figure:** these sheets were made here, so
+measuring the extractor on them is partly circular. The rate obtained on this
+corpus is not predictive of the real one. The measurement bench is the
+deliverable; the figure will only be meaningful on real sheets, checked by
+hand.
 
-L'egress réseau de l'environnement de développement bloque les sites des
-domaines : aucune fiche réelle n'a pu être récupérée.
+Network egress from the development environment blocks the estates' websites:
+no real sheet could be retrieved.
 
-## Étapes suivantes
+## Next steps
 
-1. Parser l'annuaire du syndicat — une page unique et structurée, un seul point
-   d'entrée, pas soixante sites à crawler en aveugle.
-2. Localiser les PDF sur chaque site (`/nos-vins`, `/la-cave`, espace pro).
-   Respecter `robots.txt`, limiter la cadence, user-agent identifiable.
-3. Relire le premier lot à la main, le figer dans `attendu/`, et mesurer.
-4. Si les fiches sont des scans : OCR en amont, le reste ne bouge pas. Si
-   l'extraction par règles plafonne, passer à un modèle vision — `verbatim()`
-   reste la condition d'acceptation.
+1. Parse the syndicate directory: a single structured page, one entry point,
+   not sixty websites to crawl blindly.
+2. Locate the PDFs on each website (`/nos-vins`, `/la-cave`, trade area).
+   Honor `robots.txt`, limit the rate, use an identifiable user-agent.
+3. Review the first batch by hand, freeze it in `expected/`, and measure.
+4. If the sheets are scans: OCR upstream, nothing else changes. If rule-based
+   extraction plateaus, switch to a vision model: `verbatim()` remains the
+   acceptance condition.
