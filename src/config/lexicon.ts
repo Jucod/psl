@@ -192,7 +192,7 @@ export const OPPOSITES: Record<string, string> = {
  * "plus" is deliberately absent: "plus de tanins" asks for more.
  */
 export const NEGATION_MARKERS = new Set([
-  'pas', 'peu', 'sans', 'moins', 'trop', 'aucun', 'aucune', 'eviter', 'evite', 'ni',
+  'pas', 'peu', 'sans', 'moins', 'trop', 'aucun', 'aucune', 'eviter', 'evite', 'ni', 'rien',
 ]);
 
 /** Scope of a marker, in number of words to the right. */

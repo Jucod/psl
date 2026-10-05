@@ -393,6 +393,15 @@ describe('regressions found in review', () => {
     expect(output.search?.refusal?.source?.url).toMatch(/^https?:\/\//);
   });
 
+  it('"rien de tannique" puts the structured wines last, not first', async () => {
+    // End-to-end counterpart of the parser regression: the request used to
+    // come back with the most tannic wines on top.
+    const { runPipeline } = await import('../src/pipeline.js');
+    const output = await runPipeline({ message: 'un rouge, rien de tannique' });
+    expect(output.search!.ranking).toBe('vector');
+    for (const w of output.search!.results) expect(STRUCTURED).not.toContain(w.id);
+  });
+
   it('a grape of the appellation goes through normally', async () => {
     const { runPipeline } = await import('../src/pipeline.js');
     const output = await runPipeline({ message: 'un rouge a base de syrah' });

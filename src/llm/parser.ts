@@ -189,6 +189,8 @@ function* ngrams(
 /** Does a negation marker appear among the preceding words? */
 function isNegated(raw: string[], position: number): boolean {
   for (let i = Math.max(0, position - NEGATION_SCOPE); i < position; i++) {
+    // "rien que" means "nothing but": a restriction, not a negation.
+    if (raw[i] === 'rien' && raw[i + 1] === 'que') continue;
     if (NEGATION_MARKERS.has(raw[i]!)) return true;
   }
   return false;

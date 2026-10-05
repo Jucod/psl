@@ -45,6 +45,20 @@ describe('deterministic parser', () => {
     expect(f.descriptors).not.toContain('tannic');
   });
 
+  it('reads "rien de" as a negation', () => {
+    // Regression: "rien" was not a marker, so "rien de tannique" (nothing
+    // tannic) asked FOR tannic wines and ranked the most tannic first.
+    const f = parseMessage('un rouge, rien de tannique', opts);
+    expect(f.descriptors_excluded).toContain('tannic');
+    expect(f.descriptors).not.toContain('tannic');
+  });
+
+  it('does not read "rien que" (nothing but) as a negation', () => {
+    const f = parseMessage('rien que du boise', opts);
+    expect(f.descriptors).toContain('oak');
+    expect(f.descriptors_excluded).toHaveLength(0);
+  });
+
   it('does not negate a descriptor without a marker', () => {
     const f = parseMessage('un vin tannique et concentre', opts);
     expect(f.descriptors).toContain('tannic');
