@@ -1,4 +1,4 @@
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { writeFile } from 'node:fs/promises';
 import { z } from 'zod';
 import { WineBaseSchema } from '../schema/wine.js';
@@ -16,7 +16,7 @@ import { LlmFiltersSchema } from '../schema/filters.js';
  * date) cannot be expressed in JSON Schema. They are restated as a description
  * and enforced by the database CHECK constraints.
  */
-const TARGETS = [
+export const TARGETS = [
   {
     schema: WineBaseSchema,
     file: 'wine.schema.json',
@@ -42,7 +42,10 @@ export function render(target: (typeof TARGETS)[number]): string {
   return JSON.stringify(json, null, 2) + '\n';
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Entry-point guard. Comparing with `file://${argv[1]}` never matched on
+// Windows (backslashes, drive letter), so `npm run schema:export` silently
+// did nothing there.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   for (const target of TARGETS) {
     const path = fileURLToPath(new URL(`../../db/schema/${target.file}`, import.meta.url));
     await writeFile(path, render(target), 'utf8');

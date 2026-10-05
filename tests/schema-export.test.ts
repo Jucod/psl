@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { WineSchema } from '../src/schema/wine.js';
-import { readdirSync } from 'node:fs';
 
 /**
  * zod is the single source of truth. db/schema/*.json is its committed
@@ -11,18 +10,16 @@ import { readdirSync } from 'node:fs';
  */
 describe('schema contract', () => {
   it('the committed JSON Schemas are up to date', async () => {
-    const { render } = await import('../src/cli/export-schema.js');
-    const mod: any = await import('../src/cli/export-schema.js');
-    // render() is exported; the two targets are rebuilt from the module.
-    expect(typeof render).toBe('function');
+    const { TARGETS, render } = await import('../src/cli/export-schema.js');
+    expect(TARGETS.length).toBeGreaterThan(0);
 
-    for (const file of ['wine.schema.json', 'filters.schema.json']) {
-      const path = new URL(`../db/schema/${file}`, import.meta.url);
-      const committed = readFileSync(path, 'utf8');
-      expect(committed.length).toBeGreaterThan(100);
-      expect(JSON.parse(committed).$schema).toContain('json-schema.org');
+    for (const target of TARGETS) {
+      // A Windows checkout with core.autocrlf turns LF into CRLF: compare content, not line endings.
+      const committed = readFileSync(new URL(`../db/schema/${target.file}`, import.meta.url), 'utf8')
+        .replace(/\r\n/g, '\n');
+      expect(committed, `db/schema/${target.file} is stale: run npm run schema:export`)
+        .toBe(render(target));
     }
-    void mod;
   });
 
   it('the seed wines validate against the schema', () => {
