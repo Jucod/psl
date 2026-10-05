@@ -1,7 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { buildGrapeIndex } from '../ingest/util.js';
-import type { WineResult } from '../engine/types.js';
 import { parseMessage } from './parser.js';
 import { ZERO_USAGE, type ExtractionResult, type FormulationInput, type LlmProvider } from './index.js';
 
@@ -154,27 +153,6 @@ export function formulateFromTemplate(input: FormulationInput): string {
   // in its own place. Repeating them here doubled the length of the page
   // without adding anything.
   return lines.join('\n');
-}
-
-/** Kept for text outputs (CLI, log), where no card exists. */
-export function describeFacts(w: WineResult): string {
-  const facts: string[] = [];
-  if (w.blend.length > 0) {
-    facts.push(
-      w.blend
-        .map((b) => (b.pct === null ? b.grape : `${b.grape} ${b.pct}%`))
-        .join(', '),
-    );
-  }
-  if (w.abv !== null) facts.push(`${w.abv}%`);
-  if (w.aging) facts.push(`elevage : ${w.aging}`);
-  if (w.certification) facts.push(w.certification);
-  if (w.price_eur !== null) {
-    facts.push(
-      `${EUROS(w.price_eur)}${w.price_as_of ? ` (prix releve le ${w.price_as_of})` : ''}`,
-    );
-  }
-  return facts.length ? facts.join(' · ') : 'aucune caracteristique technique indexee';
 }
 
 /**

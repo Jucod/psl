@@ -11,7 +11,7 @@ import { vectorText } from './llm/parser.js';
 import { search } from './engine/search.js';
 import { pickExcerpt } from './engine/justification.js';
 import type { SearchResult } from './engine/types.js';
-import { EMPTY_FILTERS, parsePartialFilters, type Filters } from './schema/filters.js';
+import { parsePartialFilters, type Filters } from './schema/filters.js';
 
 const GRAPES_PATH = fileURLToPath(new URL('../db/seed/grapes.json', import.meta.url));
 
@@ -316,5 +316,3 @@ export function combine(a: number[], b: number[], weight: number): number[] | nu
   if (norm < 1e-9) return null;
   return v.map((x) => x / norm);
 }
-
-export { EMPTY_FILTERS, config };

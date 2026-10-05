@@ -29,9 +29,3 @@ export async function closeDb(): Promise<void> {
 export function toVector(v: readonly number[]): string {
   return `[${v.join(',')}]`;
 }
-
-/** Parses a pgvector vector literal. */
-export function fromVector(s: string | null): number[] | null {
-  if (!s) return null;
-  return s.slice(1, -1).split(',').map(Number);
-}

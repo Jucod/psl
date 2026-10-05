@@ -1,4 +1,4 @@
-import { config, fieldByKey, type FilterField } from '../config/domain.js';
+import { config, type FilterField } from '../config/domain.js';
 import type { Filters } from '../schema/filters.js';
 
 export interface SqlClause {
@@ -88,8 +88,4 @@ function clauseForField(
       throw new Error(`unhandled operator: ${_exhaustive}`);
     }
   }
-}
-
-export function fieldLabel(key: string): string {
-  return fieldByKey.get(key)?.label ?? key;
 }

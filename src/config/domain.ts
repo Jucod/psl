@@ -40,8 +40,6 @@ export interface FilterField {
   readonly operator: Operator;
   readonly column?: string;
   readonly join?: Join;
-  /** How the value is rendered in the front end's active-filters panel. */
-  readonly render: (value: any) => string;
   /**
    * Relaxes the constraint by one step. Receives the current value and the
    * original one (to cap the drift). Returns null when the field cannot be
@@ -52,8 +50,6 @@ export interface FilterField {
 }
 
 export interface DomainConfig {
-  readonly mainTable: string;
-  readonly primaryKey: string;
   readonly fields: readonly FilterField[];
   /** Relaxation order, one constraint at a time. */
   readonly relaxationOrder: readonly string[];
@@ -99,16 +95,12 @@ function colorLabel(code: unknown, form: 'singular' | 'plural' = 'singular'): st
 }
 
 export const config: DomainConfig = {
-  mainTable: 'wines',
-  primaryKey: 'id',
-
   fields: [
     {
       key: 'appellation',
       label: 'Appellation',
       operator: 'eq',
       column: 'appellation_id',
-      render: (v) => String(v),
       // Deliberately not relaxable. See relaxationOrder below.
       relax: () => null,
     },
@@ -117,14 +109,12 @@ export const config: DomainConfig = {
       label: 'Couleur',
       operator: 'eq',
       column: 'color',
-      render: (v) => colorLabel(v),
     },
     {
       key: 'price_max',
       label: 'Budget maximum',
       operator: 'max',
       column: 'price_eur',
-      render: (v) => `jusqu'a ${EUROS(v)}`,
       // In 25% steps, capped at +50% of the initial budget.
       relax: (current: number, original: number) => {
         // Without this guard, a missing original makes the comparison NaN,
@@ -152,14 +142,12 @@ export const config: DomainConfig = {
       label: 'Budget minimum',
       operator: 'min',
       column: 'price_eur',
-      render: (v) => `a partir de ${EUROS(v)}`,
     },
     {
       key: 'vintage_min',
       label: 'Millesime le plus ancien',
       operator: 'min',
       column: 'vintage',
-      render: (v) => `${v} ou plus recent`,
       relax: (current: number, original: number) => {
         if (!Number.isFinite(original)) return null;
         const next = current - 1;
@@ -172,7 +160,6 @@ export const config: DomainConfig = {
       label: 'Millesime le plus recent',
       operator: 'max',
       column: 'vintage',
-      render: (v) => `${v} ou plus ancien`,
       relax: (current: number, original: number) => {
         if (!Number.isFinite(original)) return null;
         const next = current + 1;
@@ -185,14 +172,12 @@ export const config: DomainConfig = {
       label: 'Agriculture biologique',
       operator: 'boolean',
       column: 'organic',
-      render: (v) => (v ? 'bio uniquement' : 'bio ou conventionnel'),
     },
     {
       key: 'grapes_included',
       label: 'Cepages souhaites',
       operator: 'join_any',
       join: { table: 'wine_grapes', foreignKey: 'wine_id', column: 'grape' },
-      render: (v: string[]) => v.join(', '),
       relax: () => null,
     },
     {
@@ -200,7 +185,6 @@ export const config: DomainConfig = {
       label: 'Cepages exclus',
       operator: 'join_none',
       join: { table: 'wine_grapes', foreignKey: 'wine_id', column: 'grape' },
-      render: (v: string[]) => `sans ${v.join(', ')}`,
     },
   ],
 

@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
-import { EMPTY_FILTERS, FiltersSchema, LlmFiltersSchema } from '../schema/filters.js';
+import { FiltersSchema, LlmFiltersSchema } from '../schema/filters.js';
 import { parseMessage } from './parser.js';
 import { EXTRACTION_SYSTEM, FORMULATION_SYSTEM, schemaRetryMessage } from './prompts.js';
 import { formulateFromTemplate } from './local.js';
@@ -215,5 +215,3 @@ export function formulationPayload(input: FormulationInput) {
     })),
   };
 }
-
-export { EMPTY_FILTERS };
