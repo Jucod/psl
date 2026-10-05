@@ -4,9 +4,11 @@ Conversational search engine over a product catalog. A visitor describes a need
 in natural language, the system turns the request into explicit filters,
 queries the catalog, and answers while citing its sources.
 
-The subject is wine. **The product is the engine.** Domain specifics live in
-`src/config/` and in the data; the search engine knows neither "color" nor
-"vintage".
+The subject is wine. **The product is the engine.** Turning a request into
+SQL, relaxing constraints and refusing out-of-catalog requests are driven by
+a declarative domain config (`src/config/`); the engine core does not name
+"color" or "vintage". The result projection and the appellation fallback are
+still wine-specific: see "Reusability" below.
 
 The product itself speaks French: the visitor's requests, the tasting notes,
 the lexicon and every message shown on screen are in French. The code, the
@@ -39,7 +41,7 @@ are deterministic and offline. See "Providers" below.
 
 ```bash
 npm run demo -- "un rouge pas trop tannique pour un gigot, autour de 20 euros"
-npm test
+npm test             # creates and resets its own <db>_test database
 ```
 
 ---
@@ -150,9 +152,18 @@ it did not show.
 
 `src/config/domain.ts` declares the filters, their column, their operator,
 their relaxation mode and the coverage rule. `src/config/lexicon.ts` holds the
-vocabulary. Changing business domain = rewriting these two files. No plugin
-layer, no generic entity model: the brief explicitly forbids anticipating a
-second client that does not exist.
+vocabulary. From that config alone, `src/engine/query.ts` builds the `WHERE`
+clauses, and `src/engine/search.ts` runs the relaxation ladder and the
+coverage refusal.
+
+What is not config-driven yet, stated plainly: in `src/engine/search.ts`, the
+result projection (`RESULTS_SQL`, with its per-column masking of the
+development overlay), the fallback on the appellation profile, the dish
+pairings and the catalog-size query name the wine tables and columns. Moving
+to another business domain means rewriting the two config files **and** those
+queries. That is a deliberate stopping point, not an oversight: no plugin
+layer, no generic entity model, because the brief explicitly forbids
+anticipating a second client that does not exist.
 
 ---
 

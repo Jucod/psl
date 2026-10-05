@@ -1,13 +1,12 @@
 /**
  * Business-domain configuration.
  *
- * This is the ONLY file in the project where the word "wine" means anything.
- * The search engine (src/engine/) knows neither "color", nor "vintage", nor
- * "appellation": it consumes the declarations below.
- *
- * Reusing the engine on a spare-parts catalog = rewriting this file and
- * changing the data. No plugin layer, no generic entity model: one declarative
- * object, and that is all.
+ * Filters, operators, relaxation and the coverage rule are declared here, and
+ * the engine's query builder and relaxation loop consume them without naming
+ * "color", "vintage" or "appellation". The result projection in
+ * src/engine/search.ts is still wine-specific (see the README, Reusability):
+ * reusing the engine on another catalog means rewriting this file, the
+ * lexicon and those queries. No plugin layer, no generic entity model.
  *
  * The product speaks French: labels, announcements and messages declared here
  * are shown to visitors as they are, hence the French string literals.
