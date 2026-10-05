@@ -1,4 +1,5 @@
 import pg from 'pg';
+import { env } from '../config/env.js';
 
 const { Pool, types } = pg;
 
@@ -7,14 +8,11 @@ const { Pool, types } = pg;
 // way to the front end.
 types.setTypeParser(1700, (v) => (v === null ? null : Number(v)));
 
-export const DATABASE_URL =
-  process.env.DATABASE_URL ?? 'postgres://psl:psl@127.0.0.1:5432/psl';
-
 let pool: pg.Pool | null = null;
 
 export function db(): pg.Pool {
   if (!pool) {
-    pool = new Pool({ connectionString: DATABASE_URL, max: 8 });
+    pool = new Pool({ connectionString: env.databaseUrl(), max: 8 });
     pool.on('error', (e) => console.error('[pg] pool error', e.message));
   }
   return pool;

@@ -1,4 +1,15 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 /** Centralized reading of the environment, with safe defaults. */
+
+// The README says `cp .env.example .env`: the file has to be read by someone.
+// Loaded once, here, because every entry point (CLI, API, tests) goes through
+// this module before touching the environment. Variables already set in the
+// process environment win over the file, so CI and the test setup keep
+// control.
+const DOTENV = fileURLToPath(new URL('../../.env', import.meta.url));
+if (existsSync(DOTENV)) process.loadEnvFile(DOTENV);
 
 function numberVar(key: string, fallback: number): number {
   const v = process.env[key];
@@ -30,6 +41,13 @@ export const env = {
    * the environment serves no development data.
    */
   allowFixtures: () => booleanVar('PSL_ALLOW_FIXTURES', false),
+
+  /**
+   * Origins allowed to call the API from a browser. Empty = same origin only:
+   * an open origin lets a third-party page burn through the daily spending cap.
+   */
+  allowedOrigins: () =>
+    (process.env.PSL_ALLOWED_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean),
 
   port: () => numberVar('PORT', 3000),
 } as const;

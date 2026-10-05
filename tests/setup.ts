@@ -5,8 +5,10 @@ import { beforeAll } from 'vitest';
 // The cases that check the behavior WITHOUT fixtures do it explicitly, by
 // passing allowFixtures: false to the engine.
 process.env.PSL_ALLOW_FIXTURES = '1';
-process.env.PSL_EMBEDDING_PROVIDER ??= 'local';
-process.env.PSL_LLM_PROVIDER ??= 'local';
+// Forced, not defaulted: a developer's .env pointing at a paid provider must
+// never turn `npm test` into billed API calls.
+process.env.PSL_EMBEDDING_PROVIDER = 'local';
+process.env.PSL_LLM_PROVIDER = 'local';
 process.env.DATABASE_URL ??= 'postgres://psl:psl@127.0.0.1:5432/psl';
 
 beforeAll(async () => {

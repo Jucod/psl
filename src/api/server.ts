@@ -19,8 +19,7 @@ const app = Fastify({ logger: { level: 'info' } });
 // CORS: an open origin lets a third-party page burn through the daily spending
 // cap. Per-IP rate limiting mitigates that without cancelling it.
 // Same origin only by default; PSL_ALLOWED_ORIGINS opens it up when needed.
-const origins = (process.env.PSL_ALLOWED_ORIGINS ?? '')
-  .split(',').map((o) => o.trim()).filter(Boolean);
+const origins = env.allowedOrigins();
 await app.register(cors, { origin: origins.length > 0 ? origins : false });
 
 /** Serves the built front end when it exists. Absent in dev: Vite takes care of it. */
