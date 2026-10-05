@@ -1,3 +1,4 @@
+import { config } from '../config/domain.js';
 import { padDimension, type EmbeddingProvider } from './index.js';
 
 export interface RemoteOptions {
@@ -39,6 +40,8 @@ export class RemoteEmbedding implements EmbeddingProvider {
     const json = (await response.json()) as { data: { embedding: number[]; index: number }[] };
     return json.data
       .sort((a, b) => a.index - b.index)
-      .map((d) => padDimension(d.embedding, 1536));
+      // Stored in a vector(config.embeddingDimension) column, whatever the
+      // model's native size.
+      .map((d) => padDimension(d.embedding, config.embeddingDimension));
   }
 }
