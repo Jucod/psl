@@ -52,83 +52,133 @@ const http = new PoliteFetcher({
   delayMs: Number(args.delay),
 });
 
-const report: string[] = [
-  `# Collection of ${today}`,
-  '',
-  'Candidates only. Review each file, fix or delete it, then promote with',
-  '`npm run collect:promote -- <file>...` (see ingestion/README.md).',
-  '',
-  '| producer | shop | products | candidates | already in catalog | excluded |',
-  '|---|---|---|---|---|---|',
-];
-const details: string[] = [];
-let total = 0;
+const rows: string[] = [];
+const ready: string[] = [];
+const toComplete: string[] = [];
+const excludedByReason = new Map<string, string[]>();
+const noApi: string[] = [];
+let products = 0;
+let known = 0;
 
 for (const producer of producers) {
   process.stdout.write(`${producer.id.padEnd(44)} `);
-  let products;
+  let list;
   try {
-    products = await listProducts(http, producer.website);
+    list = await listProducts(http, producer.website);
   } catch (e) {
     console.log(`error: ${(e as Error).message}`);
-    report.push(`| ${producer.id} | error: ${(e as Error).message.slice(0, 60)} | | | | |`);
+    rows.push(`| ${producer.id} | error: ${(e as Error).message.slice(0, 60)} | | | | | |`);
     continue;
   }
-  if (products === null) {
+  if (list === null) {
     console.log('no public product API');
-    report.push(`| ${producer.id} | no public product API | | | | |`);
+    noApi.push(`${producer.id} (${producer.website})`);
     continue;
   }
 
-  const candidates: Candidate[] = [];
-  const excluded: string[] = [];
-  let known = 0;
-  for (const product of products) {
+  products += list.length;
+  const counts = { ready: 0, toComplete: 0, known: 0, excluded: 0 };
+  for (const product of list) {
     const result = extractCandidate(product, producer, catalog.grapeIndex, today);
     if (result.kind === 'excluded') {
-      excluded.push(`${result.title}: ${result.reason}`);
+      counts.excluded++;
+      const bucket = excludedByReason.get(result.reason) ?? [];
+      bucket.push(`${producer.id}: ${result.title} <${result.url}>`);
+      excludedByReason.set(result.reason, bucket);
       continue;
     }
     const verdict = reviewCandidate(result.candidate.wine, result.candidate.sourceText, catalog);
     if (verdict.errors.some((e) => e.startsWith('already in the catalog'))) {
-      known++;
+      counts.known++;
       continue;
     }
-    candidates.push(result.candidate);
-    const { wine, flags, sourceText } = result.candidate;
-    await writeFile(join(outDir, `${wine.id}.source.txt`), sourceText + '\n', 'utf8');
-    await writeFile(
-      join(outDir, `${wine.id}.json`),
-      JSON.stringify({
-        _review: {
-          collected_on: today,
-          platform: products[0]!.platform,
-          source_text: `${wine.id}.source.txt`,
-          flags,
-          checks: [...verdict.errors, ...verdict.warnings],
-        },
-        ...wine,
-      }, null, 2) + '\n',
-      'utf8',
-    );
-    details.push(
+    await writeCandidate(result.candidate, list[0]!.platform, [...verdict.errors, ...verdict.warnings]);
+    const { wine, flags, toComplete: missing } = result.candidate;
+    const entry = [
       `### ${wine.id}`, '', `<${wine.page_url}>`, '',
-      ...[...flags, ...verdict.errors, ...verdict.warnings].map((f) => `- ${f}`), '',
-    );
+      ...missing.map((m) => `- **to complete**: ${m}`),
+      ...flags.map((f) => `- ${f}`), '',
+    ];
+    if (missing.length > 0) {
+      counts.toComplete++;
+      toComplete.push(...entry);
+    } else {
+      counts.ready++;
+      ready.push(...entry);
+    }
   }
-  total += candidates.length;
-  console.log(`${products[0]?.platform ?? '-'}: ${products.length} products, ${candidates.length} candidates, ${known} known`);
-  report.push(`| ${producer.id} | ${products[0]?.platform ?? '-'} | ${products.length} | ${candidates.length} | ${known} | ${excluded.length} |`);
-  if (excluded.length) details.push(`### ${producer.id}: excluded`, '', ...excluded.map((e) => `- ${e}`), '');
+  known += counts.known;
+  console.log(
+    `${list[0]?.platform ?? '-'}: ${list.length} products → ${counts.ready} ready, ` +
+    `${counts.toComplete} to complete, ${counts.known} known, ${counts.excluded} excluded`,
+  );
+  rows.push(
+    `| ${producer.id} | ${list[0]?.platform ?? '-'} | ${list.length} | ${counts.ready} | ` +
+    `${counts.toComplete} | ${counts.known} | ${counts.excluded} |`,
+  );
 }
 
-report.push('', `**${total} candidate(s).**`, '', '## Details', '', ...details);
-await writeFile(join(outDir, 'REPORT.md'), report.join('\n') + '\n', 'utf8');
+const readyCount = ready.filter((l) => l.startsWith('### ')).length;
+const completeCount = toComplete.filter((l) => l.startsWith('### ')).length;
+const excludedCount = [...excludedByReason.values()].reduce((n, v) => n + v.length, 0);
+
+const report = [
+  `# Collection of ${today}`,
+  '',
+  `${products} products read on ${producers.length - noApi.length} shops: ` +
+  `**${readyCount} ready**, **${completeCount} to complete**, ${known} already in the catalog, ` +
+  `${excludedCount} excluded. ${noApi.length} websites expose no product API.`,
+  '',
+  '"To complete" candidates leave the appellation or the color empty because the page does not',
+  'settle it: set the field in the JSON file, or delete the file. Promotion refuses them until then.',
+  '',
+  '| producer | shop | products | ready | to complete | known | excluded |',
+  '|---|---|---|---|---|---|---|',
+  ...rows,
+  '',
+  '## Excluded, by reason',
+  '',
+  ...[...excludedByReason].sort((a, b) => b[1].length - a[1].length)
+    .map(([reason, items]) => `- ${items.length} × ${reason}`),
+  '',
+  `## Ready (${readyCount})`, '', ...ready,
+  `## To complete (${completeCount})`, '', ...toComplete,
+  `## Excluded (${excludedCount})`, '',
+  ...[...excludedByReason].flatMap(([reason, items]) => [`### ${reason}`, '', ...items.map((i) => `- ${i}`), '']),
+  `## Websites without a product API (${noApi.length})`, '',
+  'Their wines need HTML parsing, a browser, or the PDF tech sheets.', '',
+  ...noApi.map((p) => `- ${p}`), '',
+];
+await writeFile(join(outDir, 'REPORT.md'), report.join('\n'), 'utf8');
+
 const shown = relative(process.cwd(), outDir).replaceAll('\\', '/');
 console.log(
-  `\n${total} candidate(s) in ${shown}/\n\n` +
-  'Next:\n' +
-  `  1. read ${shown}/REPORT.md, then fix or delete the candidate files\n` +
+  `\n${readyCount} ready, ${completeCount} to complete, ${known} already in the catalog, ` +
+  `${excludedCount} excluded, ${noApi.length} websites without a product API.\n` +
+  [...excludedByReason].sort((a, b) => b[1].length - a[1].length)
+    .map(([reason, items]) => `  excluded ${String(items.length).padStart(3)} × ${reason}`).join('\n') +
+  `\n\nNext:\n` +
+  `  1. read ${shown}/REPORT.md; complete or delete the "to complete" files\n` +
   `  2. npm run collect:promote -- ${shown}\n` +
   '  3. npm run db:seed && npm run db:embed',
 );
+
+async function writeCandidate(candidate: Candidate, platform: string, checks: string[]): Promise<void> {
+  const { wine, flags, toComplete: missing, sourceText } = candidate;
+  await writeFile(join(outDir, `${wine.id}.source.txt`), sourceText + '\n', 'utf8');
+  await writeFile(
+    join(outDir, `${wine.id}.json`),
+    JSON.stringify({
+      _review: {
+        collected_on: today,
+        platform,
+        source_text: `${wine.id}.source.txt`,
+        to_complete: missing,
+        flags,
+        checks,
+      },
+      ...wine,
+    }, null, 2) + '\n',
+    'utf8',
+  );
+}

@@ -26,14 +26,28 @@ the report as such: they need HTML parsing or a browser, out of scope here.
 
 It writes **candidates**, never wines: `ingestion/candidates/<date>/`, ignored
 by git, with one JSON file per wine, the product text it was taken from, and a
-`REPORT.md`. Products are excluded with a stated reason when they are not a
-single 75 cl bottle, not a Pic Saint-Loup (the appellation must be named, not
-only the terroir), white, or of an unclear color. Fields the page does not
-state clearly are left null and flagged rather than guessed. The tasting note
-is made of the page's descriptive sentences, copied as they are.
+`REPORT.md` that counts exclusions by reason.
+
+Only what is certainly not a bottle of Pic Saint-Loup is excluded: gift boxes
+and other non-wine products, large formats, white wines, and pages that state
+another designation (IGP, AOP Languedoc, Vin de France) without naming Pic
+Saint-Loup. Everything merely uncertain is kept:
+
+- **ready**: the page names the appellation (including its former name, "AOC
+  Coteaux du Languedoc Pic Saint-Loup") and the color;
+- **to complete**: the page names Pic Saint-Loup only as a place, states no
+  appellation, or does not say the color. The field is left empty and
+  `_review.to_complete` says what to decide: set it from the label, or delete
+  the file.
+
+Other uncertain fields (vintage, price, blend) are left null and flagged
+rather than guessed. The tasting note is made of the page's descriptive
+sentences, copied as they are.
 
 Review each candidate (fix a field, delete the file, or keep it as is), then
-promote the folder, or single files; `npm run collect` prints the exact path:
+promote the folder, or single files; `npm run collect` prints the exact path.
+Promoted files move to a `promoted/` subfolder, so the command can be run
+again on the same folder after completing the others:
 
 ```bash
 npm run collect:promote -- ingestion/candidates/2026-10-07

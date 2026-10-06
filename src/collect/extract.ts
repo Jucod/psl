@@ -21,10 +21,22 @@ export interface Producer {
   website: string;
 }
 
+/**
+ * A wine as extracted. The appellation and the color stay null when the page
+ * does not settle them: the reviewer sets them, and promotion refuses the file
+ * until then.
+ */
+export type CandidateWine = Omit<Wine, 'appellation_id' | 'color'> & {
+  appellation_id: string | null;
+  color: Wine['color'] | null;
+};
+
 export interface Candidate {
-  wine: Wine;
+  wine: CandidateWine;
   /** What the reviewer must look at before promoting. */
   flags: string[];
+  /** What the reviewer must decide: promotion is refused until it is done. */
+  toComplete: string[];
   /** The product text the note was taken from, for the verbatim check. */
   sourceText: string;
 }
@@ -37,8 +49,10 @@ const APPELLATION = 'aoc-pic-saint-loup';
 
 const NOT_A_BOTTLE = /coffret|carton|caisse|\blot\b|\bpack\b|verres?\b|tire-bouchon|carte cadeau|bon cadeau|bag[- ]in[- ]box|\bbib\b|cubi|abonnement|degustation|visite|atelier|huile|jus\b/;
 const PSL = /pic[\s-]*s(ain)?t[\s-]*loup/;
-const PSL_AS_APPELLATION = /\b(aop|aoc|appellation)\s+(d'origine\s+(protegee|controlee)\s+)?pic[\s-]*s(ain)?t[\s-]*loup/;
-const OTHER_DESIGNATION = /\bigp\b|vin de france|\b(aop|aoc)\s+languedoc\b|coteaux du languedoc|saint[- ]guilhem/;
+// Includes the former name of the appellation, "AOC Coteaux du Languedoc Pic
+// Saint-Loup", still on the labels of vintages before its own AOC (2016).
+const PSL_AS_APPELLATION = /\b(aop|aoc|appellation)\s+(d'origine\s+(protegee|controlee)\s+)?((coteaux\s+du\s+)?languedoc[\s-]+)?pic[\s-]*s(ain)?t[\s-]*loup/;
+const OTHER_DESIGNATION = /\bigp\b|vin de france|\b(aop|aoc)\s+languedoc\b(?![\s-]+pic)|coteaux du languedoc(?![\s-]+pic)|saint[- ]guilhem/;
 const LARGE_FORMAT = /magnum|jeroboam|150\s?cl|1[,.]5\s?l\b|\b37[,.]5\s?cl|demi[- ]bouteille/;
 
 /** Sentences of the page that describe the wine itself, by vocabulary. */
@@ -56,24 +70,39 @@ export function extractCandidate(
   const all = normalize([title, product.text, ...product.labels].join('\n'));
   const exclude = (reason: string): Extraction => ({ kind: 'excluded', title, url: product.url, reason });
 
+  // Excluded: only what is certainly not a bottle of Pic Saint-Loup.
+  // Everything merely uncertain becomes a candidate to complete.
   if (NOT_A_BOTTLE.test(titleN)) return exclude('not a single bottle of wine');
   if (LARGE_FORMAT.test(titleN)) return exclude('large or small format: the 75 cl bottle is the reference');
-  if (!PSL.test(all)) return exclude('Pic Saint-Loup not mentioned');
-  if (!PSL_AS_APPELLATION.test(all) && !product.labels.some((l) => PSL.test(normalize(l)))) {
-    // The Tonillieres case: a page that talks about the Pic Saint-Loup
-    // terroir without naming the appellation.
-    return exclude('Pic Saint-Loup mentioned, but not as the appellation');
-  }
 
-  const flags: string[] = [];
-  if (OTHER_DESIGNATION.test(all)) {
-    flags.push('the page also mentions another designation (IGP, AOP Languedoc...): check the appellation');
+  const pslNamed = PSL_AS_APPELLATION.test(all) || product.labels.some((l) => PSL.test(normalize(l)));
+  const pslMentioned = PSL.test(all);
+  const otherDesignation = OTHER_DESIGNATION.test(all);
+  if (!pslMentioned && otherDesignation) {
+    return exclude('another designation (IGP, AOP Languedoc, Vin de France) and no Pic Saint-Loup');
   }
 
   const color = colorOf(titleN, all);
   if (color === 'white') return exclude('white wine: the Pic Saint-Loup AOC covers no white');
-  if (color === null) return exclude('color not found on the page');
-  if (color === 'ambiguous') return exclude('several colors on the page, none in the title');
+
+  const flags: string[] = [];
+  const toComplete: string[] = [];
+
+  if (!pslNamed) {
+    toComplete.push(pslMentioned
+      // The Tonillieres case: the Pic Saint-Loup terroir, not the appellation.
+      ? 'appellation_id: the page names Pic Saint-Loup as a place, not as the appellation. ' +
+        'Set "aoc-pic-saint-loup" if the label says so, otherwise delete this file.'
+      : 'appellation_id: the page states no appellation. ' +
+        'Set "aoc-pic-saint-loup" if the label says so, otherwise delete this file.');
+  } else if (otherDesignation) {
+    flags.push('the page also mentions another designation (IGP, AOP Languedoc...): check the appellation');
+  }
+  if (color === null || color === 'ambiguous') {
+    toComplete.push(color === null
+      ? 'color: the page does not say. Set "red" or "rose".'
+      : 'color: several colors on the page, none in the title. Set "red" or "rose".');
+  }
 
   const vintage = vintageOf(title, product.text);
   if (vintage.flag) flags.push(vintage.flag);
@@ -105,12 +134,12 @@ export function extractCandidate(
   const nameSlug = slug(name);
   const colorPart = titleColor && !nameSlug.split('-').includes(titleColor) ? titleColor : null;
   const id = [shortProducer(producer.id), nameSlug, colorPart, vintage.value].filter(Boolean).join('-');
-  const wine: Wine = {
+  const wine: CandidateWine = {
     id,
     producer_id: producer.id,
-    appellation_id: APPELLATION,
+    appellation_id: pslNamed ? APPELLATION : null,
     name,
-    color,
+    color: color === 'red' || color === 'rose' ? color : null,
     vintage: vintage.value,
     blend,
     abv: abvOf(product.text),
@@ -135,7 +164,7 @@ export function extractCandidate(
     page_url: product.url,
   };
 
-  return { kind: 'candidate', candidate: { wine, flags, sourceText: product.text } };
+  return { kind: 'candidate', candidate: { wine, flags, toComplete, sourceText: product.text } };
 }
 
 export function sha256(text: string): string {

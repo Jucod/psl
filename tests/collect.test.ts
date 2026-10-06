@@ -90,19 +90,45 @@ describe('collector: from shop data to candidate', () => {
   });
 
   it.each([
-    ['a page about the terroir that does not name the appellation',
-      { ...shopifyRed, title: 'Les Tonillieres 2022', tags: [], product_type: 'Vin',
-        body_html: '<p>Un rouge de notre terroir du Pic Saint-Loup, 70% carignan.</p>' },
-      'not as the appellation'],
     ['a white wine', { ...shopifyRed, title: 'Blanc des Garrigues 2024 - AOP Pic Saint-Loup' }, 'white'],
     ['a gift box', { ...shopifyRed, title: 'Coffret découverte AOP Pic Saint-Loup' }, 'single bottle'],
     ['a magnum', { ...shopifyRed, title: 'Les Terrasses 2023 Magnum' }, 'format'],
-    ['another appellation', { ...shopifyRed, title: 'Les Mûriers 2024', tags: ['IGP'],
-      body_html: '<p>IGP Saint-Guilhem-le-Désert, vin rouge.</p>' }, 'not mentioned'],
-  ])('excludes %s', (_label, product, reason) => {
+    ['another designation, no Pic Saint-Loup', { ...shopifyRed, title: 'Les Mûriers 2024', tags: [],
+      body_html: '<p>IGP Saint-Guilhem-le-Désert, vin rouge.</p>' }, 'another designation'],
+  ])('excludes only what is certainly not a bottle of Pic Saint-Loup: %s', (_label, product, reason) => {
     const r = extractCandidate(fromShopify('https://morties.com/', product), MORTIES, grapeIndex, DAY);
     expect(r.kind).toBe('excluded');
     if (r.kind === 'excluded') expect(r.reason).toMatch(reason);
+  });
+
+  it.each([
+    ['names the terroir, not the appellation (the Tonillieres case)',
+      { ...shopifyRed, title: 'Les Tonillieres 2022', tags: [], product_type: 'Vin rouge',
+        body_html: '<p>Un rouge de notre terroir du Pic Saint-Loup. Bouche fraiche et fruitee.</p>' },
+      'appellation_id', /as a place/],
+    ['states no appellation at all',
+      { ...shopifyRed, title: 'Le Cazal 2021', tags: [], product_type: 'Vin rouge',
+        body_html: '<p>Bouche ronde, tanins fondus, finale sur la reglisse.</p>' },
+      'appellation_id', /no appellation/],
+    ['does not say the color',
+      { ...shopifyRed, title: 'Cuvée X 2022 - AOP Pic Saint-Loup', tags: [], product_type: 'Vin',
+        body_html: '<p>Nez de cassis, bouche ample et tanins serres.</p>' },
+      'color', /does not say/],
+  ])('keeps a page that %s, with the field left empty for the reviewer', (_label, product, field, why) => {
+    const r = extractCandidate(fromShopify('https://morties.com/', product), MORTIES, grapeIndex, DAY);
+    if (r.kind !== 'candidate') throw new Error(`excluded: ${r.reason}`);
+    expect((r.candidate.wine as Record<string, unknown>)[field]).toBeNull();
+    expect(r.candidate.toComplete.join()).toMatch(why);
+  });
+
+  it('recognizes the former name of the appellation', () => {
+    const product = { ...shopifyRed, title: 'Vieilles Vignes 2014', tags: [],
+      body_html: '<p>AOC Coteaux du Languedoc Pic Saint-Loup rouge. Robe profonde, bouche dense.</p>' };
+    const r = extractCandidate(fromShopify('https://morties.com/', product), MORTIES, grapeIndex, DAY);
+    if (r.kind !== 'candidate') throw new Error(`excluded: ${r.reason}`);
+    expect(r.candidate.wine.appellation_id).toBe('aoc-pic-saint-loup');
+    expect(r.candidate.toComplete).toEqual([]);
+    expect(r.candidate.flags.join()).not.toMatch(/another designation/);
   });
 
   it('flags instead of guessing: several prices, no vintage, no grape', () => {
@@ -158,6 +184,25 @@ describe('collector: promotion checks', () => {
     const c = candidate();
     const edited = { ...c.wine, tasting_note: c.wine.tasting_note!.replace('souples', 'soyeux') };
     expect(reviewCandidate(edited, c.sourceText, ctx).errors.join()).toMatch(/not made of sentences copied/);
+  });
+
+  it('refuses a candidate to complete until the reviewer has set the field', () => {
+    const product = { ...shopifyRed, tags: [], product_type: 'Vin rouge', title: 'Le Cazal 2021',
+      body_html: '<p>Bouche ronde, tanins fondus, finale sur la reglisse.</p>' };
+    const r = extractCandidate(fromShopify('https://morties.com/', product), MORTIES, grapeIndex, DAY);
+    if (r.kind !== 'candidate') throw new Error('excluded');
+    expect(reviewCandidate(r.candidate.wine, r.candidate.sourceText, ctx).errors.join())
+      .toMatch(/appellation_id is not set/);
+    const completed = { ...r.candidate.wine, appellation_id: 'aoc-pic-saint-loup' };
+    expect(reviewCandidate(completed, r.candidate.sourceText, ctx).errors).toEqual([]);
+  });
+
+  it('recognizes a known wine despite the accents the first collection dropped', () => {
+    const c = candidate();
+    const stored = { ...c.wine, id: 'other-id', name: 'Les Terrasses', color: 'red' } as never;
+    const accented = { ...c.wine, name: 'Lés Térrasses' };
+    expect(reviewCandidate(accented, c.sourceText, { ...ctx, existing: [stored] }).errors.join())
+      .toMatch(/already in the catalog as other-id/);
   });
 
   it('refuses a wine that is already in the catalog', () => {

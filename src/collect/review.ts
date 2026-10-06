@@ -1,5 +1,5 @@
 import { WineSchema, type Wine } from '../schema/wine.js';
-import { grapeCode } from '../ingest/util.js';
+import { grapeCode, slug } from '../ingest/util.js';
 import { inspectNote } from '../ingest/quarantine.js';
 import { isVerbatim } from './extract.js';
 
@@ -87,6 +87,21 @@ export interface ReviewContext {
 /** Everything that must hold before a candidate enters db/seed/wines/. */
 export function reviewCandidate(raw: unknown, sourceText: string | null, ctx: ReviewContext): Verdict & { wine?: Wine } {
   const verdict: Verdict = { errors: [], warnings: [] };
+  const r = (raw ?? {}) as Partial<Record<keyof Wine, unknown>>;
+
+  // Checked on the raw object, so that a candidate still to complete is
+  // recognized as a wine the catalog already has.
+  const sameWine = ctx.existing.find((w) =>
+    w.id === r.id ||
+    // slug: the catalog's first names were stored without accents.
+    (w.producer_id === r.producer_id && slug(w.name) === slug(String(r.name ?? '')) &&
+     w.vintage === r.vintage && (r.color == null || w.color === r.color)));
+  if (sameWine) verdict.errors.push(`already in the catalog as ${sameWine.id}`);
+
+  if (r.appellation_id == null) verdict.errors.push('appellation_id is not set: decide it from the label (see _review.to_complete)');
+  if (r.color == null) verdict.errors.push('color is not set: "red" or "rose" (see _review.to_complete)');
+  if (verdict.errors.length > 0) return verdict;
+
   const parsed = WineSchema.safeParse(raw);
   if (!parsed.success) {
     verdict.errors.push(...parsed.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`));
@@ -104,12 +119,6 @@ export function reviewCandidate(raw: unknown, sourceText: string | null, ctx: Re
   const rules = checkGrapeRules(wine, ctx.rules, ctx.grapeIndex);
   verdict.errors.push(...rules.errors);
   verdict.warnings.push(...rules.warnings);
-
-  const sameWine = ctx.existing.find((w) =>
-    w.id === wine.id ||
-    (w.producer_id === wine.producer_id && w.name.toLowerCase() === wine.name.toLowerCase() &&
-     w.vintage === wine.vintage && w.color === wine.color));
-  if (sameWine) verdict.errors.push(`already in the catalog as ${sameWine.id}`);
 
   if (wine.tasting_note) {
     if (sourceText === null) {
