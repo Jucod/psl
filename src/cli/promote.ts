@@ -1,18 +1,36 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { loadCatalog, WINES_DIR } from '../collect/catalog.js';
 import { reviewCandidate } from '../collect/review.js';
 
 /**
- * npm run collect:promote -- <candidate.json>...
+ * npm run collect:promote -- <candidate.json>... | <candidates folder>
  *
  * The only way into db/seed/wines/: the reviewed candidate is checked again
  * (schema, known producer and grapes, AOC grape rules, duplicates, note copied
  * verbatim from the page, quarantine), then written without its review block.
  */
-const files = process.argv.slice(2);
+const args = process.argv.slice(2);
+if (args.length === 0) {
+  console.error(
+    'usage: npm run collect:promote -- <candidate.json>...\n' +
+    '       npm run collect:promote -- <candidates folder>   (every candidate in it)',
+  );
+  process.exit(1);
+}
+
+// A folder stands for every candidate it holds.
+const files: string[] = [];
+for (const arg of args) {
+  if ((await stat(arg)).isDirectory()) {
+    const names = (await readdir(arg)).filter((f) => f.endsWith('.json')).sort();
+    files.push(...names.map((f) => join(arg, f)));
+  } else {
+    files.push(arg);
+  }
+}
 if (files.length === 0) {
-  console.error('usage: npm run collect:promote -- ingestion/candidates/<date>/<id>.json ...');
+  console.error('no candidate file found.');
   process.exit(1);
 }
 

@@ -124,4 +124,11 @@ for (const producer of producers) {
 
 report.push('', `**${total} candidate(s).**`, '', '## Details', '', ...details);
 await writeFile(join(outDir, 'REPORT.md'), report.join('\n') + '\n', 'utf8');
-console.log(`\n${total} candidate(s) in ${relative(root, outDir)}/ — read REPORT.md first.`);
+const shown = relative(process.cwd(), outDir).replaceAll('\\', '/');
+console.log(
+  `\n${total} candidate(s) in ${shown}/\n\n` +
+  'Next:\n' +
+  `  1. read ${shown}/REPORT.md, then fix or delete the candidate files\n` +
+  `  2. npm run collect:promote -- ${shown}\n` +
+  '  3. npm run db:seed && npm run db:embed',
+);

@@ -32,10 +32,11 @@ only the terroir), white, or of an unclear color. Fields the page does not
 state clearly are left null and flagged rather than guessed. The tasting note
 is made of the page's descriptive sentences, copied as they are.
 
-Review each candidate (fix a field, delete the file, or keep it as is), then:
+Review each candidate (fix a field, delete the file, or keep it as is), then
+promote the folder, or single files; `npm run collect` prints the exact path:
 
 ```bash
-npm run collect:promote -- ingestion/candidates/<date>/<id>.json ...
+npm run collect:promote -- ingestion/candidates/2026-10-07
 npm run db:seed && npm run db:embed
 ```
 
