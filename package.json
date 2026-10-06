@@ -14,6 +14,8 @@
     "db:embed": "tsx src/cli/embed.ts",
     "db:reset": "tsx src/cli/migrate.ts --reset",
     "schema:export": "tsx src/cli/export-schema.ts",
+    "collect": "tsx src/cli/collect.ts",
+    "collect:promote": "tsx src/cli/promote.ts",
     "demo": "tsx src/cli/demo.ts",
     "api": "tsx src/api/server.ts",
     "api:dev": "tsx watch src/api/server.ts",

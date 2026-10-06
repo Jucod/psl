@@ -9,6 +9,43 @@ python3 -m venv .venv && .venv/bin/pip install -r ingestion/requirements.txt
 .venv/bin/python ingestion/measure.py
 ```
 
+## Collecting more wines
+
+```bash
+# .env: PSL_COLLECT_CONTACT=you@example.org   (sent in the user-agent)
+npm run collect                                   # every estate with a website
+npm run collect -- --producer domaine-de-morties  # or a few, comma-separated
+```
+
+The collector reads each estate's shop through the two public product APIs
+the 16/09 collection found usable without a browser: Shopify
+(`/products.json`) and the WooCommerce Store API. It honors `robots.txt`,
+waits a second between two requests to the same host, identifies itself, and
+retries the flaky sites. Sites with neither API (PrestaShop, Wix) are listed in
+the report as such: they need HTML parsing or a browser, out of scope here.
+
+It writes **candidates**, never wines: `ingestion/candidates/<date>/`, ignored
+by git, with one JSON file per wine, the product text it was taken from, and a
+`REPORT.md`. Products are excluded with a stated reason when they are not a
+single 75 cl bottle, not a Pic Saint-Loup (the appellation must be named, not
+only the terroir), white, or of an unclear color. Fields the page does not
+state clearly are left null and flagged rather than guessed. The tasting note
+is made of the page's descriptive sentences, copied as they are.
+
+Review each candidate (fix a field, delete the file, or keep it as is), then:
+
+```bash
+npm run collect:promote -- ingestion/candidates/<date>/<id>.json ...
+npm run db:seed && npm run db:embed
+```
+
+Promotion checks again what must hold: the schema, a producer from the
+directory, known grapes, the AOC grape rules read from the seed (syrah share,
+secondary grapes, number of main grapes), no duplicate of a wine already in
+the catalog, the note made of sentences copied verbatim from the page (a note
+reworded during review is refused), and the injection quarantine. The wine is
+then written to `db/seed/wines/` with a `_provenance` line.
+
 ## Why Python here, and only here
 
 The runtime is TypeScript. Python only steps in for PDF extraction, where

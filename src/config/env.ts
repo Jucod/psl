@@ -49,5 +49,8 @@ export const env = {
   allowedOrigins: () =>
     (process.env.PSL_ALLOWED_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean),
 
+  /** E-mail or URL put in the collector's user-agent, so estates can reach us. */
+  collectContact: () => process.env.PSL_COLLECT_CONTACT ?? '',
+
   port: () => numberVar('PORT', 3000),
 } as const;

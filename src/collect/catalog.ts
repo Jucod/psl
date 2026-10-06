@@ -1,0 +1,37 @@
+import { fileURLToPath } from 'node:url';
+import { readdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { buildGrapeIndex, slug } from '../ingest/util.js';
+import type { Wine } from '../schema/wine.js';
+import type { Producer } from './extract.js';
+import type { GrapeRules } from './review.js';
+
+export const SEED_DIR = fileURLToPath(new URL('../../db/seed/', import.meta.url));
+export const WINES_DIR = join(SEED_DIR, 'wines');
+
+/** What the collector and the promotion step need from the reference data. */
+export async function loadCatalog() {
+  const seed = JSON.parse(await readFile(join(SEED_DIR, 'pic-saint-loup-seed.json'), 'utf8'));
+  const grapes = JSON.parse(await readFile(join(SEED_DIR, 'grapes.json'), 'utf8'));
+
+  const entries: { name: string; website?: string | null }[] = [
+    ...(seed.producers?.estates ?? []),
+    ...(seed.producers?.cooperatives ?? []),
+  ];
+  const producers: Producer[] = entries
+    .filter((p) => p.website && p.website !== 'TODO')
+    .map((p) => ({ id: slug(p.name), name: p.name, website: p.website! }));
+
+  const existing: Wine[] = [];
+  for (const f of (await readdir(WINES_DIR)).filter((f) => f.endsWith('.json')).sort()) {
+    existing.push(JSON.parse(await readFile(join(WINES_DIR, f), 'utf8')));
+  }
+
+  return {
+    producers,
+    producerIds: new Set(entries.map((p) => slug(p.name))),
+    grapeIndex: buildGrapeIndex(grapes.grapes),
+    rules: seed.appellations[0].grape_rules as GrapeRules,
+    existing,
+  };
+}
