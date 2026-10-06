@@ -19,8 +19,6 @@ export default async function setup(): Promise<void> {
     throw new Error(`refusing to reset "${name}": the test database name must end with _test`);
   }
 
-  await createIfMissing(url, name);
-
   process.env.DATABASE_URL = url;
   process.env.PSL_EMBEDDING_PROVIDER = 'local';
 
@@ -32,6 +30,7 @@ export default async function setup(): Promise<void> {
   const { embedCatalog } = await import('../src/embeddings/refresh.js');
 
   try {
+    await createIfMissing(url, name);
     await migrate({ reset: true });
     const client = await db().connect();
     try {
