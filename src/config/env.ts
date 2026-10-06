@@ -29,7 +29,7 @@ export const env = {
 
   embeddingProvider: () => process.env.PSL_EMBEDDING_PROVIDER ?? 'local',
   llmProvider: () => process.env.PSL_LLM_PROVIDER ?? 'local',
-  llmModel: () => process.env.PSL_LLM_MODEL ?? 'claude-sonnet-5',
+  llmModel: () => process.env.PSL_LLM_MODEL ?? 'claude-opus-5-5',
 
   maxMessageLength: () => numberVar('PSL_MAX_MESSAGE_LENGTH', 400),
   rateLimitPerIpPerHour: () => numberVar('PSL_RATE_LIMIT_PER_IP_PER_HOUR', 20),

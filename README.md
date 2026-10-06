@@ -186,6 +186,31 @@ trop tannique" produces `descriptors: ['supple']` **and**
 `descriptors_excluded: ['tannic']`, and the query vector is
 `normalize(v(wanted) − 0.7 · v(rejected))`.
 
+### Running with Claude
+
+```bash
+# .env
+PSL_LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-...        # https://console.anthropic.com
+PSL_LLM_MODEL=claude-opus-5-5       # default; claude-sonnet-5-5 costs half
+```
+
+The key comes from the Claude Console and is billed per use. A Claude Pro or
+Max subscription does not cover API calls: it is a separate product.
+
+Measured from the prompt sizes, a search costs about 2,500 to 3,000 input
+tokens and 500 to 1,500 output tokens over the two calls, i.e. 2 to 5 euro
+cents with Claude Opus 5.5 and half that with Claude Sonnet 5.5. The real cost
+of each search is printed by `npm run demo` and logged in the `searches`
+table; `PSL_DAILY_BUDGET_EUR` cuts the service off for the day when the sum
+reaches it.
+
+Both calls run at `effort: low` and opt into the server-side fallback on
+refusal (`fallbacks: "default"`). Whatever still fails (invalid output twice,
+refusal, network or key error) falls back on the local parser or the template,
+announced as such: the visitor never gets a blank page. `tests/anthropic.test.ts`
+runs this provider through the real SDK against a fake HTTP server.
+
 ### Stale vectors
 
 Editing `src/config/lexicon.ts` changes how notes are vectorized without
@@ -344,7 +369,7 @@ have to be requested from the estates or picked up at the cellar.
 |---|---|---|
 | 1 | Data foundation | done, on a real corpus (17 wines, 74 producers) |
 | 2 | Hybrid search without an LLM | done |
-| 3 | LLM layer, two calls | Anthropic provider wired, not run for lack of a key in the environment |
+| 3 | LLM layer, two calls | Anthropic provider tested offline against a fake HTTP server; not yet run against the live API |
 | 4 | Interface | done |
 | 5 | Automated PDF ingestion | extractor and measurement bench done, measured on three PDFs made here |
 

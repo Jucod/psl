@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
+import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { FiltersSchema, LlmFiltersSchema } from '../schema/filters.js';
 import { parseMessage } from './parser.js';
 import { EXTRACTION_SYSTEM, FORMULATION_SYSTEM, schemaRetryMessage } from './prompts.js';
@@ -7,31 +7,55 @@ import { formulateFromTemplate } from './local.js';
 import { checkOutput } from './output-check.js';
 import type { ExtractionResult, FormulationInput, LlmProvider, Usage } from './index.js';
 
-/** $ per million tokens. Table as of 2026-06-24, to be rechecked before deployment. */
+/** $ per million tokens, Anthropic first-party API rates as of 2026-09-25. */
 const PRICES: Record<string, { in: number; out: number }> = {
+  'claude-fable-5-1': { in: 10, out: 50 },
+  'claude-fable-5': { in: 10, out: 50 },
+  'claude-opus-5-5': { in: 4, out: 20 },
   'claude-opus-5': { in: 5, out: 25 },
   'claude-opus-4-8': { in: 5, out: 25 },
+  'claude-sonnet-5-5': { in: 2, out: 10 },
   'claude-sonnet-5': { in: 2, out: 10 },
   'claude-haiku-4-5': { in: 1, out: 5 },
-  'claude-fable-5-1': { in: 10, out: 50 },
 };
+
+/**
+ * An unknown model is priced like the most expensive one: the daily cap must
+ * stop too early rather than too late.
+ */
+const MOST_EXPENSIVE = Object.values(PRICES).reduce((a, b) => (b.out > a.out ? b : a));
 
 /** Frozen conversion rate: the spending cap is a guardrail, not accounting. */
 const USD_TO_EUR = 0.92;
 
 function costEur(model: string, tokensIn: number, tokensOut: number): number {
-  const price = PRICES[model] ?? PRICES['claude-opus-5']!;
+  const price = PRICES[model] ?? MOST_EXPENSIVE;
   const usd = (tokensIn * price.in + tokensOut * price.out) / 1_000_000;
   return usd * USD_TO_EUR;
 }
 
+/**
+ * Server-side fallback on a refusal: if the model declines (safety
+ * classifiers), the API reruns the same request on a model chosen by refusal
+ * category, inside the same call. The local fallbacks below (rule-based parser,
+ * template) stay in place for everything else.
+ */
+const FALLBACK: Pick<Anthropic.Beta.MessageCreateParams, 'betas' | 'fallbacks'> = {
+  betas: ['server-side-fallback-2026-07-01'],
+  fallbacks: 'default',
+};
+
 export class AnthropicLlm implements LlmProvider {
   readonly name = 'anthropic';
-  private readonly client: Anthropic;
 
-  constructor(private readonly model: string) {
-    this.client = new Anthropic();
-  }
+  /**
+   * Credentials come from the environment (ANTHROPIC_API_KEY). The client is
+   * injectable so that tests can run this provider without the network.
+   */
+  constructor(
+    private readonly model: string,
+    private readonly client: Anthropic = new Anthropic(),
+  ) {}
 
   /**
    * Call 1. One retry at most, then degraded mode.
@@ -43,7 +67,10 @@ export class AnthropicLlm implements LlmProvider {
     defaultAppellation: string | null,
   ): Promise<ExtractionResult> {
     const usage: Usage = { tokens_in: 0, tokens_out: 0, cost_eur: 0 };
-    const history: Anthropic.MessageParam[] = [
+    // Append-only: the retry adds turns, it never rewrites earlier ones, and
+    // it replays no thinking block, so the conversation check on thinking
+    // blocks has nothing to reject.
+    const history: Anthropic.Beta.BetaMessageParam[] = [
       {
         role: 'user',
         content:
@@ -57,17 +84,19 @@ export class AnthropicLlm implements LlmProvider {
 
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const response = await this.client.messages.parse({
+        const response = await this.client.beta.messages.parse({
+          ...FALLBACK,
           model: this.model,
-          max_tokens: 2048,
+          // Room for adaptive thinking on top of a short JSON answer.
+          max_tokens: 4096,
           system: EXTRACTION_SYSTEM,
           // Field extraction: no need for deep deliberation, and latency
           // matters in an interactive demo.
-          output_config: { effort: 'low', format: zodOutputFormat(LlmFiltersSchema) },
+          output_config: { effort: 'low', format: betaZodOutputFormat(LlmFiltersSchema) },
           messages: history,
         });
 
-        addUsage(usage, response.usage, this.model);
+        addUsage(usage, response, this.model);
 
         if (response.stop_reason === 'refusal') {
           lastError = 'refus du modele';
@@ -114,9 +143,10 @@ export class AnthropicLlm implements LlmProvider {
     const payload = formulationPayload(input);
 
     try {
-      const response = await this.client.messages.create({
+      const response = await this.client.beta.messages.create({
+        ...FALLBACK,
         model: this.model,
-        max_tokens: 2000,
+        max_tokens: 4096,
         system: FORMULATION_SYSTEM,
         output_config: { effort: 'low' },
         messages: [
@@ -129,14 +159,14 @@ export class AnthropicLlm implements LlmProvider {
         ],
       });
 
-      addUsage(usage, response.usage, this.model);
+      addUsage(usage, response, this.model);
 
       if (response.stop_reason === 'refusal') {
         return { text: formulateFromTemplate(input), usage };
       }
 
       const text = response.content
-        .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+        .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === 'text')
         .map((b) => b.text)
         .join('\n')
         .trim();
@@ -157,10 +187,28 @@ export class AnthropicLlm implements LlmProvider {
   }
 }
 
-function addUsage(usage: Usage, u: { input_tokens: number; output_tokens: number }, model: string): void {
-  usage.tokens_in += u.input_tokens;
-  usage.tokens_out += u.output_tokens;
-  usage.cost_eur += costEur(model, u.input_tokens, u.output_tokens);
+/**
+ * Bills each sampling iteration at the rate of the model that ran it: after a
+ * server-side fallback, part of the call ran on another model.
+ */
+function addUsage(
+  usage: Usage,
+  response: { model: string; usage: Anthropic.Beta.BetaUsage },
+  requestedModel: string,
+): void {
+  const iterations = (response.usage.iterations ?? []).filter(
+    (it): it is Anthropic.Beta.BetaMessageIterationUsage | Anthropic.Beta.BetaFallbackMessageIterationUsage =>
+      it.type === 'message' || it.type === 'fallback_message',
+  );
+  const parts = iterations.length > 0
+    ? iterations.map((it) => ({ model: it.model ?? requestedModel, in: it.input_tokens, out: it.output_tokens }))
+    : [{ model: response.model || requestedModel, in: response.usage.input_tokens, out: response.usage.output_tokens }];
+
+  for (const p of parts) {
+    usage.tokens_in += p.in;
+    usage.tokens_out += p.out;
+    usage.cost_eur += costEur(p.model, p.in, p.out);
+  }
 }
 
 /**
