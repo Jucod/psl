@@ -19,6 +19,8 @@ structure where each block is labeled by the `alt` of its icon (`position`,
 
 74 pages retrieved, one request per second, identifying user-agent.
 
+Coverage of what the syndicate publishes:
+
 | field | coverage |
 |---|---|
 | name | 74 / 74 |
@@ -28,8 +30,16 @@ structure where each block is labeled by the `alt` of its icon (`position`,
 | website | 56 / 74 |
 
 Result: **71 estates + 3 cooperative wineries**, against 5 estates and 3
-cooperatives in the previous seed. The raw collection is kept in
-`ingestion/collected/syndicate-directory-2026-09-16.json`.
+cooperatives in the previous seed. The collection is kept in
+`ingestion/collected/syndicate-directory-2026-09-16.json`, reduced to the
+fields the project uses: slug, name, commune, website.
+
+**No personal data is kept.** The syndicate's pages also carry contact names,
+phone numbers, e-mail addresses, postal addresses and a description written by
+each estate. The code reads none of them, so none of them is stored in the
+repository, nor in its history: data you do not need is data you do not have
+to protect. The descriptions are left out for a second reason, the one behind
+step 6 of the ingestion plan: the text belongs to the estates.
 
 Two communes are outside the 17 of the AOC (Teyran, Saint-Drézéry): these are
 members headquartered outside the area, not a collection error.
