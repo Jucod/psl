@@ -1,5 +1,5 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://coste-ubesse.com/product/laglandier-vin-rouge-igp-saint-guilhem-le-desert/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://coste-ubesse.com/product/laglandier-vin-rouge-igp-saint-guilhem-le-desert/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at the multi-designation review of 2026-10-09, by trimming only: quotation marks removed, aging sentence (kept in `aging`) removed from the note.",
   "id": "coste-ubesse-l-aglandier",
   "producer_id": "domaine-coste-ubesse",
   "appellation_id": "igp-saint-guilhem-le-desert",
@@ -18,7 +18,7 @@
   "price_as_of": "2026-10-09",
   "organic": true,
   "certification": null,
-  "tasting_note": "« Une cuvée 100% syrah aux parfums envoûtants de réglisse et de vanille, longue en bouche, qui a vieilli deux ans en barriques avant sa mise en bouteille. » Elevage séparé des gouttes et des presses puis assemblage et élevage 2 ans en barriques bordelaises (dont une neuve).",
+  "tasting_note": "Une cuvée 100% syrah aux parfums envoûtants de réglisse et de vanille, longue en bouche, qui a vieilli deux ans en barriques avant sa mise en bouteille.",
   "tasting_note_source": {
     "id": "page-coste-ubesse-l-aglandier",
     "type": "producer_page",

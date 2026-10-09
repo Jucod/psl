@@ -59,7 +59,10 @@ export function App() {
       <header className="page-header">
         <div>
           <h1>Pic Saint-Loup</h1>
-          <p>Recherche par description, sur le catalogue des domaines de l'appellation.</p>
+          <p>
+            Recherche par description, sur les vins des domaines du Pic Saint-Loup :
+            l'AOP, et les appellations voisines sous lesquelles ils vendent leurs autres cuvees.
+          </p>
         </div>
         {response?.fixtures_enabled && (
           <p className="global-warning">
@@ -117,7 +120,7 @@ export function App() {
                 response.search.undecidableFilters.length === 0 && (
                 <div className="banner banner-empty">
                   <strong>Aucune reference.</strong> Le catalogue compte{' '}
-                  {response.search.catalogSize} cuvee(s) pour cette appellation et
+                  {response.search.catalogSize} cuvee(s) pour cette designation et
                   cette couleur. Rien n'est propose par defaut.
                 </div>
               )}
@@ -155,7 +158,8 @@ export function App() {
         <p className="health-notice">L'abus d'alcool est dangereux pour la sante. A consommer avec moderation.</p>
         <p>
           Les descriptions proviennent des fiches techniques des domaines et du cahier
-          des charges INAO de l'appellation. Chaque element affiche porte sa source.
+          des charges INAO de l'AOP Pic Saint-Loup. Le badge AOP signale une appellation
+          d'origine protegee. Chaque element affiche porte sa source.
           Aucune note de degustation n'est generee.
         </p>
       </footer>

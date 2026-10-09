@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it } from 'vitest';
 import { AnthropicLlm } from '../src/llm/anthropic.js';
-import type { FormulationInput } from '../src/llm/index.js';
+import type { Designation, ExtractionContext, FormulationInput } from '../src/llm/index.js';
 import type { WineResult } from '../src/engine/types.js';
 import { EMPTY_FILTERS } from '../src/schema/filters.js';
 
@@ -42,6 +42,12 @@ function message(content: Reply[], extra: Reply = {}): Reply {
   };
 }
 
+const PSL: Designation = {
+  id: 'aoc-pic-saint-loup', name: 'Pic Saint-Loup', tier: 'aop', aliases: ['pic saint loup'],
+};
+const PSL_ONLY: ExtractionContext = { defaultAppellation: PSL.id, designations: [PSL] };
+const NO_DEFAULT: ExtractionContext = { defaultAppellation: null, designations: [PSL] };
+
 const VALID_FILTERS = {
   ...EMPTY_FILTERS,
   appellation: 'aoc-pic-saint-loup', color: 'red', price_max: 20,
@@ -55,7 +61,7 @@ describe('Anthropic provider: filter extraction (call 1)', () => {
     ]);
     const llm = new AnthropicLlm('claude-opus-5-5', client);
 
-    const r = await llm.extractFilters('un rouge pas trop tannique pour un gigot', 'aoc-pic-saint-loup');
+    const r = await llm.extractFilters('un rouge pas trop tannique pour un gigot', PSL_ONLY);
 
     expect(r.degraded).toBe(false);
     expect(r.filters.color).toBe('red');
@@ -63,6 +69,8 @@ describe('Anthropic provider: filter extraction (call 1)', () => {
 
     const sent = requests[0]!;
     expect(sent.body.model).toBe('claude-opus-5-5');
+    // The model picks the designation from a list rather than spelling it.
+    expect(sent.body.messages[0].content).toMatch(/- aoc-pic-saint-loup: AOP Pic Saint-Loup/);
     expect(sent.body.output_config.effort).toBe('low');
     expect(sent.body.output_config.format.type).toBe('json_schema');
     // Server-side fallback on refusal, opted in.
@@ -78,7 +86,7 @@ describe('Anthropic provider: filter extraction (call 1)', () => {
       message([{ type: 'text', text: JSON.stringify(invalid) }]),
       message([{ type: 'text', text: JSON.stringify(VALID_FILTERS) }]),
     ]);
-    const r = await new AnthropicLlm('claude-opus-5-5', client).extractFilters('x', null);
+    const r = await new AnthropicLlm('claude-opus-5-5', client).extractFilters('x', NO_DEFAULT);
 
     expect(r.degraded).toBe(false);
     expect(requests).toHaveLength(2);
@@ -95,7 +103,7 @@ describe('Anthropic provider: filter extraction (call 1)', () => {
       message([{ type: 'text', text: JSON.stringify(invalid) }]),
     ]);
     const r = await new AnthropicLlm('claude-opus-5-5', client)
-      .extractFilters('un rose pour l apero', 'aoc-pic-saint-loup');
+      .extractFilters('un rose pour l apero', PSL_ONLY);
 
     expect(r.degraded).toBe(true);
     expect(r.degradedReason).toMatch(/price_min/);
@@ -107,7 +115,7 @@ describe('Anthropic provider: filter extraction (call 1)', () => {
     const { client } = fakeClient([
       message([], { stop_reason: 'refusal', stop_details: { type: 'refusal', category: null, explanation: null } }),
     ]);
-    const r = await new AnthropicLlm('claude-opus-5-5', client).extractFilters('un rouge', null);
+    const r = await new AnthropicLlm('claude-opus-5-5', client).extractFilters('un rouge', NO_DEFAULT);
     expect(r.degraded).toBe(true);
     expect(r.degradedReason).toBe('refus du modele');
   });
@@ -116,7 +124,7 @@ describe('Anthropic provider: filter extraction (call 1)', () => {
     const { client } = fakeClient([
       { __status: 401, type: 'error', error: { type: 'authentication_error', message: 'invalid x-api-key' } },
     ]);
-    const r = await new AnthropicLlm('claude-opus-5-5', client).extractFilters('un rouge', null);
+    const r = await new AnthropicLlm('claude-opus-5-5', client).extractFilters('un rouge', NO_DEFAULT);
     expect(r.degraded).toBe(true);
     expect(r.filters.color).toBe('red');
   });
@@ -125,7 +133,7 @@ describe('Anthropic provider: filter extraction (call 1)', () => {
 describe('Anthropic provider: cost accounting', () => {
   it('prices the tokens of the model that ran', async () => {
     const { client } = fakeClient([message([{ type: 'text', text: JSON.stringify(VALID_FILTERS) }])]);
-    const r = await new AnthropicLlm('claude-opus-5-5', client).extractFilters('x', null);
+    const r = await new AnthropicLlm('claude-opus-5-5', client).extractFilters('x', NO_DEFAULT);
     // 1000 in at $4/M + 100 out at $20/M = $0.006, at 0.92 €/$.
     expect(r.usage.cost_eur).toBeCloseTo(0.006 * 0.92, 9);
   });
@@ -145,7 +153,7 @@ describe('Anthropic provider: cost accounting', () => {
         },
       }),
     ]);
-    const r = await new AnthropicLlm('claude-opus-5-5', client).extractFilters('x', null);
+    const r = await new AnthropicLlm('claude-opus-5-5', client).extractFilters('x', NO_DEFAULT);
     const usd = (1000 * 4 + 50 * 20 + 1000 * 5 + 100 * 25) / 1e6;
     expect(r.usage.cost_eur).toBeCloseTo(usd * 0.92, 9);
     expect(r.usage.tokens_in).toBe(2000);
@@ -155,7 +163,7 @@ describe('Anthropic provider: cost accounting', () => {
     const { client } = fakeClient([
       message([{ type: 'text', text: JSON.stringify(VALID_FILTERS) }], { model: 'claude-future-9' }),
     ]);
-    const r = await new AnthropicLlm('claude-future-9', client).extractFilters('x', null);
+    const r = await new AnthropicLlm('claude-future-9', client).extractFilters('x', NO_DEFAULT);
     expect(r.usage.cost_eur).toBeCloseTo(((1000 * 10 + 100 * 50) / 1e6) * 0.92, 9);
   });
 });
@@ -163,7 +171,8 @@ describe('Anthropic provider: cost accounting', () => {
 describe('Anthropic provider: formulation (call 2)', () => {
   const ARBOUSE: WineResult = {
     id: 'arbouse', name: "L'Arbouse", producer: 'Mas Bruguiere', producer_id: 'mas-bruguiere',
-    commune: null, appellation_id: 'aoc-pic-saint-loup', color: 'red', vintage: 2024,
+    commune: null, appellation_id: 'aoc-pic-saint-loup', appellation_name: 'Pic Saint-Loup',
+    appellation_tier: 'aop', color: 'red', vintage: 2024,
     abv: null, aging: null, price_eur: 20, price_as_of: '2026-09-16', organic: true,
     certification: null, blend: [], page_url: null,
     tasting_note: 'La bouche est souple et coulante, les tanins sont fondus.',

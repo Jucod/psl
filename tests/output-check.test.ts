@@ -5,7 +5,8 @@ import type { WineResult } from '../src/engine/types.js';
 function wine(p: Partial<WineResult>): WineResult {
   return {
     id: 'x', name: 'X', producer: 'Domaine X', producer_id: 'x', commune: null,
-    appellation_id: 'aoc-pic-saint-loup', color: 'red', vintage: 2022,
+    appellation_id: 'aoc-pic-saint-loup', appellation_name: 'Pic Saint-Loup', appellation_tier: 'aop',
+    color: 'red', vintage: 2022,
     abv: null, aging: null, price_eur: null, price_as_of: null, organic: null,
     certification: null, blend: [], page_url: null,
     tasting_note: null, note_source: null, producer_pairings: [],

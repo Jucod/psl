@@ -1,5 +1,5 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://morties.com/products/aoc-languedoc-vente-vin-blanc (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://morties.com/products/aoc-languedoc-vente-vin-blanc (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at the multi-designation review of 2026-10-09, by trimming only: the aging line glued to the last sentence moved to `aging`.",
   "id": "morties-jamais-content-blanc-2024",
   "producer_id": "domaine-de-morties",
   "appellation_id": "vin-de-france",
@@ -13,12 +13,12 @@
     }
   ],
   "abv": null,
-  "aging": null,
+  "aging": "En barriques de 500l",
   "price_eur": 30.5,
   "price_as_of": "2026-10-09",
   "organic": null,
   "certification": null,
-  "tasting_note": "Vin jeune à la robe jaune pâle. Le nez est expressif sur des notes d'agrumes, et épices douces. Ce vin blanc de garde allie son coté sudiste à la minéralité du terroir de Mortiès En barriques de 500l",
+  "tasting_note": "Vin jeune à la robe jaune pâle. Le nez est expressif sur des notes d'agrumes, et épices douces. Ce vin blanc de garde allie son coté sudiste à la minéralité du terroir de Mortiès",
   "tasting_note_source": {
     "id": "page-morties-jamais-content-blanc-2024",
     "type": "producer_page",

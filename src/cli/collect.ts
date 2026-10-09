@@ -94,7 +94,7 @@ for (const producer of producers) {
   products += list.length;
   const counts = { ready: 0, toComplete: 0, known: 0, excluded: 0 };
   for (const product of list) {
-    const result = extractCandidate(product, producer, catalog.grapeIndex, today);
+    const result = extractCandidate(product, producer, catalog, today);
     if (result.kind === 'excluded') {
       counts.excluded++;
       const bucket = excludedByReason.get(result.reason) ?? [];
@@ -144,7 +144,7 @@ const report = [
   `**${readyCount} ready**, **${completeCount} to complete**, ${known} already in the catalog, ` +
   `${excludedCount} excluded. ${noApi.length} websites gave no product data.`,
   '',
-  '"To complete" candidates leave the appellation or the color empty because the page does not',
+  '"To complete" candidates leave the designation or the color empty because the page does not',
   'settle it: set the field in the JSON file, or delete the file. Promotion refuses them until then.',
   '',
   '| producer | shop | products | ready | to complete | known | excluded |',

@@ -1,0 +1,37 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://mas-bruguiere.com/produit/vin-les-muriers-aop-languedoc-blanc/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at the multi-designation review of 2026-10-09, by trimming only: the page repeats its blocks: the note keeps the first occurrence of each tasting sentence, without the section headings, serving advice and cut fragments; `aging` was a sentence about the parcel name, set to null.",
+  "id": "mas-bruguiere-les-muriers-2025",
+  "producer_id": "mas-bruguiere",
+  "appellation_id": "aoc-languedoc",
+  "name": "Les Mûriers",
+  "color": "white",
+  "vintage": 2025,
+  "blend": [
+    {
+      "grape": "vermentino",
+      "pct": null
+    },
+    {
+      "grape": "roussanne",
+      "pct": null
+    }
+  ],
+  "abv": 11,
+  "aging": null,
+  "price_eur": null,
+  "price_as_of": null,
+  "organic": null,
+  "certification": null,
+  "tasting_note": "Un blanc tendu et lumineux, façonné par la fraîcheur du Pic Saint-Loup. La robe se présente or pâle aux reflets argentés . Le nez est expressif et précis, révélant une trame minérale accompagnée de fruits à chair jaune. En bouche, l’équilibre s’installe immédiatement entre ampleur et fraîcheur. Le vin développe une matière savoureuse, portée par un fruit net et gourmand, avant de s’étirer sur une finale persistante.",
+  "tasting_note_source": {
+    "id": "page-mas-bruguiere-les-muriers-2025",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://mas-bruguiere.com/produit/vin-les-muriers-aop-languedoc-blanc/",
+    "authority": "Mas Bruguière",
+    "retrieved_on": "2026-10-09",
+    "content_sha256": "2013b8b41ba64b18b741f3081a029f60e0188a2cb4d6bf3addafb3b4e499ff34"
+  },
+  "producer_pairings": [],
+  "page_url": "https://mas-bruguiere.com/produit/vin-les-muriers-aop-languedoc-blanc/"
+}

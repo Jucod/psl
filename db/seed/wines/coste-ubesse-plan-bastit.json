@@ -1,5 +1,5 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://coste-ubesse.com/product/plan-bastit-vin-rouge-igp-saint-guilhem-le-desert/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://coste-ubesse.com/product/plan-bastit-vin-rouge-igp-saint-guilhem-le-desert/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at the multi-designation review of 2026-10-09, by trimming only: opening quotation mark and the aging sentence (kept in `aging`) removed from the note.",
   "id": "coste-ubesse-plan-bastit",
   "producer_id": "domaine-coste-ubesse",
   "appellation_id": "igp-saint-guilhem-le-desert",
@@ -18,7 +18,7 @@
   "price_as_of": "2026-10-09",
   "organic": true,
   "certification": null,
-  "tasting_note": "« On retrouve dans ce vin de la puissance, mais également l’équilibre et la subtilité des arômes de fruits rouges avec une grande finesse dans les tanins. 5 semaines de macération traditionnelle puis élevage séparé des gouttes et des presses (dont une partie en fût de chêne)",
+  "tasting_note": "On retrouve dans ce vin de la puissance, mais également l’équilibre et la subtilité des arômes de fruits rouges avec une grande finesse dans les tanins.",
   "tasting_note_source": {
     "id": "page-coste-ubesse-plan-bastit",
     "type": "producer_page",

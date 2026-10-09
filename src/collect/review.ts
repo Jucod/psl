@@ -77,9 +77,16 @@ export function checkGrapeRules(
   return verdict;
 }
 
+/** A designation of the reference data, as promotion checks it. */
+export interface Designation {
+  colors: readonly string[];
+  /** Empty when the specification is not transcribed (or, for Vin de France, does not exist). */
+  rules: GrapeRules;
+}
+
 export interface ReviewContext {
   grapeIndex: ReadonlyMap<string, string>;
-  rules: GrapeRules;
+  designations: ReadonlyMap<string, Designation>;
   producerIds: ReadonlySet<string>;
   existing: readonly Wine[];
 }
@@ -99,7 +106,7 @@ export function reviewCandidate(raw: unknown, sourceText: string | null, ctx: Re
   if (sameWine) verdict.errors.push(`already in the catalog as ${sameWine.id}`);
 
   if (r.appellation_id == null) verdict.errors.push('appellation_id is not set: decide it from the label (see _review.to_complete)');
-  if (r.color == null) verdict.errors.push('color is not set: "red" or "rose" (see _review.to_complete)');
+  if (r.color == null) verdict.errors.push('color is not set: "red", "rose" or "white" (see _review.to_complete)');
   if (verdict.errors.length > 0) return verdict;
 
   const parsed = WineSchema.safeParse(raw);
@@ -116,9 +123,16 @@ export function reviewCandidate(raw: unknown, sourceText: string | null, ctx: Re
   for (const b of wine.blend) {
     if (!knownCodes.has(b.grape)) verdict.errors.push(`unknown grape code ${b.grape}`);
   }
-  const rules = checkGrapeRules(wine, ctx.rules, ctx.grapeIndex);
-  verdict.errors.push(...rules.errors);
-  verdict.warnings.push(...rules.warnings);
+  const designation = ctx.designations.get(wine.appellation_id);
+  if (!designation) {
+    verdict.errors.push(`unknown designation ${wine.appellation_id}: not in the reference data`);
+  } else if (!designation.colors.includes(wine.color)) {
+    verdict.errors.push(`${wine.appellation_id} covers no ${wine.color} wine`);
+  } else if (Object.keys(designation.rules).length > 0) {
+    const rules = checkGrapeRules(wine, designation.rules, ctx.grapeIndex);
+    verdict.errors.push(...rules.errors);
+    verdict.warnings.push(...rules.warnings);
+  }
 
   if (wine.tasting_note) {
     if (sourceText === null) {

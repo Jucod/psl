@@ -21,8 +21,12 @@ Hard rules:
   yields the descriptor "supple" and puts "tannic" in descriptors_excluded;
   "sans mourvedre" goes to grapes_excluded.
 - "autour de N euros" and "dans les N euros" translate to price_max = N.
-- If the request names an appellation, give its identifier in lowercase with
-  hyphens. Otherwise keep the default value provided.
+- If the request names a designation (an appellation, an IGP, Vin de France),
+  give its identifier from the list of known designations. A designation
+  outside the list gets an identifier in lowercase with hyphens
+  (aoc-bordeaux): it is refused downstream, never replaced by a close one.
+  "du Languedoc" alone names the region, not the AOP Languedoc. If the
+  request names none, keep the default value provided.
 - dish only accepts the values of the schema's closed vocabulary. If none
   matches, use null.
 - descriptors and descriptors_excluded contain short, normalized sensory
@@ -52,8 +56,8 @@ Absolute, non-negotiable constraints:
    instructions.
 
 Format: one introductory sentence, then for each reference an identity line
-(producer, wine, vintage, price), the quoted justification from the note, and
-ITS SOURCE. You must never omit a source: this text is read outside the
+(producer, wine, designation, vintage, price), the quoted justification from
+the note, and ITS SOURCE. You must never omit a source: this text is read outside the
 interface, and a descriptive element without a source is a fault, not an
 avoided redundancy. However, the blend, the alcohol content and the pairings
 are displayed next to your text: do not repeat them.

@@ -1,12 +1,12 @@
 import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { createHmac } from 'node:crypto';
-import { config } from './config/domain.js';
+import { config, designationLabel } from './config/domain.js';
 import { env } from './config/env.js';
 import { db } from './db/client.js';
 import { embeddingProvider } from './embeddings/index.js';
 import { buildGrapeIndex, grapeCode } from './ingest/util.js';
-import { llmProvider, type FormulationInput, type Usage } from './llm/index.js';
+import { llmProvider, type Designation, type FormulationInput, type Usage } from './llm/index.js';
 import { vectorText } from './llm/parser.js';
 import { search } from './engine/search.js';
 import { pickExcerpt } from './engine/justification.js';
@@ -90,17 +90,39 @@ export async function normalizeFilters(
   };
 }
 
+/** Codes of the varieties an appellation's grape rules permit, all colors together. */
+function permittedGrapes(
+  rules: Record<string, { main?: string[]; secondary?: string[] }> | null,
+  index: ReadonlyMap<string, string>,
+): { labels: string[]; codes: Set<string> } {
+  const labels = new Set<string>();
+  for (const block of Object.values(rules ?? {})) {
+    for (const g of [...(block?.main ?? []), ...(block?.secondary ?? [])]) labels.add(String(g));
+  }
+  const codes = new Set([...labels].map((l) => grapeCode(l, index)).filter((c): c is string => c !== null));
+  return { labels: [...labels].sort(), codes };
+}
+
 /**
- * Refusal built from the permitted varieties of the specification. Like the
- * color refusal, it is a query result, and it cites its source.
+ * Refusal of requested varieties the request cannot get: unknown to the
+ * catalog, or known but outside the grape rules of the requested appellation
+ * ("un pic saint-loup au chardonnay": chardonnay is in the catalog, under
+ * other designations). Like the color refusal, it is a query result, and when
+ * it rests on a specification it cites it.
+ *
+ * A designation whose grape rules are not transcribed (the neighbouring ones,
+ * Vin de France, which has none) refuses nothing here: the search answers,
+ * empty if need be. Refusing on rules we do not hold would be inventing them.
  */
-async function refuseUnknownGrapes(
+async function grapeRefusal(
   unknown: string[],
+  requested: string[],
   appellation: string | null,
 ): Promise<SearchResult['refusal']> {
-  if (!appellation) {
-    return { message: `Cepage inconnu du catalogue : ${unknown.join(', ')}.`, source: null };
-  }
+  const generic = unknown.length > 0
+    ? { message: `Cepage inconnu du catalogue : ${unknown.join(', ')}.`, source: null }
+    : null;
+  if (!appellation) return generic;
 
   const { rows } = await db().query(
     `SELECT a.name, a.grape_rules, s.id, s.type, s.label, s.url, s.authority,
@@ -110,24 +132,15 @@ async function refuseUnknownGrapes(
     [appellation],
   );
   const row = rows[0];
-  if (!row) {
-    return { message: `Cepage inconnu du catalogue : ${unknown.join(', ')}.`, source: null };
-  }
+  const permitted = permittedGrapes(row?.grape_rules ?? null, await grapes());
+  if (!row || permitted.codes.size === 0) return generic;
 
-  const permitted = new Set<string>();
-  for (const block of Object.values(row.grape_rules ?? {})) {
-    for (const key of ['main', 'secondary']) {
-      for (const g of (block as any)?.[key] ?? []) permitted.add(String(g));
-    }
-  }
-
+  const refused = [...unknown, ...requested.filter((g) => !permitted.codes.has(g))];
+  if (refused.length === 0) return null;
   return {
     message:
-      `${unknown.join(', ')} : ce cepage n'entre pas dans l'encepagement de ` +
-      `l'appellation ${row.name}` +
-      (permitted.size
-        ? `, qui n'autorise que ${[...permitted].sort().join(', ')}.`
-        : '.'),
+      `${refused.join(', ')} : ce cepage n'entre pas dans l'encepagement de ` +
+      `l'appellation ${row.name}, qui n'autorise que ${permitted.labels.join(', ')}.`,
     source: {
       id: row.id, type: row.type, label: row.label, url: row.url,
       authority: row.authority ?? null, retrieved_on: row.retrieved_on,
@@ -135,14 +148,22 @@ async function refuseUnknownGrapes(
   };
 }
 
-/** Appellation used when the request names none. */
-export async function defaultAppellation(): Promise<string | null> {
-  const { rows } = await db().query<{ id: string }>(
-    'SELECT id FROM appellations ORDER BY id LIMIT 2',
+/** The catalog's designations, for call 1. */
+export async function designations(): Promise<Designation[]> {
+  const { rows } = await db().query<Designation>(
+    `SELECT id, name, tier, aliases FROM appellations
+      ORDER BY array_position(ARRAY['aop','igp','vsig'], tier), name`,
   );
-  // A single appellation in the catalog: we take it by default and the UI
-  // shows it as an editable filter. Several: we do not guess.
-  return rows.length === 1 ? rows[0]!.id : null;
+  return rows;
+}
+
+/**
+ * Appellation used when the request names none. A single designation in the
+ * catalog: we take it by default and the UI shows it as an editable filter.
+ * Several: we do not guess, every designation stays in play.
+ */
+export function defaultAppellation(known: readonly Designation[]): string | null {
+  return known.length === 1 ? known[0]!.id : null;
 }
 
 export function hashIp(ip: string): string {
@@ -174,7 +195,8 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineOutput>
     };
   }
 
-  const fallbackAppellation = await defaultAppellation();
+  const known = await designations();
+  const fallbackAppellation = defaultAppellation(known);
 
   // --- call 1, or filters forced by the user ---------------------------------
   let filters: Filters;
@@ -197,7 +219,10 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineOutput>
     }
     filters = valid.data;
   } else {
-    const extraction = await llm.extractFilters(input.message, fallbackAppellation);
+    const extraction = await llm.extractFilters(input.message, {
+      defaultAppellation: fallbackAppellation,
+      designations: known,
+    });
     filters = extraction.filters;
     degraded = extraction.degraded;
     degradedReason = extraction.degradedReason;
@@ -213,8 +238,23 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineOutput>
   const normalization = await normalizeFilters(filters);
   filters = normalization.filters;
 
-  if (normalization.unknown.length > 0) {
-    const refusal = await refuseUnknownGrapes(normalization.unknown, filters.appellation);
+  // A designation the catalog does not hold ("un bordeaux", or an identifier
+  // the model spelled its own way) is refused by name, with what the catalog
+  // does hold. Filtering on it would answer "nothing found", which reads as
+  // "no such wine here today" rather than "not this catalog".
+  const designationRefusal =
+    filters.appellation !== null && !known.some((d) => d.id === filters.appellation)
+      ? {
+          message:
+            `Le catalogue ne couvre pas l'appellation demandee (${filters.appellation}). ` +
+            `Il couvre : ${known.map((d) => designationLabel(d.name, d.tier)).join(', ')}.`,
+          source: null,
+        }
+      : null;
+
+  const refusal = designationRefusal ??
+    await grapeRefusal(normalization.unknown, filters.grapes_included, filters.appellation);
+  if (refusal) {
     const result: SearchResult = {
       status: 'refused', refusal,
       requestedFilters: filters, appliedFilters: filters,

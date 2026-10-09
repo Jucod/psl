@@ -1,5 +1,5 @@
 import type pg from 'pg';
-import { config, fieldByKey } from '../config/domain.js';
+import { config, designationLabel, fieldByKey } from '../config/domain.js';
 import { DISHES } from '../config/lexicon.js';
 import { db, toVector } from '../db/client.js';
 import type { Filters } from '../schema/filters.js';
@@ -78,6 +78,7 @@ const RESULTS_SQL = `
     w.organic, w.certification, w.tasting_note, w.producer_pairings,
     w.page_url, w.embedding_level, w.from_fixture, w.is_masked,
     p.id AS producer_id, p.name AS producer, p.commune,
+    d.name AS appellation_name, d.tier AS appellation_tier,
     ns.id  AS ns_id,  ns.type AS ns_type, ns.label AS ns_label,
     ns.url AS ns_url, ns.authority AS ns_authority, ns.retrieved_on::text AS ns_date,
     ap.profile_text, ap.source_section,
@@ -94,6 +95,7 @@ const RESULTS_SQL = `
     END AS score
   FROM w
   JOIN producers p ON p.id = w.producer_id
+  JOIN appellations d ON d.id = w.appellation_id
   LEFT JOIN appellation_profiles ap
          ON ap.appellation_id = w.appellation_id AND ap.color = w.color
   LEFT JOIN sources ns ON ns.id = w.tasting_note_source_id
@@ -126,6 +128,8 @@ function toResult(r: Record<string, any>): WineResult {
     producer_id: r.producer_id,
     commune: r.commune ?? null,
     appellation_id: r.appellation_id,
+    appellation_name: r.appellation_name,
+    appellation_tier: r.appellation_tier,
     color: r.color,
     vintage: r.vintage ?? null,
     abv: r.abv ?? null,
@@ -219,8 +223,21 @@ async function checkCoverage(
   const readable = { ...values };
   if (src[0]?.name) readable[keys[0]!.filter] = src[0].name;
 
+  // Where the catalog DOES hold that color. Nothing is served (it is still a
+  // refusal), but "a white Pic Saint-Loup" is the first thing a visitor asks,
+  // and the estates' whites exist under other designations: saying which
+  // turns a dead end into the next request.
+  const { rows: elsewhere } = await pool.query<{ name: string; tier: string }>(
+    `SELECT d.name, d.tier
+       FROM wines w JOIN appellations d ON d.id = w.appellation_id
+      WHERE w.available AND w.${discriminatingKey.column} = $1 AND w.${keys[0]!.column} <> $2
+      GROUP BY d.name, d.tier
+      ORDER BY array_position(ARRAY['aop','igp','vsig'], d.tier), d.name`,
+    [values[discriminatingKey.filter], values[keys[0]!.filter]],
+  );
+
   return {
-    message: message(readable, available),
+    message: message(readable, available, elsewhere.map((r) => designationLabel(r.name, r.tier))),
     source: src[0]
       ? {
           id: src[0].id, type: src[0].type, label: src[0].label, url: src[0].url,

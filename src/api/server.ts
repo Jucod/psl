@@ -65,8 +65,9 @@ app.get('/api/catalog', async () => {
   const pool = db();
   const fixtures = env.allowFixtures();
   const [appellations, colors, grapes, bounds] = await Promise.all([
-    pool.query(`SELECT a.id, a.name, s.label AS source_label, s.url AS source_url
-                  FROM appellations a JOIN sources s ON s.id = a.source_id ORDER BY a.name`),
+    pool.query(`SELECT a.id, a.name, a.tier, s.label AS source_label, s.url AS source_url
+                  FROM appellations a JOIN sources s ON s.id = a.source_id
+                 ORDER BY array_position(ARRAY['aop','igp','vsig'], a.tier), a.name`),
     pool.query(`SELECT DISTINCT color FROM appellation_colors ORDER BY color`),
     pool.query(`SELECT g.code, g.label FROM grapes g
                  WHERE EXISTS (

@@ -58,6 +58,7 @@ even if the model goes off the rails, and they can be demonstrated without it.
 | No tasting note without a citable source | `CHECK note_requires_source` |
 | No price without the date it was observed | `CHECK price_requires_date` |
 | A white Pic Saint-Loup is impossible | composite FK `(appellation_id, color)` → `appellation_colors` |
+| No designation without its legal tier (the AOP badge is never a guess) | `tier NOT NULL CHECK (tier IN ('aop','igp','vsig'))` |
 | The description level cannot lie | `CHECK level_consistent` |
 | A food pairing cannot become source data | `CHECK status = 'derived'` |
 
@@ -67,23 +68,64 @@ Refusing a white Pic Saint-Loup is **a query result**, not an instruction:
 Five behaviors are visible on screen:
 
 - **Coverage refusal**: "un vin blanc du Pic Saint-Loup" (a white Pic
-  Saint-Loup) → explicit refusal citing the INAO specification. No
-  approximate white is offered.
-- **Grape refusal**: "avez-vous du chardonnay ?" → refusal citing the grape
-  varieties the appellation permits. Grapes outside the appellation are
-  recognized **on purpose** (`GRAPES_OUTSIDE_APPELLATION`): without that, the
-  constraint evaporated and the system answered with three reds.
+  Saint-Loup) → explicit refusal citing the INAO specification, which then
+  names the designations under which the catalog does hold whites (AOP
+  Languedoc, Vin de France). Pointed to, never served: no approximate white
+  is offered in place of the one asked for.
+- **Grape refusal**: "un pic saint-loup au chardonnay" → refusal citing the
+  grape varieties the AOC permits. Without a designation, "avez-vous du
+  chardonnay ?" answers with the Vin de France that contains some; "avez-vous
+  du merlot ?" is refused as unknown to the catalog. Grapes outside the
+  catalog are recognized **on purpose** (`GRAPES_OUTSIDE_CATALOG`): without
+  that, the constraint evaporated and the system answered with three reds.
+- **Designation refusal**: "avez-vous un bordeaux ?" → "the catalog does not
+  cover this appellation", with the list of those it covers. Filtering on it
+  would have answered "nothing found", which reads as "not today" rather than
+  "not here".
 - **Empty**: "un rouge à base de cinsaut" → cinsault is permitted by the AOC
   grape rules, so no refusal is due, but no wine in the catalog contains it.
   An assumed empty answer, distinct from a refusal. The three states sit on
-  the same axis: chardonnay is refused, cinsault is empty, syrah answers.
+  the same axis: a chardonnay Pic Saint-Loup is refused, cinsault is empty,
+  syrah answers.
 - **Missing data**: "autour de 20 €" when no price has been collected → "I
   cannot answer on this criterion". "No wine under 20 €" and "I have the price
   of no wine" are two different answers, and mistaking the second for the
   first is an unfounded statement.
 - **Relaxation**: "moins de 12 euros" → nothing under 12 €, the budget is
   relaxed in 25% steps, capped at +50%, and **announced**. The appellation is
-  never relaxed silently.
+  never relaxed: a Vin de France is not a cheaper Pic Saint-Loup.
+
+### One appellation, and its neighbours
+
+The catalog holds every still wine of the Pic Saint-Loup estates, not only
+their Pic Saint-Loup: the estates release their whites, and part of their
+reds, under neighbouring designations. Leaving them out hid half of what an
+estate makes; mixing them in without saying so would have sold a Vin de France
+as a protected designation of origin. Each designation therefore carries its
+legal **tier**, and the interface shows it:
+
+| tier | designations | badge |
+|---|---|---|
+| `aop` | Pic Saint-Loup, Languedoc, Grés de Montpellier | filled **AOP** badge |
+| `igp` | Saint-Guilhem-le-Désert | outline IGP tag |
+| `vsig` | Vin de France (no geographical indication) | none: the name says it |
+
+A request that names no designation searches them all; one that names a
+designation ("un blanc AOP Languedoc", "un vin de France") filters on it. The
+parser reads designations as proper nouns, on their exact words: "du
+Languedoc" names the region, which includes the Pic Saint-Loup, and is not
+read as the AOP Languedoc.
+
+**What is transcribed, and what is not.** For the Pic Saint-Loup: colors,
+grape rules, communes, sensory profile, all from the INAO specification. For
+the neighbours: the tier and the permitted colors only, each with the
+specification or regulation that sets them. Their grape rules and sensory
+profiles are left empty rather than written from memory, with two visible
+consequences: the grape refusal only applies to the Pic Saint-Loup, and a
+neighbouring wine without a producer note would have no profile to fall back
+on (none is in that case today). The neighbours' sources were located through
+a search engine; the development environment cannot reach the INAO websites,
+so they were not opened from it.
 
 ---
 
@@ -305,9 +347,12 @@ the demo goes public: it is not authentication, it is twenty lines.
 
 ## State of the data
 
-**The catalog is real.** 17 wines from 7 estates, collected on 16 September
-2026 from the pages published by the producers themselves, each under a
-`producer_page` source carrying its URL and date. The reference data lists the
+**The catalog is real.** 41 wines from 7 estates, collected on 16 September
+and 9 October 2026 from the pages published by the producers themselves, each
+under a `producer_page` source carrying its URL and date: 19 AOP Pic
+Saint-Loup (18 reds, 1 rose), 3 AOP Languedoc whites, 1 AOP Grés de
+Montpellier, 2 IGP Saint-Guilhem-le-Désert reds, 16 Vins de France (10 whites,
+6 reds). The reference data lists the
 **74 producers** of the appellation, taken from the syndicate's directory. The
 details of the collection, including what was left out and why, are in
 `ingestion/DATA-COLLECTION-2026-09-16.md`.
@@ -344,7 +389,7 @@ two places and look like a bug. A screen showing two different wines under the
 same description loses the trust it is trying to build; deduplicating on the
 note is a product decision, not a fix.
 
-**Alcohol content is missing almost everywhere.** 5 wines out of 17. It is the
+**Alcohol content is missing almost everywhere.** 12 wines out of 41. It is the
 field least served by retail sites, and the one that would come from the tech
 sheets.
 
@@ -367,7 +412,7 @@ have to be requested from the estates or picked up at the cellar.
 
 | | | |
 |---|---|---|
-| 1 | Data foundation | done, on a real corpus (17 wines, 74 producers) |
+| 1 | Data foundation | done, on a real corpus (41 wines, 5 designations, 74 producers) |
 | 2 | Hybrid search without an LLM | done |
 | 3 | LLM layer, two calls | Anthropic provider tested offline against a fake HTTP server; not yet run against the live API |
 | 4 | Interface | done |

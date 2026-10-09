@@ -61,7 +61,11 @@ export interface DomainConfig {
   readonly coverage: {
     readonly table: string;
     readonly keys: readonly { readonly filter: string; readonly column: string }[];
-    readonly message: (values: Record<string, unknown>, available: string[]) => string;
+    /**
+     * `elsewhere`: the designations under which the catalog holds the
+     * requested color, as labels. Pointed to, never served.
+     */
+    readonly message: (values: Record<string, unknown>, available: string[], elsewhere: string[]) => string;
   };
   readonly maxResults: number;
   readonly rejectionWeight: number;
@@ -91,6 +95,19 @@ export const COLOR_LABELS: Record<string, { readonly singular: string; readonly 
 
 function colorLabel(code: unknown, form: 'singular' | 'plural' = 'singular'): string {
   return COLOR_LABELS[String(code)]?.[form] ?? String(code);
+}
+
+/**
+ * Prefix of a designation by tier. Only the AOP is a protected designation of
+ * origin; a Vin de France has no geographical indication, hence no prefix:
+ * "Vin de France" is its whole name.
+ */
+export const TIER_PREFIX: Record<string, string | null> = { aop: 'AOP', igp: 'IGP', vsig: null };
+
+/** "AOP Pic Saint-Loup", "IGP Saint-Guilhem-le-Désert", "Vin de France". */
+export function designationLabel(name: string, tier: string): string {
+  const prefix = TIER_PREFIX[tier];
+  return prefix ? `${prefix} ${name}` : name;
 }
 
 export const config: DomainConfig = {
@@ -189,10 +206,10 @@ export const config: DomainConfig = {
 
   /**
    * Budget, then vintage. The appellation closes the order but is NOT
-   * relaxable (relax: () => null): in a single-AOC catalog, relaxing the
-   * appellation cannot bring anything back, and it is in any case the most
-   * explicit part of a request. The engine then produces an announced refusal.
-   * The rung stays declared for the day the catalog becomes multi-AOC.
+   * relaxable (relax: () => null): it is the most explicit part of a request,
+   * and now that the catalog holds several designations, relaxing it would
+   * serve a Vin de France to someone who asked for a Pic Saint-Loup. The
+   * engine produces an announced refusal or an empty answer instead.
    */
   relaxationOrder: ['price_max', 'vintage_min', 'vintage_max', 'appellation'],
 
@@ -202,9 +219,12 @@ export const config: DomainConfig = {
       { filter: 'appellation', column: 'appellation_id' },
       { filter: 'color', column: 'color' },
     ],
-    message: (values, available) =>
+    message: (values, available, elsewhere) =>
       `L'appellation ${values.appellation} ne couvre pas les ${colorLabel(values.color, 'plural')}. ` +
-      `Elle ne produit que : ${available.map((c) => colorLabel(c)).sort().join(', ')}.`,
+      `Elle ne produit que : ${available.map((c) => colorLabel(c)).sort().join(', ')}.` +
+      (elsewhere.length > 0
+        ? ` Les ${colorLabel(values.color, 'plural')} du catalogue relevent de : ${elsewhere.join(', ')}.`
+        : ''),
   },
 
   maxResults: 3,

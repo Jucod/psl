@@ -23,6 +23,10 @@ export interface WineResult {
   producer_id: string;
   commune: string | null;
   appellation_id: string;
+  /** "Pic Saint-Loup", "Vin de France": the designation as a visitor reads it. */
+  appellation_name: string;
+  /** Only 'aop' is a protected designation of origin: the interface badges it. */
+  appellation_tier: 'aop' | 'igp' | 'vsig';
   color: string;
   vintage: number | null;
   abv: number | null;

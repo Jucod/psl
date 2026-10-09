@@ -1,8 +1,11 @@
 import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
+import { designationLabel } from '../config/domain.js';
 import { buildGrapeIndex } from '../ingest/util.js';
 import { parseMessage } from './parser.js';
-import { ZERO_USAGE, type ExtractionResult, type FormulationInput, type LlmProvider } from './index.js';
+import {
+  ZERO_USAGE, type ExtractionContext, type ExtractionResult, type FormulationInput, type LlmProvider,
+} from './index.js';
 
 const GRAPES_PATH = fileURLToPath(new URL('../../db/seed/grapes.json', import.meta.url));
 
@@ -33,10 +36,11 @@ export class LocalLlm implements LlmProvider {
 
   async extractFilters(
     message: string,
-    defaultAppellation: string | null,
+    { defaultAppellation, designations }: ExtractionContext,
   ): Promise<ExtractionResult> {
     const filters = parseMessage(message, {
       defaultAppellation,
+      designations,
       grapeIndex: await this.grapeIndex(),
     });
     return { filters, degraded: false, degradedReason: null, usage: ZERO_USAGE };
@@ -103,7 +107,7 @@ export function formulateFromTemplate(input: FormulationInput): string {
     } else {
       lines.push(
         s.catalogSize === 0
-          ? `Le catalogue ne contient aucune cuvee correspondant a cette appellation et cette couleur.`
+          ? `Le catalogue ne contient aucune cuvee correspondant a cette designation et cette couleur.`
           : `Aucune des ${s.catalogSize} cuvee(s) du catalogue ne satisfait ces criteres.`,
       );
     }
@@ -119,6 +123,7 @@ export function formulateFromTemplate(input: FormulationInput): string {
   for (const [i, w] of s.results.entries()) {
     const identity =
       `${i + 1}. ${w.producer}, ${w.name}${w.vintage ? ` ${w.vintage}` : ''}` +
+      ` (${designationLabel(w.appellation_name, w.appellation_tier)})` +
       (w.price_eur !== null ? ` — ${EUROS(w.price_eur)}` : '');
 
     if (w.tasting_note) {

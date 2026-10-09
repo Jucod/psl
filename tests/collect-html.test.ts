@@ -3,11 +3,17 @@ import { describe, expect, it } from 'vitest';
 import { extractCandidate, type Producer } from '../src/collect/extract.js';
 import { listProductsFromHtml, locs, productScore, readProductPage } from '../src/collect/html.js';
 import { PoliteFetcher } from '../src/collect/http.js';
+import { designationsOf } from '../src/collect/catalog.js';
 import { buildGrapeIndex } from '../src/ingest/util.js';
 
-const grapeIndex = buildGrapeIndex(
-  JSON.parse(readFileSync(new URL('../db/seed/grapes.json', import.meta.url), 'utf8')).grapes,
-);
+const reference = {
+  grapeIndex: buildGrapeIndex(
+    JSON.parse(readFileSync(new URL('../db/seed/grapes.json', import.meta.url), 'utf8')).grapes,
+  ),
+  designations: designationsOf(
+    JSON.parse(readFileSync(new URL('../db/seed/pic-saint-loup-seed.json', import.meta.url), 'utf8')),
+  ),
+};
 const ESTATE: Producer = { id: 'domaine-de-l-hortus', name: "Domaine de l'Hortus", website: 'https://www.domaine-hortus.fr/' };
 
 /** Shaped like a PrestaShop 1.7 product page: JSON-LD, feature table, description block. */
@@ -92,7 +98,7 @@ describe('HTML reader: product data in pages', () => {
 
   it('feeds the same extractor as the APIs, with the same guarantees', () => {
     const p = readProductPage(PRESTASHOP, 'https://www.domaine-hortus.fr/12-grande-cuvee-2021.html')!;
-    const r = extractCandidate(p, ESTATE, grapeIndex, '2026-10-09');
+    const r = extractCandidate(p, ESTATE, reference, '2026-10-09');
     if (r.kind !== 'candidate') throw new Error(`excluded: ${r.reason}`);
     const w = r.candidate.wine;
     // The appellation comes from the breadcrumb, the color from the description.

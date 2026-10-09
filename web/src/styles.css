@@ -212,6 +212,17 @@ button {
 .badge-red { color: var(--accent); border-color: currentColor; }
 .badge-organic   { color: #2f6b3a; border-color: currentColor; }
 @media (prefers-color-scheme: dark) { .badge-organic { color: #82c295; } }
+/* Protected designation of origin: the one filled badge of the card, so that
+   it reads at a glance. An IGP gets an outline, a Vin de France nothing. */
+.designation { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--text); }
+.badge-aop {
+  background: var(--accent); color: var(--bg-card); border-color: var(--accent);
+  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-decoration: none;
+}
+.badge-igp {
+  color: var(--text-soft); border-color: currentColor;
+  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-decoration: none;
+}
 
 .price { margin-left: auto; text-align: right; white-space: nowrap; }
 .price strong { display: block; font-size: 17px; font-variant-numeric: tabular-nums; }

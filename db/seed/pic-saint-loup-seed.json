@@ -1,28 +1,64 @@
 {
   "_meta": {
     "version": "0.1",
-    "note": "Reference layer only. No tasting note or per-wine price is invented here. Fields marked TODO are filled in from the estates' tech sheets.",
+    "note": "Reference layer only. No tasting note or per-wine price is invented here. Fields marked TODO are filled in from the estates' tech sheets. The neighbouring designations carry only what the catalog uses (tier, permitted colors, the names visitors give them): their grape rules and sensory profiles are not transcribed, rather than written from memory.",
     "sources": [
       {
         "id": "inao_cdc_psl",
+        "type": "specification",
         "label": "Cahier des charges AOC Pic Saint-Loup",
         "url": "https://extranet.inao.gouv.fr/fichier/PNOCDCPicStLoup.pdf",
         "authority": "INAO"
       },
       {
         "id": "syndicat_psl",
+        "type": "directory",
         "label": "Syndicat des vignerons du Pic Saint-Loup",
         "url": "https://www.pic-saint-loup.com/domaines/"
       },
       {
         "id": "languedoc_aoc",
+        "type": "producer_page",
         "label": "Syndicat des vins AOC Languedoc, page AOP Pic Saint Loup",
         "url": "https://www.languedoc-aoc.com/appellation/aop-pic-saint-loup"
       },
       {
         "id": "ot_grand_psl",
+        "type": "directory",
         "label": "Office de tourisme du Grand Pic Saint-Loup, annuaire vignerons",
         "url": "https://www.grandpicsaintloup-tourisme.fr/de-la-vigne-et-du-vin/les-vignerons"
+      },
+      {
+        "id": "inao_cdc_languedoc",
+        "type": "specification",
+        "label": "Cahier des charges AOC Languedoc",
+        "url": "https://extranet.inao.gouv.fr/fichier/PNOCDCLanguedoc.pdf",
+        "authority": "INAO",
+        "retrieved_on": "2026-10-09"
+      },
+      {
+        "id": "inao_cdc_gres_de_montpellier",
+        "type": "specification",
+        "label": "Cahier des charges AOC Grés de Montpellier",
+        "url": "https://extranet.inao.gouv.fr/fichier/PNO2025AOPGresdeMontpellier.pdf",
+        "authority": "INAO",
+        "retrieved_on": "2026-10-09"
+      },
+      {
+        "id": "cdc_igp_saint_guilhem",
+        "type": "specification",
+        "label": "Cahier des charges IGP Saint-Guilhem-le-Désert (arrêté du 13 janvier 2022)",
+        "url": "https://info.agriculture.gouv.fr/gedei/site/bo-agri/document_administratif-770aea9b-b2c6-4aa0-ae5b-7f1f81ec19c3/telechargement",
+        "authority": "Ministère de l'Agriculture, Bulletin officiel",
+        "retrieved_on": "2026-10-09"
+      },
+      {
+        "id": "dgccrf_etiquetage_vins",
+        "type": "regulation",
+        "label": "DGCCRF, étiquetage des vins : les vins sans indication géographique",
+        "url": "https://www.economie.gouv.fr/dgccrf/les-fiches-pratiques/etiquetage-des-vins-savoir-lire-les-etiquettes",
+        "authority": "DGCCRF",
+        "retrieved_on": "2026-10-09"
       }
     ]
   },
@@ -30,6 +66,12 @@
     {
       "id": "aoc-pic-saint-loup",
       "name": "Pic Saint-Loup",
+      "tier": "aop",
+      "aliases": [
+        "pic saint loup",
+        "pic st loup",
+        "coteaux du languedoc pic saint loup"
+      ],
       "status": "AOC/AOP",
       "aoc_recognized": "2016",
       "region": "Languedoc",
@@ -184,6 +226,76 @@
           "_note": "the Pic Saint-Loup AOC does not cover white wines. A white from the area is released as AOC Languedoc or IGP. The agent must say so explicitly rather than recommend a white under the Pic Saint-Loup label."
         }
       }
+    },
+    {
+      "id": "aoc-languedoc",
+      "name": "Languedoc",
+      "tier": "aop",
+      "aliases": [
+        "aop languedoc",
+        "aoc languedoc",
+        "appellation languedoc",
+        "un languedoc"
+      ],
+      "_aliases_note": "\"du Languedoc\" names the region, which includes the Pic Saint-Loup: it is deliberately not an alias.",
+      "status": "AOC/AOP",
+      "region": "Languedoc",
+      "permitted_colors": [
+        "red",
+        "rose",
+        "white"
+      ],
+      "source": "inao_cdc_languedoc"
+    },
+    {
+      "id": "aoc-gres-de-montpellier",
+      "name": "Grés de Montpellier",
+      "tier": "aop",
+      "aliases": [
+        "gres de montpellier"
+      ],
+      "status": "AOC/AOP",
+      "region": "Languedoc",
+      "permitted_colors": [
+        "red"
+      ],
+      "source": "inao_cdc_gres_de_montpellier"
+    },
+    {
+      "id": "igp-saint-guilhem-le-desert",
+      "name": "Saint-Guilhem-le-Désert",
+      "tier": "igp",
+      "aliases": [
+        "saint guilhem",
+        "st guilhem",
+        "saint guilhem le desert"
+      ],
+      "status": "IGP",
+      "region": "Languedoc",
+      "permitted_colors": [
+        "red",
+        "rose",
+        "white"
+      ],
+      "source": "cdc_igp_saint_guilhem"
+    },
+    {
+      "id": "vin-de-france",
+      "name": "Vin de France",
+      "tier": "vsig",
+      "aliases": [
+        "vin de france",
+        "vins de france",
+        "vdf"
+      ],
+      "status": "Vin sans indication géographique",
+      "region": null,
+      "permitted_colors": [
+        "red",
+        "rose",
+        "white"
+      ],
+      "source": "dgccrf_etiquetage_vins"
     }
   ],
   "producers": {

@@ -22,6 +22,7 @@ export function ResultCard({ wine: w, rank, labels }: {
             {w.vintage && <span className="vintage">{w.vintage}</span>}
           </h3>
           <p className="subtitle">
+            <Designation wine={w} />
             {w.commune && <span>{w.commune}</span>}
             <span className={`badge badge-${w.color}`}>{labelOf(labels?.colors, w.color)}</span>
             {w.certification && <span className="badge badge-organic">{w.certification}</span>}
@@ -102,4 +103,29 @@ export function ResultCard({ wine: w, rank, labels }: {
       )}
     </article>
   );
+}
+
+/**
+ * The designation, with the AOP badge on protected designations of origin
+ * only. An IGP gets a plain outline tag, a Vin de France none: the badge must
+ * mean something, and it means "protected designation of origin".
+ */
+function Designation({ wine: w }: { wine: WineResult }) {
+  if (w.appellation_tier === 'aop') {
+    return (
+      <span className="designation">
+        <abbr className="badge badge-aop" title="Appellation d'origine protegee">AOP</abbr>
+        {w.appellation_name}
+      </span>
+    );
+  }
+  if (w.appellation_tier === 'igp') {
+    return (
+      <span className="designation">
+        <abbr className="badge badge-igp" title="Indication geographique protegee">IGP</abbr>
+        {w.appellation_name}
+      </span>
+    );
+  }
+  return <span className="designation">{w.appellation_name}</span>;
 }

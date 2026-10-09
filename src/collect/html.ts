@@ -32,10 +32,16 @@ const FEATURE_SELECTORS = [
 export function readProductPage(html: string, pageUrl: string): RawProduct | null {
   const root = parse(html);
   const nodes = jsonLdNodes(root);
-  const product = nodes.find((n) => hasType(n, 'Product'));
-  const micro = root.querySelector('[itemtype*="schema.org/Product"]');
+  const products = nodes.filter((n) => hasType(n, 'Product'));
+  const micros = root.querySelectorAll('[itemtype*="schema.org/Product"]');
+  const product = products[0];
+  const micro = micros[0] ?? null;
   const ogType = meta(root, 'og:type');
   if (!product && !micro && !/product/.test(ogType ?? '')) return null;
+  // A home or range page carrying a grid of products is not a product page:
+  // read as one, it became a wine named "Accueil" with the whole range as its
+  // text. Its products have their own pages, which the crawl reaches.
+  if (products.length > 1 || micros.length > 1) return null;
 
   const title = clean(
     str(product?.name) ?? itemprop(micro, 'name') ?? meta(root, 'og:title') ??

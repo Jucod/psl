@@ -1,9 +1,9 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://morties.com/products/un-peu-dagrume-blanc-maceration-vdf-2023 (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://morties.com/products/un-peu-dagrume-blanc-maceration-vdf-2023 (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at the multi-designation review of 2026-10-09, by trimming only: the English translation removed from the note; `aging` was a section heading, set to null. Name \"\"Un peu d'agrume\" \"Blanc macération\"\" recased or cut to the cuvee name.",
   "id": "morties-un-peu-d-agrume-blanc-maceration-2024",
   "producer_id": "domaine-de-morties",
   "appellation_id": "vin-de-france",
-  "name": "\"Un peu d'agrume\" \"Blanc macération\"",
+  "name": "Un peu d'agrume",
   "color": "white",
   "vintage": 2024,
   "blend": [
@@ -13,12 +13,12 @@
     }
   ],
   "abv": null,
-  "aging": "Élevage / Aging :",
+  "aging": null,
   "price_eur": 23.5,
   "price_as_of": "2026-10-09",
   "organic": null,
   "certification": null,
-  "tasting_note": "Vin de macération de quelques jours à la robe orange ambrée soutenue. Le nez est expressif sur des notes d'agrumes et d'écorces d'orange. / A white wine macerated for a few days with a deep amber orange color.",
+  "tasting_note": "Vin de macération de quelques jours à la robe orange ambrée soutenue. Le nez est expressif sur des notes d'agrumes et d'écorces d'orange.",
   "tasting_note_source": {
     "id": "page-morties-un-peu-d-agrume-blanc-maceration-2024",
     "type": "producer_page",

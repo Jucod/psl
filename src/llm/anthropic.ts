@@ -5,7 +5,10 @@ import { parseMessage } from './parser.js';
 import { EXTRACTION_SYSTEM, FORMULATION_SYSTEM, schemaRetryMessage } from './prompts.js';
 import { formulateFromTemplate } from './local.js';
 import { checkOutput } from './output-check.js';
-import type { ExtractionResult, FormulationInput, LlmProvider, Usage } from './index.js';
+import { designationLabel } from '../config/domain.js';
+import type {
+  ExtractionContext, ExtractionResult, FormulationInput, LlmProvider, Usage,
+} from './index.js';
 
 /** $ per million tokens, Anthropic first-party API rates as of 2026-09-25. */
 const PRICES: Record<string, { in: number; out: number }> = {
@@ -64,7 +67,7 @@ export class AnthropicLlm implements LlmProvider {
    */
   async extractFilters(
     message: string,
-    defaultAppellation: string | null,
+    { defaultAppellation, designations }: ExtractionContext,
   ): Promise<ExtractionResult> {
     const usage: Usage = { tokens_in: 0, tokens_out: 0, cost_eur: 0 };
     // Append-only: the retry adds turns, it never rewrites earlier ones, and
@@ -74,7 +77,11 @@ export class AnthropicLlm implements LlmProvider {
       {
         role: 'user',
         content:
-          `Default appellation if the request names none: ` +
+          // The model picks an identifier from this list rather than spelling
+          // one: "aop-languedoc" for "aoc-languedoc" would filter on nothing.
+          `Known designations:\n` +
+          designations.map((d) => `- ${d.id}: ${designationLabel(d.name, d.tier)}`).join('\n') +
+          `\n\nDefault appellation if the request names none: ` +
           `${defaultAppellation ?? 'none'}\n\nRequest: ${message}`,
       },
     ];
@@ -125,7 +132,7 @@ export class AnthropicLlm implements LlmProvider {
 
     // Degraded mode.
     return {
-      filters: parseMessage(message, { defaultAppellation }),
+      filters: parseMessage(message, { defaultAppellation, designations }),
       degraded: true,
       degradedReason: lastError || 'sortie non conforme au schema',
       usage,
@@ -230,6 +237,9 @@ export function formulationPayload(input: FormulationInput) {
     references: s.results.map((w) => ({
       producer: w.producer,
       wine: w.name,
+      // "AOP Pic Saint-Loup", "Vin de France": an objective reference, and the
+      // only way the text can tell a protected designation from the others.
+      designation: designationLabel(w.appellation_name, w.appellation_tier),
       vintage: w.vintage,
       color: w.color,
       blend: w.blend,

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { buildGrapeIndex, slug } from '../ingest/util.js';
 import type { Wine } from '../schema/wine.js';
 import type { Producer } from './extract.js';
-import type { GrapeRules } from './review.js';
+import type { Designation, GrapeRules } from './review.js';
 
 export const SEED_DIR = fileURLToPath(new URL('../../db/seed/', import.meta.url));
 export const WINES_DIR = join(SEED_DIR, 'wines');
@@ -35,7 +35,18 @@ export async function loadCatalog() {
     producers,
     producerIds: new Set(entries.map((p) => slug(p.name))),
     grapeIndex: buildGrapeIndex(grapes.grapes),
-    rules: seed.appellations[0].grape_rules as GrapeRules,
+    designations: designationsOf(seed),
     existing,
   };
+}
+
+/**
+ * The designations of the seed, with their colors and grape rules. The rules
+ * are empty for the designations whose specification is not transcribed:
+ * promotion then checks the color, not the blend.
+ */
+export function designationsOf(seed: {
+  appellations: { id: string; permitted_colors: string[]; grape_rules?: GrapeRules }[];
+}): Map<string, Designation> {
+  return new Map(seed.appellations.map((a) => [a.id, { colors: a.permitted_colors, rules: a.grape_rules ?? {} }]));
 }

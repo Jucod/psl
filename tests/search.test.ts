@@ -371,6 +371,44 @@ describe('milestone 2 - hybrid search', () => {
 });
 
 describe('rendering', () => {
+  it('the refusal points to the designations that DO hold whites, without serving any', async () => {
+    const r = await search(filters({ color: 'white' }), options);
+    expect(r.results).toHaveLength(0);
+    expect(r.refusal?.message).toMatch(/blancs du catalogue relevent de : AOP Languedoc, Vin de France\./);
+  });
+
+  it('every result carries its designation and tier, for the AOP badge', async () => {
+    const psl = await search(filters({ color: 'red' }), { ...options, maxResults: 50 });
+    expect(psl.results.length).toBeGreaterThan(0);
+    for (const w of psl.results) {
+      expect(w.appellation_name).toBe('Pic Saint-Loup');
+      expect(w.appellation_tier).toBe('aop');
+    }
+    const vdf = await search(filters({ appellation: 'vin-de-france' }), { ...options, maxResults: 50 });
+    expect(vdf.results.length).toBeGreaterThan(0);
+    for (const w of vdf.results) expect(w.appellation_tier).toBe('vsig');
+  });
+
+  it('a white without a named designation is answered from the whole catalog', async () => {
+    const { runPipeline } = await import('../src/pipeline.js');
+    const output = await runPipeline({ message: 'un blanc pour des huitres' });
+    expect(output.status).toBe('ok');
+    expect(output.search!.appliedFilters.appellation).toBeNull();
+    for (const w of output.search!.results) expect(w.color).toBe('white');
+  });
+
+  it('a designation outside the catalog is refused by name, not answered empty', async () => {
+    const { runPipeline } = await import('../src/pipeline.js');
+    const output = await runPipeline({ message: 'x', forcedFilters: { appellation: 'aoc-bordeaux' } });
+    expect(output.status).toBe('refused');
+    expect(output.search?.refusal?.message).toMatch(/aoc-bordeaux/);
+    expect(output.search?.refusal?.message).toMatch(/AOP Pic Saint-Loup/);
+    // The deterministic parser gets there too.
+    const local = await runPipeline({ message: 'avez-vous un bordeaux ?' });
+    expect(local.status).toBe('refused');
+    expect(local.search?.results ?? []).toHaveLength(0);
+  });
+
   it('the refusal names the appellation, it does not show its identifier', async () => {
     const r = await search(filters({ color: 'white' }), options);
     expect(r.refusal?.message).toContain('Pic Saint-Loup');
@@ -381,9 +419,11 @@ describe('rendering', () => {
 describe('regressions found in review', () => {
   it('GRAPE REFUSAL: a grape outside the AOC grape rules is refused, not ignored', async () => {
     // Before: normalizeFilters dropped the unresolved grape, the constraint
-    // evaporated, and "avez-vous du chardonnay ?" returned three reds.
+    // evaporated, and "avez-vous du chardonnay ?" returned three reds. Since
+    // the whites entered the catalog, chardonnay is a known grape: the refusal
+    // now comes from the Pic Saint-Loup grape rules when the request names it.
     const { runPipeline } = await import('../src/pipeline.js');
-    const output = await runPipeline({ message: 'avez-vous du chardonnay ?' });
+    const output = await runPipeline({ message: 'un pic saint-loup au chardonnay' });
 
     expect(output.status).toBe('refused');
     expect(output.search?.results).toHaveLength(0);
@@ -391,6 +431,35 @@ describe('regressions found in review', () => {
     expect(output.search?.refusal?.message).toMatch(/encepagement/i);
     // A refusal cites its source, like the color one.
     expect(output.search?.refusal?.source?.url).toMatch(/^https?:\/\//);
+  });
+
+  it('a grape the catalog holds outside the AOC is served, from the other designations', async () => {
+    const { runPipeline } = await import('../src/pipeline.js');
+    const output = await runPipeline({ message: 'avez-vous du chardonnay ?' });
+
+    expect(output.status).toBe('ok');
+    expect(output.search!.appliedFilters.appellation).toBeNull();
+    expect(output.search!.results.length).toBeGreaterThan(0);
+    for (const w of output.search!.results) {
+      expect(w.blend.map((b) => b.grape)).toContain('chardonnay');
+      expect(w.appellation_tier).not.toBe('aop');
+    }
+  });
+
+  it('a grape unknown to the catalog is refused as such', async () => {
+    const { runPipeline } = await import('../src/pipeline.js');
+    const output = await runPipeline({ message: 'avez-vous du merlot ?' });
+    expect(output.status).toBe('refused');
+    expect(output.search?.refusal?.message).toMatch(/inconnu du catalogue : merlot/i);
+  });
+
+  it('grape rules not transcribed refuse nothing: no rule is invented', async () => {
+    const { runPipeline } = await import('../src/pipeline.js');
+    const output = await runPipeline({
+      message: 'x',
+      forcedFilters: { appellation: 'vin-de-france', grapes_included: ['chardonnay'] },
+    });
+    expect(output.status).toBe('ok');
   });
 
   it('"rien de tannique" puts the structured wines last, not first', async () => {

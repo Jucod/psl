@@ -12,6 +12,10 @@ export interface WineResult {
   name: string;
   producer: string;
   commune: string | null;
+  appellation_id: string;
+  appellation_name: string;
+  /** Only 'aop' is a protected designation of origin. */
+  appellation_tier: 'aop' | 'igp' | 'vsig';
   color: string;
   vintage: number | null;
   abv: number | null;
@@ -79,13 +83,22 @@ export interface Labels {
 }
 
 export interface Catalog {
-  appellations: { id: string; name: string; source_label: string; source_url: string }[];
+  appellations: { id: string; name: string; tier: 'aop' | 'igp' | 'vsig'; source_label: string; source_url: string }[];
   colors: string[];
   grapes: { code: string; label: string }[];
   bounds: { price_min: number | null; price_max: number | null; vintage_min: number | null; vintage_max: number | null };
   fields: { key: string; label: string; operator: string }[];
   relaxation_order: string[];
   labels: Labels;
+}
+
+/**
+ * "AOP Pic Saint-Loup", "IGP Saint-Guilhem-le-Désert", "Vin de France". Same
+ * rule as designationLabel() on the server: a Vin de France has no prefix.
+ */
+export function designationLabel(name: string, tier: string): string {
+  const prefix = ({ aop: 'AOP', igp: 'IGP' } as Record<string, string>)[tier];
+  return prefix ? `${prefix} ${name}` : name;
 }
 
 /** Label of a code, falling back to the code itself while the catalog loads. */

@@ -6,7 +6,12 @@ import { readFileSync } from 'node:fs';
 const grapes = buildGrapeIndex(
   JSON.parse(readFileSync(new URL('../db/seed/grapes.json', import.meta.url), 'utf8')).grapes,
 );
+const designations = JSON.parse(
+  readFileSync(new URL('../db/seed/pic-saint-loup-seed.json', import.meta.url), 'utf8'),
+).appellations as { id: string; aliases: string[] }[];
 const opts = { defaultAppellation: 'aoc-pic-saint-loup', grapeIndex: grapes };
+/** As the pipeline calls it now that the catalog holds several designations. */
+const multi = { defaultAppellation: null, grapeIndex: grapes, designations };
 
 /**
  * The deterministic parser is used twice: as the prototype's "local" provider,
@@ -190,6 +195,15 @@ describe('color: the traps we ran into', () => {
   it('recognizes a grape outside the appellation so that it can be refused', () => {
     expect(parseMessage('avez-vous du chardonnay ?', opts).grapes_included).toContain('chardonnay');
     expect(parseMessage('un viognier', opts).grapes_included).toContain('viognier');
+    expect(parseMessage('un merlot', opts).grapes_included).toEqual(['merlot']);
+  });
+
+  it('"cabernet sauvignon" is one grape outside the catalog, not a sauvignon', () => {
+    // Sauvignon became a catalog grape with the whites: read first by stem, it
+    // came back next to "cabernet sauvignon", and the request asked for a
+    // grape the user had not named.
+    expect(parseMessage('un cabernet sauvignon', opts).grapes_included).toEqual(['cabernet sauvignon']);
+    expect(parseMessage('un sauvignon blanc', opts).grapes_included).toEqual(['sauvignon']);
   });
 
   it('the word that gives the color is not reused as a descriptor', () => {
@@ -217,5 +231,50 @@ describe('color: the traps we ran into', () => {
     const r = parseMessage('un rouge floral', opts);
     expect(r.color).toBe('red');
     expect(r.descriptors).toContain('floral');
+  });
+});
+
+describe('deterministic parser: designations', () => {
+  it.each([
+    ['un rouge du pic saint-loup', 'aoc-pic-saint-loup'],
+    ['un Pic St Loup rosé', 'aoc-pic-saint-loup'],
+    ['un blanc AOP Languedoc', 'aoc-languedoc'],
+    ['un Grès de Montpellier', 'aoc-gres-de-montpellier'],
+    ['un rouge de Saint-Guilhem', 'igp-saint-guilhem-le-desert'],
+    ['un vin de France pas cher', 'vin-de-france'],
+    // The former name contains "languedoc": the longest alias wins.
+    ['un vieux Coteaux du Languedoc Pic Saint-Loup', 'aoc-pic-saint-loup'],
+  ])('reads the designation the request names: %s', (message, id) => {
+    expect(parseMessage(message, multi).appellation).toBe(id);
+  });
+
+  it.each([
+    // The region, which includes the Pic Saint-Loup: no filter.
+    ['un rouge du Languedoc'],
+    // Negated: an equality filter cannot say "anything but".
+    ['un rouge, surtout pas un vin de France'],
+    // Two designations: not guessed between.
+    ['un languedoc ou un pic saint loup'],
+    ['un rouge pour un gigot'],
+  ])('sets no designation when the request does not settle one: %s', (message) => {
+    expect(parseMessage(message, multi).appellation).toBeNull();
+  });
+
+  it.each([
+    ['avez-vous un bordeaux ?', 'bordeaux'],
+    ['un bon Faugères', 'faugeres'],
+    ['un bourgogne rouge', 'bourgogne'],
+  ])('names a designation outside the catalog, so that it can be refused: %s', (message, id) => {
+    expect(parseMessage(message, multi).appellation).toBe(id);
+  });
+
+  it('a dish is not a designation', () => {
+    expect(parseMessage('un rouge pour des escargots de bourgogne', multi).appellation).toBeNull();
+    expect(parseMessage('un rose pour un gigot aux herbes de provence', multi).appellation).toBeNull();
+  });
+
+  it('a named designation wins over the default', () => {
+    expect(parseMessage('un vin de france', opts).appellation).toBe('aoc-pic-saint-loup');
+    expect(parseMessage('un vin de france', { ...opts, designations }).appellation).toBe('vin-de-france');
   });
 });

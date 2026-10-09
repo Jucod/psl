@@ -1,9 +1,9 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://boutique.masfoulaquier.fr/products/into-the-red-2025-rouge-leger-14-5-copie (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://boutique.masfoulaquier.fr/products/into-the-red-2025-rouge-leger-14-5-copie (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at the multi-designation review of 2026-10-09, by trimming only: `aging` was a section heading, set to null. Name \"INTO THE RED\" recased or cut to the cuvee name.",
   "id": "mas-foulaquier-into-the-red-2025",
   "producer_id": "mas-foulaquier",
   "appellation_id": "vin-de-france",
-  "name": "INTO THE RED",
+  "name": "Into The Red",
   "color": "red",
   "vintage": 2025,
   "blend": [
@@ -13,7 +13,7 @@
     }
   ],
   "abv": null,
-  "aging": "Vinification et Élevage",
+  "aging": null,
   "price_eur": 14.5,
   "price_as_of": "2026-10-09",
   "organic": true,

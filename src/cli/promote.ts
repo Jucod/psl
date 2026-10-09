@@ -6,11 +6,12 @@ import { reviewCandidate } from '../collect/review.js';
 
 /**
  * npm run collect:promote -- <candidate.json>... | <candidates folder>
- *                             [--set appellation_id=aoc-pic-saint-loup] [--set color=red]
+ *                             [--set appellation_id=aoc-languedoc] [--set color=white]
  *
  * The only way into db/seed/wines/: the reviewed candidate is checked again
- * (schema, known producer and grapes, AOC grape rules, duplicates, note copied
- * verbatim from the page, quarantine), then written without its review block.
+ * (schema, known producer and grapes, designation and color, AOC grape rules,
+ * duplicates, note copied verbatim from the page, quarantine), then written
+ * without its review block.
  */
 const { values: options, positionals: args } = parseArgs({
   allowPositionals: true,
@@ -20,26 +21,31 @@ if (args.length === 0) {
   console.error(
     'usage: npm run collect:promote -- <candidate.json>...\n' +
     '       npm run collect:promote -- <candidates folder>   (every candidate in it)\n' +
-    '       ... --set appellation_id=aoc-pic-saint-loup       (fills that field where it is empty)',
+    '       ... --set appellation_id=vin-de-france            (fills that field where it is empty)',
   );
   process.exit(1);
 }
 
+const catalog = await loadCatalog();
+
 /**
- * A decision the reviewer takes once for many files ("these are all Pic
- * Saint-Loup"). It only fills the fields the page left empty, and only the two
+ * A decision the reviewer takes once for many files ("these are all Vins de
+ * France"). It only fills the fields the page left empty, and only the two
  * the collector leaves to the reviewer; it is written in each wine's
  * provenance.
  */
 const SETTABLE: Record<string, (v: string) => boolean> = {
-  appellation_id: (v) => v === 'aoc-pic-saint-loup',
-  color: (v) => v === 'red' || v === 'rose',
+  appellation_id: (v) => catalog.designations.has(v),
+  color: (v) => v === 'red' || v === 'rose' || v === 'white',
 };
 const decisions: [string, string][] = [];
 for (const item of options.set ?? []) {
   const [field, value] = item.split('=') as [string, string | undefined];
   if (!SETTABLE[field] || value === undefined || !SETTABLE[field](value)) {
-    console.error(`--set ${item}: only appellation_id=aoc-pic-saint-loup, color=red or color=rose`);
+    console.error(
+      `--set ${item}: only appellation_id=<${[...catalog.designations.keys()].join('|')}> ` +
+      'or color=<red|rose|white>',
+    );
     process.exit(1);
   }
   decisions.push([field, value]);
@@ -60,7 +66,6 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-const catalog = await loadCatalog();
 let failures = 0;
 
 for (const file of files) {

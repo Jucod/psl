@@ -45,14 +45,37 @@ export type Extraction =
   | { kind: 'candidate'; candidate: Candidate }
   | { kind: 'excluded'; title: string; url: string; reason: string };
 
-const APPELLATION = 'aoc-pic-saint-loup';
-
-const NOT_A_BOTTLE = /coffret|carton|caisse|\blot\b|\bpack\b|verres?\b|tire-bouchon|carte cadeau|bon cadeau|bag[- ]in[- ]box|\bbib\b|cubi|abonnement|degustation|visite|atelier|huile|jus\b/;
+/**
+ * Not a bottle of wine: packs and gift boxes, accessories, events and visits
+ * sold through the shop, and the estate's other products. Every entry comes
+ * from a product actually met in a shop of the directory.
+ */
+const NOT_A_BOTTLE = new RegExp([
+  /coffret|carton|caisse|\blot\b|\bpack\b|offre decouverte|assortiment|colis/,
+  /verres?\b|tire-bouchon|carte cadeau|bon cadeau|gift ?card|bag[- ]in[- ]box|\bbib\b|cubi|abonnement/,
+  /degustation|visite|atelier|workshop|escape game|soiree|\bfete\b|invitation|reservation|evenement|pique[- ]nique|oursinade/,
+  /huile|jus\b|vinaigre|hydrolat|\bmarc\b|eau[- ]de[- ]vie|liqueur|ratafia|confiture|tapenade|savon/,
+].map((r) => r.source).join('|'));
+/** A home, shop or range page read as a product: its title is not a wine's. */
+const NOT_A_PRODUCT_TITLE = /^(accueil|home|boutique|shop|e-?shop|la cave|nos vins|nos cuvees|les cuvees|les vins)\b/;
 const PSL = /pic[\s-]*s(ain)?t[\s-]*loup/;
-// Includes the former name of the appellation, "AOC Coteaux du Languedoc Pic
-// Saint-Loup", still on the labels of vintages before its own AOC (2016).
-const PSL_AS_APPELLATION = /\b(aop|aoc|appellation)\s+(d'origine\s+(protegee|controlee)\s+)?((coteaux\s+du\s+)?languedoc[\s-]+)?pic[\s-]*s(ain)?t[\s-]*loup/;
-const OTHER_DESIGNATION = /\bigp\b|vin de france|\b(aop|aoc)\s+languedoc\b(?![\s-]+pic)|coteaux du languedoc(?![\s-]+pic)|saint[- ]guilhem/;
+
+/**
+ * The designations of the reference data, as labels and shops write them.
+ * Includes the former name of the Pic Saint-Loup, "AOC Coteaux du Languedoc
+ * Pic Saint-Loup", still on the labels of vintages before its own AOC (2016),
+ * which must not read as the AOP Languedoc it contains.
+ */
+const DESIGNATIONS: readonly { id: string; pattern: RegExp }[] = [
+  { id: 'aoc-pic-saint-loup', pattern: /\b(aop|aoc|appellation)\s+(d'origine\s+(protegee|controlee)\s+)?((coteaux\s+du\s+)?languedoc[\s-]+)?pic[\s-]*s(ain)?t[\s-]*loup/ },
+  { id: 'aoc-gres-de-montpellier', pattern: /gres[\s-]+de[\s-]+montpellier/ },
+  { id: 'aoc-languedoc', pattern: /\b(aop|aoc|appellation)\s+(d'origine\s+(protegee|controlee)\s+)?(coteaux\s+du\s+)?languedoc\b(?![\s-]+(pic|gres))/ },
+  { id: 'igp-saint-guilhem-le-desert', pattern: /saint[\s-]+guilhem/ },
+  { id: 'vin-de-france', pattern: /\bvin de france\b|\bvdf\b/ },
+];
+/** An IGP or a vin de pays other than Saint-Guilhem: not in the reference data. */
+const OTHER_IGP = /\b(igp|vin de pays)\b(?![\s-]+(de\s+)?saint[\s-]+guilhem)/;
+
 /** Sparkling wines: the catalog, like the appellation, holds still wines. */
 const SPARKLING_TITLE = /petillant|mousseux|cremant|pet[- ]?nat|methode (traditionnelle|ancestrale)|\bbulles?\b/;
 const SPARKLING_TEXT = /\b(vin )?(petillant|mousseux|cremant)\b|pet[- ]?nat|methode (traditionnelle|ancestrale)/;
@@ -62,10 +85,17 @@ const LARGE_FORMAT = /magnum|jeroboam|150\s?cl|1[,.]5\s?l\b|\b37[,.]5\s?cl|demi[
 const TASTING_WORDS = /\b(robe|nez|bouche|tanins?|finale|aromes?|attaque|palais|texture|longueur|gourmand|fruite|epice|garrigue)/;
 const NON_TASTING = /livraison|commande|stock|expedi|frais de port|panier|€|prix|paiement|cookies?/;
 
+/** What extraction needs from the reference data. */
+export interface ExtractionReference {
+  grapeIndex: ReadonlyMap<string, string>;
+  /** Designation id -> the colors it permits. */
+  designations: ReadonlyMap<string, { colors: readonly string[] }>;
+}
+
 export function extractCandidate(
   product: RawProduct,
   producer: Producer,
-  grapeIndex: ReadonlyMap<string, string>,
+  reference: ExtractionReference,
   retrievedOn: string,
 ): Extraction {
   const title = product.title;
@@ -73,41 +103,73 @@ export function extractCandidate(
   const all = normalize([title, product.text, ...product.labels].join('\n'));
   const exclude = (reason: string): Extraction => ({ kind: 'excluded', title, url: product.url, reason });
 
-  // Excluded: only what is certainly not a bottle of Pic Saint-Loup.
-  // Everything merely uncertain becomes a candidate to complete.
+  // Excluded: only what is certainly not a still wine of the estate, in a
+  // 75 cl bottle and under a designation of the reference data. Everything
+  // merely uncertain becomes a candidate to complete.
+  if (NOT_A_PRODUCT_TITLE.test(titleN)) return exclude('a home or range page, not a product');
   if (NOT_A_BOTTLE.test(titleN)) return exclude('not a single bottle of wine');
   if (LARGE_FORMAT.test(titleN)) return exclude('large or small format: the 75 cl bottle is the reference');
   if (SPARKLING_TITLE.test(titleN) || SPARKLING_TEXT.test(normalize(product.text))) {
     return exclude('sparkling wine: the catalog holds still wines');
   }
 
-  const pslNamed = PSL_AS_APPELLATION.test(all) || product.labels.some((l) => PSL.test(normalize(l)));
-  const pslMentioned = PSL.test(all);
-  const otherDesignation = OTHER_DESIGNATION.test(all);
-  if (!pslMentioned && otherDesignation) {
-    return exclude('another designation (IGP, AOP Languedoc, Vin de France) and no Pic Saint-Loup');
+  const labelsN = normalize([title, ...product.labels].join('\n'));
+  const named = (text: string) => DESIGNATIONS.filter((d) => d.pattern.test(text)).map((d) => d.id);
+  const onPage = named(all);
+  // A shop category or breadcrumb "Pic Saint-Loup" names the appellation.
+  if (product.labels.some((l) => PSL.test(normalize(l))) && !onPage.includes('aoc-pic-saint-loup')) {
+    onPage.unshift('aoc-pic-saint-loup');
+  }
+  if (onPage.length === 0 && OTHER_IGP.test(all)) {
+    return exclude('a designation outside the reference data (IGP Pays d\'Oc, Pays d\'Herault...)');
   }
 
   const color = colorOf(titleN, all);
-  if (color === 'white') return exclude('white wine: the Pic Saint-Loup AOC covers no white');
+  const colorCode = color === 'red' || color === 'rose' || color === 'white' ? color : null;
+
+  // An event, a gift card or a hydrolat the list above does not name yet:
+  // nothing on the page describes a wine. Kept, it would only be one more
+  // file to delete by hand.
+  if (color === null && onPage.length === 0 && abvOf(product.text) === null &&
+      blendOf(product.text, reference.grapeIndex).length === 0 &&
+      vintageOf(title, product.text).value === null) {
+    return exclude('nothing on the page describes a wine (no color, designation, grape, vintage or alcohol content)');
+  }
 
   const flags: string[] = [];
   const toComplete: string[] = [];
+  const choices = [...reference.designations.keys()].map((id) => `"${id}"`).join(', ');
 
-  if (!pslNamed) {
-    toComplete.push(pslMentioned
+  // The title and the shop's labels speak for this bottle; the page text may
+  // also talk about the estate's other wines.
+  const inLabels = named(labelsN).filter((id) => onPage.includes(id));
+  let designation: string | null =
+    onPage.length === 1 ? onPage[0]! : inLabels.length === 1 ? inLabels[0]! : null;
+
+  if (onPage.length === 0) {
+    toComplete.push(PSL.test(all)
       // The Tonillieres case: the Pic Saint-Loup terroir, not the appellation.
-      ? 'appellation_id: the page names Pic Saint-Loup as a place, not as the appellation. ' +
-        'Set "aoc-pic-saint-loup" if the label says so, otherwise delete this file.'
-      : 'appellation_id: the page states no appellation. ' +
-        'Set "aoc-pic-saint-loup" if the label says so, otherwise delete this file.');
-  } else if (otherDesignation) {
-    flags.push('the page also mentions another designation (IGP, AOP Languedoc...): check the appellation');
+      ? `appellation_id: the page names Pic Saint-Loup as a place, not as a designation. ` +
+        `Set the one on the label (${choices}), otherwise delete this file.`
+      : `appellation_id: the page states no designation. ` +
+        `Set the one on the label (${choices}), otherwise delete this file.`);
+  } else if (designation === null) {
+    toComplete.push(`appellation_id: the page names several designations (${onPage.join(', ')}). Set the one on the label.`);
+  } else if (onPage.length > 1) {
+    flags.push(`the page also names ${onPage.filter((id) => id !== designation).join(', ')}: check the designation`);
   }
-  if (color === null || color === 'ambiguous') {
+  if (designation !== null && colorCode !== null &&
+      !reference.designations.get(designation)?.colors.includes(colorCode)) {
+    toComplete.push(
+      `appellation_id: the page names ${designation}, which covers no ${colorCode} wine. ` +
+      `Set the designation on the label, otherwise delete this file.`,
+    );
+    designation = null;
+  }
+  if (colorCode === null) {
     toComplete.push(color === null
-      ? 'color: the page does not say. Set "red" or "rose".'
-      : 'color: several colors on the page, none in the title. Set "red" or "rose".');
+      ? 'color: the page does not say. Set "red", "rose" or "white".'
+      : 'color: several colors on the page, none in the title. Set "red", "rose" or "white".');
   }
 
   const vintage = vintageOf(title, product.text);
@@ -116,7 +178,7 @@ export function extractCandidate(
   const name = cleanName(title);
   if (name !== title) flags.push(`name cleaned from the shop title "${title}"`);
 
-  const blend = blendOf(product.text, grapeIndex);
+  const blend = blendOf(product.text, reference.grapeIndex);
   if (blend.length === 0) flags.push('no grape found: blend left empty');
 
   const price = priceOf(product.prices);
@@ -136,16 +198,16 @@ export function extractCandidate(
 
   // The color joins the id only when the shop's title names it, as for the
   // two Dame Jeanne (rouge and rose) already in the catalog.
-  const titleColor = /\b(rouge|rose)\b/.exec(titleN.replace(NOT_A_COLOR, ' '))?.[1];
+  const titleColor = /\b(rouge|rose|blanc)\b/.exec(titleN.replace(NOT_A_COLOR, ' '))?.[1];
   const nameSlug = slug(name);
   const colorPart = titleColor && !nameSlug.split('-').includes(titleColor) ? titleColor : null;
   const id = [shortProducer(producer.id), nameSlug, colorPart, vintage.value].filter(Boolean).join('-');
   const wine: CandidateWine = {
     id,
     producer_id: producer.id,
-    appellation_id: pslNamed ? APPELLATION : null,
+    appellation_id: designation,
     name,
-    color: color === 'red' || color === 'rose' ? color : null,
+    color: colorCode,
     vintage: vintage.value,
     blend,
     abv: abvOf(product.text),
@@ -214,17 +276,35 @@ function vintageOf(title: string, text: string): { value: number | null; flag?: 
 }
 
 function cleanName(title: string): string {
-  return title
-    .split(/\s+[-–—|]\s+/)[0]!
+  const name = title
+    // "Into The Red -Rouge léger": a dash opens a subtitle, spaced or not.
+    .split(/\s+[-–—|]\s*/)[0]!
     .replace(/\b(19[89]\d|20[0-4]\d)\b/g, '')
-    .replace(/\b(aop|aoc)\b.*$/i, '')
+    .replace(/\b(aop|aoc|igp|vdf)\b.*$/i, '')
+    .replace(/\bvin de france\b.*$/i, '')
     .replace(/\b(bio|75\s?cl)(?!\p{L})/giu, '')
     .replace(/\s{2,}/g, ' ')
     .replace(/[\s,;:-]+$/, '')
     // A trailing color is a label ("Dame Jeanne Rose"); a leading one is part
     // of the name ("Rose du Pic").
     .replace(/\s+(vin\s+)?(rouge|ros[ée]|blanc)$/iu, '')
-    .trim() || title.trim();
+    .trim();
+  return recase(name) || title.trim();
+}
+
+const SMALL_WORDS = new Set(['a', 'à', 'au', 'aux', 'de', 'des', 'du', 'en', 'et', 'la', 'le', 'les']);
+
+/**
+ * "ORANGE À LA MER" -> "Orange à la Mer". Only an all-capitals name is
+ * recased: a name with a lowercase letter is written the way the estate chose.
+ */
+function recase(name: string): string {
+  if (/\p{Ll}/u.test(name)) return name;
+  return name.toLowerCase().split(' ')
+    .map((w, i) => (i > 0 && SMALL_WORDS.has(w)
+      ? w
+      : w.replace(/(^|[’'-])(\p{L})/gu, (_, sep: string, c: string) => sep + c.toUpperCase())))
+    .join(' ');
 }
 
 function blendOf(text: string, grapeIndex: ReadonlyMap<string, string>): Wine['blend'] {

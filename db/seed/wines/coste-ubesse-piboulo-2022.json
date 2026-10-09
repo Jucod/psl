@@ -1,5 +1,5 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://coste-ubesse.com/product/piboulo-2022-gres-de-montpellier-syrah-grenache/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://coste-ubesse.com/product/piboulo-2022-gres-de-montpellier-syrah-grenache/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at the multi-designation review of 2026-10-09, by trimming only: quotation marks removed.",
   "id": "coste-ubesse-piboulo-2022",
   "producer_id": "domaine-coste-ubesse",
   "appellation_id": "aoc-gres-de-montpellier",
@@ -22,7 +22,7 @@
   "price_as_of": "2026-10-09",
   "organic": null,
   "certification": null,
-  "tasting_note": "« Une cuvée construite autour de la syrah et du grenache qui donne un vin soyeux et bien équilibré aux arômes de fruits noirs . C’est un vin vivant d’une belle fraîcheur qui va parfaitement accompagner des viandes grillées et des fromages de caractère. »",
+  "tasting_note": "Une cuvée construite autour de la syrah et du grenache qui donne un vin soyeux et bien équilibré aux arômes de fruits noirs . C’est un vin vivant d’une belle fraîcheur qui va parfaitement accompagner des viandes grillées et des fromages de caractère.",
   "tasting_note_source": {
     "id": "page-coste-ubesse-piboulo-2022",
     "type": "producer_page",

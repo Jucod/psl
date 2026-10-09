@@ -1,0 +1,37 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://boutique.masfoulaquier.fr/products/orenji-mas-foulaquier (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at the multi-designation review of 2026-10-09, by trimming only: a radio critic's review (third-party editorial content, not the estate's), the label credits and a cut fragment removed from the note; `aging` was a section heading, set to null. Name \"Orenji -Muscat de macération\" recased or cut to the cuvee name.",
+  "id": "mas-foulaquier-orenji-muscat-de-maceration-2025",
+  "producer_id": "mas-foulaquier",
+  "appellation_id": "vin-de-france",
+  "name": "Orenji",
+  "color": "white",
+  "vintage": 2025,
+  "blend": [
+    {
+      "grape": "muscat-petits-grains",
+      "pct": 80
+    },
+    {
+      "grape": "grenache",
+      "pct": 20
+    }
+  ],
+  "abv": null,
+  "aging": null,
+  "price_eur": 16,
+  "price_as_of": "2026-10-09",
+  "organic": null,
+  "certification": null,
+  "tasting_note": "Explosion de fruits et de fleurs...Plein d'inspirations pour accompagner des plats exotiques, des viandes blanches ou des fromages persillés!",
+  "tasting_note_source": {
+    "id": "page-mas-foulaquier-orenji-muscat-de-maceration-2025",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://boutique.masfoulaquier.fr/products/orenji-mas-foulaquier",
+    "authority": "Mas Foulaquier",
+    "retrieved_on": "2026-10-09",
+    "content_sha256": "0b773c0f292196205a3de5df53937b417f5b239801fcd5fcd6186e5182039397"
+  },
+  "producer_pairings": [],
+  "page_url": "https://boutique.masfoulaquier.fr/products/orenji-mas-foulaquier"
+}

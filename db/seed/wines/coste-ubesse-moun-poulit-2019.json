@@ -1,5 +1,5 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://coste-ubesse.com/product/moun-poulit-vin-rouge-vin-de-france/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://coste-ubesse.com/product/moun-poulit-vin-rouge-vin-de-france/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at the multi-designation review of 2026-10-09, by trimming only: opening quotation mark removed.",
   "id": "coste-ubesse-moun-poulit-2019",
   "producer_id": "domaine-coste-ubesse",
   "appellation_id": "vin-de-france",
@@ -26,7 +26,7 @@
   "price_as_of": "2026-10-09",
   "organic": null,
   "certification": null,
-  "tasting_note": "« Un assemblage harmonieux pour un vin gourmand sur le fruit, digeste et plein de fraîcheur malgré son caractère bien trempé.",
+  "tasting_note": "Un assemblage harmonieux pour un vin gourmand sur le fruit, digeste et plein de fraîcheur malgré son caractère bien trempé.",
   "tasting_note_source": {
     "id": "page-coste-ubesse-moun-poulit-2019",
     "type": "producer_page",

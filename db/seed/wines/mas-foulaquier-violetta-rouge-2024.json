@@ -1,5 +1,5 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://boutique.masfoulaquier.fr/products/violetta-mas-foulaquier (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://boutique.masfoulaquier.fr/products/violetta-mas-foulaquier (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at the multi-designation review of 2026-10-09, by trimming only: the history of the cuvee removed from the note; `aging` was a section heading, set to null.",
   "id": "mas-foulaquier-violetta-rouge-2024",
   "producer_id": "mas-foulaquier",
   "appellation_id": "vin-de-france",
@@ -17,12 +17,12 @@
     }
   ],
   "abv": null,
-  "aging": "Vinification et Élevage",
+  "aging": null,
   "price_eur": 16,
   "price_as_of": "2026-10-09",
   "organic": true,
   "certification": null,
-  "tasting_note": "Cuvée libre du domaine, Violetta est issue des vignes qui donnent un caractère très fruité au vin. En 2024, le nez de griotte et de fruit rouge est plein d’éclat. La bouche est soyeuse et fraîche. Un vin de gourmandise. La première année, cette cuvée est née d'un nouveau fermage de syrah dont les moûts sentaient bon la violette. Ensuite, elle est devenue libre d'assemblage, elle reflète l'évolution du domaine, les envies d'expérimentation des vignerons : un nouveau petit fermage par-ci, l'envie d'essayer un mono-cépage par-là….",
+  "tasting_note": "Cuvée libre du domaine, Violetta est issue des vignes qui donnent un caractère très fruité au vin. En 2024, le nez de griotte et de fruit rouge est plein d’éclat. La bouche est soyeuse et fraîche. Un vin de gourmandise.",
   "tasting_note_source": {
     "id": "page-mas-foulaquier-violetta-rouge-2024",
     "type": "producer_page",

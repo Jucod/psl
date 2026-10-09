@@ -19,10 +19,26 @@ export interface ExtractionResult {
   usage: Usage;
 }
 
+/** A designation of the catalog, as call 1 needs it. */
+export interface Designation {
+  readonly id: string;
+  readonly name: string;
+  readonly tier: 'aop' | 'igp' | 'vsig';
+  /** The names visitors give it, read by the deterministic parser. */
+  readonly aliases: readonly string[];
+}
+
+export interface ExtractionContext {
+  /** Applied when the request names no designation. null = all of them. */
+  readonly defaultAppellation: string | null;
+  /** The designations a request can name: parsed locally, listed to the model. */
+  readonly designations: readonly Designation[];
+}
+
 export interface LlmProvider {
   readonly name: string;
   /** Call 1: natural language -> filters validated against the strict schema. */
-  extractFilters(message: string, defaultAppellation: string | null): Promise<ExtractionResult>;
+  extractFilters(message: string, context: ExtractionContext): Promise<ExtractionResult>;
   /** Call 2: returned rows -> text. See the type constraint below. */
   formulate(input: FormulationInput): Promise<{ text: string; usage: Usage }>;
 }

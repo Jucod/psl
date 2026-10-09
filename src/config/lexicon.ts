@@ -106,23 +106,27 @@ export const DISHES: Record<string, Dish> = {
 };
 
 /**
- * Common grape varieties that are NOT part of the appellation.
+ * Common grape varieties that no wine of the catalog can contain: they are in
+ * neither db/seed/grapes.json nor any blend.
  *
- * Without this list, "avez-vous du chardonnay ?" produced no filter to refuse:
- * the parser only recognized the catalog's varieties, the constraint
- * evaporated, and the system answered with three reds. Naming them lets the
- * engine REFUSE while citing the varieties permitted by the specification,
+ * Without this list, "avez-vous du merlot ?" produced no filter to refuse: the
+ * parser only recognized the catalog's varieties, the constraint evaporated,
+ * and the system answered with three reds. Naming them lets the engine REFUSE
  * instead of serving something close.
+ *
+ * The white varieties of the neighbouring designations (chardonnay,
+ * vermentino, roussanne...) left this list when those wines entered the
+ * catalog: they are now real grapes, recognized through grapes.json, and the
+ * Pic Saint-Loup refusal comes from its grape rules instead.
  *
  * To be extended according to the requests actually received; it does not
  * have to be exhaustive to be useful.
  */
-export const GRAPES_OUTSIDE_APPELLATION = [
-  'chardonnay', 'viognier', 'roussanne', 'marsanne', 'bourboulenc', 'clairette',
-  'vermentino', 'rolle', 'sauvignon', 'chenin', 'riesling', 'gewurztraminer',
+export const GRAPES_OUTSIDE_CATALOG = [
+  'chenin', 'riesling', 'gewurztraminer',
   'pinot noir', 'cabernet sauvignon', 'cabernet franc', 'merlot', 'gamay',
-  'malbec', 'tannat', 'nebbiolo', 'sangiovese', 'tempranillo', 'muscat',
-  'grenache blanc', 'picpoul', 'terret', 'aligote',
+  'malbec', 'tannat', 'nebbiolo', 'sangiovese', 'tempranillo',
+  'terret', 'aligote',
 ];
 
 /**
@@ -137,9 +141,38 @@ export const GRAPES_OUTSIDE_APPELLATION = [
  * Accepted consequence: a variety written in the plural is not recognized.
  * Missing a refusal costs less than a wrong refusal.
  */
-export const GRAPES_OUTSIDE_APPELLATION_EXACT = new Set(
-  GRAPES_OUTSIDE_APPELLATION.map(normalize),
+export const GRAPES_OUTSIDE_CATALOG_EXACT = new Set(
+  GRAPES_OUTSIDE_CATALOG.map(normalize),
 );
+
+/**
+ * Designations a visitor may ask for and the catalog does not hold, with the
+ * words that name them. Recognized so that "un bordeaux" gets the designation
+ * refusal instead of three wines picked on nothing.
+ *
+ * Bare names only where they cannot be something else: "bourgogne" alone is
+ * also the escargots, "provence" the herbs, "alsace" the choucroute. Those
+ * need the article, or are left out.
+ */
+export const DESIGNATIONS_OUTSIDE_CATALOG: readonly { id: string; aliases: readonly string[] }[] = [
+  { id: 'bordeaux', aliases: ['bordeaux'] },
+  { id: 'bourgogne', aliases: ['un bourgogne', 'du bourgogne'] },
+  { id: 'champagne', aliases: ['champagne'] },
+  { id: 'chablis', aliases: ['chablis'] },
+  { id: 'beaujolais', aliases: ['beaujolais'] },
+  { id: 'sancerre', aliases: ['sancerre'] },
+  { id: 'cotes-du-rhone', aliases: ['cotes du rhone'] },
+  { id: 'chateauneuf-du-pape', aliases: ['chateauneuf du pape'] },
+  { id: 'cotes-de-provence', aliases: ['cotes de provence'] },
+  { id: 'rioja', aliases: ['rioja'] },
+  { id: 'cahors', aliases: ['cahors'] },
+  // Neighbours in the Languedoc, as likely to be asked here as they are absent.
+  { id: 'faugeres', aliases: ['faugeres'] },
+  { id: 'saint-chinian', aliases: ['saint chinian'] },
+  { id: 'terrasses-du-larzac', aliases: ['terrasses du larzac'] },
+  { id: 'minervois', aliases: ['minervois'] },
+  { id: 'corbieres', aliases: ['corbieres'] },
+];
 
 /** Strips accents and lowercases. */
 export function normalize(text: string): string {

@@ -38,17 +38,31 @@ It writes **candidates**, never wines: `ingestion/candidates/<date>/`, ignored
 by git, with one JSON file per wine, the product text it was taken from, and a
 `REPORT.md` that counts exclusions by reason.
 
-Only what is certainly not a bottle of Pic Saint-Loup is excluded: gift boxes
-and other non-wine products, large formats, white wines, and pages that state
-another designation (IGP, AOP Languedoc, Vin de France) without naming Pic
-Saint-Loup. Everything merely uncertain is kept:
+The catalog holds the still wines of the estates under the five designations
+of the reference data: AOP Pic Saint-Loup, AOP Languedoc, AOP Grés de
+Montpellier, IGP Saint-Guilhem-le-Désert and Vin de France, whites included.
+Only what is certainly outside it is excluded:
 
-- **ready**: the page names the appellation (including its former name, "AOC
-  Coteaux du Languedoc Pic Saint-Loup") and the color;
+- products that are not a single bottle of wine: gift boxes and packs,
+  accessories, events, visits, workshops and gift cards, and the estate's
+  other products (hydrolats, vinegar, marc, oil...), every one of them met in
+  a shop of the directory;
+- home and range pages read as a product ("Accueil", "Nos vins"), and pages on
+  which nothing describes a wine (no color, designation, grape, vintage or
+  alcohol content);
+- large formats, sparkling wines, and IGPs outside the reference data (Pays
+  d'Oc, Pays d'Hérault...).
+
+Everything merely uncertain is kept:
+
+- **ready**: the page names one designation (the Pic Saint-Loup under its
+  former name, "AOC Coteaux du Languedoc Pic Saint-Loup", included) and a
+  color that designation covers;
 - **to complete**: the page names Pic Saint-Loup only as a place, states no
-  appellation, or does not say the color. The field is left empty and
-  `_review.to_complete` says what to decide: set it from the label, or delete
-  the file.
+  designation, names several that its title does not settle, names one that
+  does not cover the wine's color (a white "AOP Pic Saint-Loup"), or does not
+  say the color. The field is left empty and `_review.to_complete` says what
+  to decide: set it from the label, or delete the file.
 
 Other uncertain fields (vintage, price, blend) are left null and flagged
 rather than guessed. The tasting note is made of the page's descriptive
@@ -65,16 +79,20 @@ npm run db:seed && npm run db:embed
 ```
 
 When the same decision holds for many "to complete" files (you checked that an
-estate's wines are all Pic Saint-Loup), `--set appellation_id=aoc-pic-saint-loup`
-or `--set color=red|rose` fills that field where it is empty, and says so in
-each promoted wine's provenance.
+estate's wines are all Vins de France), `--set appellation_id=vin-de-france`
+(or any designation of the reference data) or `--set color=red|rose|white`
+fills that field where it is empty, and says so in each promoted wine's
+provenance. Promote such a batch on its own folder or files: the decision
+applies to every file of the command.
 
 Promotion checks again what must hold: the schema, a producer from the
-directory, known grapes, the AOC grape rules read from the seed (syrah share,
-secondary grapes, number of main grapes), no duplicate of a wine already in
-the catalog, the note made of sentences copied verbatim from the page (a note
-reworded during review is refused), and the injection quarantine. The wine is
-then written to `db/seed/wines/` with a `_provenance` line.
+directory, known grapes, a designation of the reference data that covers the
+wine's color, the grape rules of that designation where the seed transcribes
+them (today the Pic Saint-Loup's: syrah share, secondary grapes, number of
+main grapes), no duplicate of a wine already in the catalog, the note made of
+sentences copied verbatim from the page (a note reworded during review is
+refused), and the injection quarantine. The wine is then written to
+`db/seed/wines/` with a `_provenance` line.
 
 ## Why Python here, and only here
 

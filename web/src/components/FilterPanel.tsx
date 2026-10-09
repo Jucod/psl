@@ -1,4 +1,4 @@
-import { labelOf, type Catalog, type Filters } from '../types.ts';
+import { designationLabel, labelOf, type Catalog, type Filters } from '../types.ts';
 
 interface Props {
   filters: Filters;
@@ -57,7 +57,7 @@ export function FilterPanel({ filters, catalog, onChange, onRerun, modified }: P
         <select value={filters.appellation ?? ''} onChange={(e) => set('appellation', e.target.value || null)}>
           <option value="">indifferent</option>
           {(catalog?.appellations ?? []).map((a) => (
-            <option key={a.id} value={a.id}>{a.name}</option>
+            <option key={a.id} value={a.id}>{designationLabel(a.name, a.tier)}</option>
           ))}
         </select>
       </label>

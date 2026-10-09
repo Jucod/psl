@@ -25,6 +25,40 @@ describe('database guardrails', () => {
     ).rejects.toMatchObject({ code: FOREIGN_KEY_VIOLATION, constraint: 'wines_appellation_id_color_fkey' });
   });
 
+  it('accepts the same white under a designation that covers whites', async () => {
+    const client = await db().connect();
+    try {
+      await client.query('BEGIN');
+      await expect(client.query(
+        `INSERT INTO wines (id, producer_id, appellation_id, color, name, embedding_level)
+         VALUES ('test-white','mas-bruguiere','aoc-languedoc','white','Test','appellation')`,
+      )).resolves.toBeDefined();
+    } finally {
+      await client.query('ROLLBACK');
+      client.release();
+    }
+  });
+
+  it('rejects a designation without a tier: the AOP badge cannot be left to chance', async () => {
+    await expect(
+      db().query(
+        `INSERT INTO appellations (id, name, source_id)
+         VALUES ('test-designation','Test','inao-cdc-psl')`,
+      ),
+    ).rejects.toMatchObject({ code: '23502', column: 'tier' });
+    await expect(
+      db().query(
+        `INSERT INTO appellations (id, name, tier, source_id)
+         VALUES ('test-designation','Test','aoc','inao-cdc-psl')`,
+      ),
+    ).rejects.toMatchObject({ code: CHECK_VIOLATION, constraint: 'appellations_tier_check' });
+  });
+
+  it('only the Pic Saint-Loup and the two Languedoc AOPs carry the AOP tier', async () => {
+    const { rows } = await db().query(`SELECT id FROM appellations WHERE tier = 'aop' ORDER BY id`);
+    expect(rows.map((r) => r.id)).toEqual(['aoc-gres-de-montpellier', 'aoc-languedoc', 'aoc-pic-saint-loup']);
+  });
+
   it('rejects a tasting note without a citable source', async () => {
     await expect(
       db().query(

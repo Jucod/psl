@@ -1,9 +1,9 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://boutique.masfoulaquier.fr/products/orange-a-la-mer-mas-foulaquier (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://boutique.masfoulaquier.fr/products/orange-a-la-mer-mas-foulaquier (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at the multi-designation review of 2026-10-09, by trimming only: a winemaking fragment cut from its sentence removed from the note; `aging` was a section heading, set to null. Name \"ORANGE À LA MER\" recased or cut to the cuvee name.",
   "id": "mas-foulaquier-orange-a-la-mer-2024",
   "producer_id": "mas-foulaquier",
   "appellation_id": "vin-de-france",
-  "name": "ORANGE À LA MER",
+  "name": "Orange à la Mer",
   "color": "white",
   "vintage": 2024,
   "blend": [
@@ -21,12 +21,12 @@
     }
   ],
   "abv": null,
-  "aging": "Vinification et Élevage",
+  "aging": null,
   "price_eur": 24,
   "price_as_of": "2026-10-09",
   "organic": true,
   "certification": null,
-  "tasting_note": "Salin, minéral et aromatiques, l'Orange à la mer est sur des notes de rose, d'abricot et de plante de garrigue. Elles sont douces et très longues, sans intervention, sous forme d'infusion, afin d'extraire lentement les matières et les tanins et que tout se fonde dans le vin avec harmonie. Aujourd'hui, les raisins proviennent de notre terroir en Pic St Loup mais l'arôme d'agrume est toujours là!",
+  "tasting_note": "Salin, minéral et aromatiques, l'Orange à la mer est sur des notes de rose, d'abricot et de plante de garrigue. Aujourd'hui, les raisins proviennent de notre terroir en Pic St Loup mais l'arôme d'agrume est toujours là!",
   "tasting_note_source": {
     "id": "page-mas-foulaquier-orange-a-la-mer-2024",
     "type": "producer_page",

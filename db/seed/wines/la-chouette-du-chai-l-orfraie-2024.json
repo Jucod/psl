@@ -1,5 +1,5 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://lachouetteduchai.com/produit/lorfraie/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://lachouetteduchai.com/produit/lorfraie/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at the multi-designation review of 2026-10-09, by trimming only: quotation marks removed.",
   "id": "la-chouette-du-chai-l-orfraie-2024",
   "producer_id": "la-chouette-du-chai",
   "appellation_id": "aoc-languedoc",
@@ -22,7 +22,7 @@
   "price_as_of": null,
   "organic": null,
   "certification": null,
-  "tasting_note": "” L’Orfraie 2024 est un blanc lumineux et précis, reflet de l’altitude et de la fraîcheur du plateau de Cazevieille. Le nez s’ouvre sur des notes d’agrumes frais, de fleurs blanches et de fruits a chair blanche, soulignées par une touche subtilement saline. En bouche, l’attaque est droite et tendue. La finale est longue, nette et minérale, laissant une sensation de pureté et de légèreté. “",
+  "tasting_note": "L’Orfraie 2024 est un blanc lumineux et précis, reflet de l’altitude et de la fraîcheur du plateau de Cazevieille. Le nez s’ouvre sur des notes d’agrumes frais, de fleurs blanches et de fruits a chair blanche, soulignées par une touche subtilement saline. En bouche, l’attaque est droite et tendue. La finale est longue, nette et minérale, laissant une sensation de pureté et de légèreté.",
   "tasting_note_source": {
     "id": "page-la-chouette-du-chai-l-orfraie-2024",
     "type": "producer_page",

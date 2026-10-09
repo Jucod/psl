@@ -6,8 +6,14 @@ import { slug } from './util.js';
 const SEED_PATH = fileURLToPath(new URL('../../db/seed/pic-saint-loup-seed.json', import.meta.url));
 const GRAPES_PATH = fileURLToPath(new URL('../../db/seed/grapes.json', import.meta.url));
 
-/** Date the reference data was collected by hand, not the publication date of the INAO text. */
+/**
+ * Date the reference data was collected by hand, not the publication date of
+ * the INAO text. A source added later states its own `retrieved_on`.
+ */
 const RETRIEVED_ON = '2026-09-14';
+
+const SOURCE_TYPES = new Set(['specification', 'regulation', 'directory', 'producer_page']);
+const TIERS = new Set(['aop', 'igp', 'vsig']);
 
 export interface ReferenceIngestSummary {
   sources: number; appellations: number; colors: number;
@@ -22,38 +28,37 @@ export async function ingestReference(client: pg.PoolClient): Promise<ReferenceI
     sources: 0, appellations: 0, colors: 0, profiles: 0, pairings: 0, producers: 0, grapes: 0,
   };
 
-  const sourceType = (id: string): string => {
-    if (id === 'inao_cdc_psl') return 'specification';
-    if (id === 'syndicat_psl' || id === 'ot_grand_psl') return 'directory';
-    return 'producer_page';
-  };
-
   for (const s of seed._meta.sources) {
+    if (!SOURCE_TYPES.has(s.type)) throw new Error(`source ${s.id}: unknown type ${s.type}`);
     await client.query(
       `INSERT INTO sources (id, type, label, url, authority, retrieved_on)
        VALUES ($1,$2,$3,$4,$5,$6)
        ON CONFLICT (id) DO UPDATE SET
          type=EXCLUDED.type, label=EXCLUDED.label, url=EXCLUDED.url,
          authority=EXCLUDED.authority, retrieved_on=EXCLUDED.retrieved_on`,
-      [slug(s.id), sourceType(s.id), s.label, s.url, s.authority ?? null, RETRIEVED_ON],
+      [slug(s.id), s.type, s.label, s.url, s.authority ?? null, s.retrieved_on ?? RETRIEVED_ON],
     );
     summary.sources++;
   }
 
   for (const a of seed.appellations) {
+    // The tier is what the AOP badge shows: a designation without one would be
+    // displayed as protected or not by accident.
+    if (!TIERS.has(a.tier)) throw new Error(`designation ${a.id}: tier must be aop, igp or vsig`);
     await client.query(
       `INSERT INTO appellations
-         (id, name, status, region, recognized_year, communes, grape_rules,
+         (id, name, tier, aliases, status, region, recognized_year, communes, grape_rules,
           production, terroir, source_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        ON CONFLICT (id) DO UPDATE SET
-         name=EXCLUDED.name, status=EXCLUDED.status, region=EXCLUDED.region,
+         name=EXCLUDED.name, tier=EXCLUDED.tier, aliases=EXCLUDED.aliases,
+         status=EXCLUDED.status, region=EXCLUDED.region,
          recognized_year=EXCLUDED.recognized_year,
          communes=EXCLUDED.communes, grape_rules=EXCLUDED.grape_rules,
          production=EXCLUDED.production, terroir=EXCLUDED.terroir,
          source_id=EXCLUDED.source_id, updated_at=now()`,
       [
-        a.id, a.name, a.status, a.region,
+        a.id, a.name, a.tier, a.aliases ?? [], a.status, a.region ?? null,
         a.aoc_recognized ? Number(a.aoc_recognized) : null,
         JSON.stringify(a.communes ?? {}),
         JSON.stringify(a.grape_rules ?? {}),
@@ -103,7 +108,7 @@ export async function ingestReference(client: pg.PoolClient): Promise<ReferenceI
            profile_text=EXCLUDED.profile_text, source_id=EXCLUDED.source_id,
            source_section=EXCLUDED.source_section`,
         [a.id, color, p.appearance ?? null, p.aromas ?? [], p.palate ?? null,
-         p.structure ?? null, p.aging_potential ?? null, text, slug('inao_cdc_psl'),
+         p.structure ?? null, p.aging_potential ?? null, text, slug(a.source),
          sourceSection ?? null],
       );
       summary.profiles++;

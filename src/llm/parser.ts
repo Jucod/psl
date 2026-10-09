@@ -1,5 +1,5 @@
 import {
-  DISHES, FAMILIES, FAMILY_BY_STEM, GRAPES_OUTSIDE_APPELLATION_EXACT,
+  DESIGNATIONS_OUTSIDE_CATALOG, DISHES, FAMILIES, FAMILY_BY_STEM, GRAPES_OUTSIDE_CATALOG_EXACT,
   NEGATION_MARKERS, NEGATION_SCOPE, OPPOSITES, normalize, stem, words,
 } from '../config/lexicon.js';
 import { EMPTY_FILTERS, FiltersSchema, type Filters } from '../schema/filters.js';
@@ -17,9 +17,12 @@ import { EMPTY_FILTERS, FiltersSchema, type Filters } from '../schema/filters.js
  */
 
 export interface ParserOptions {
+  /** Applied when the request names no designation. */
   defaultAppellation?: string | null;
   /** Normalized name or synonym -> grape code, to recognize "shiraz". */
   grapeIndex?: ReadonlyMap<string, string>;
+  /** The catalog's designations and the names visitors give them. */
+  designations?: readonly { readonly id: string; readonly aliases: readonly string[] }[];
 }
 
 const RE_PRICE_MAX = /(?:moins de|jusqu'?a|max(?:imum)?|sous|budget de|autour de|environ|vers)\s*(\d+(?:[.,]\d+)?)\s*(?:€|eur|euros?)?/i;
@@ -107,18 +110,19 @@ export function parseMessage(message: string, options: ParserOptions = {}): Filt
       (isNegated(split.raw, position) ? excluded : included).add(code);
     };
 
+    // Varieties outside the catalog are recognized DELIBERATELY, to produce a
+    // refusal rather than let the constraint evaporate. On the exact form,
+    // never by stem: see GRAPES_OUTSIDE_CATALOG_EXACT. They are read FIRST:
+    // "cabernet sauvignon" must consume "sauvignon", which is a catalog grape.
+    for (const { key, position, length } of ngrams(split.raw)) {
+      if (seen.has(position)) continue;
+      if (GRAPES_OUTSIDE_CATALOG_EXACT.has(key)) keep(key, position, length);
+    }
+
     for (const { key, position, length } of ngrams(split.stems)) {
       if (seen.has(position)) continue;
       const code = byStem.get(key);
       if (code) keep(code, position, length);
-    }
-
-    // Varieties outside the appellation are recognized DELIBERATELY, to
-    // produce a sourced refusal rather than let the constraint evaporate. On
-    // the exact form, never by stem: see GRAPES_OUTSIDE_APPELLATION_EXACT.
-    for (const { key, position, length } of ngrams(split.raw)) {
-      if (seen.has(position)) continue;
-      if (GRAPES_OUTSIDE_APPELLATION_EXACT.has(key)) keep(key, position, length);
     }
     draft.grapes_included = [...included].filter((g) => !excluded.has(g)).sort();
     draft.grapes_excluded = [...excluded].sort();
@@ -159,8 +163,12 @@ export function parseMessage(message: string, options: ParserOptions = {}): Filt
   draft.descriptors = [...descriptors].filter((d) => !rejected.has(d)).sort().slice(0, 8);
   draft.descriptors_excluded = [...rejected].sort().slice(0, 8);
 
-  // --- appellation ---------------------------------------------------------
-  if (options.defaultAppellation) draft.appellation = options.defaultAppellation;
+  // --- designation ---------------------------------------------------------
+  // The designations outside the catalog come along, so that "un bordeaux"
+  // yields the identifier "bordeaux", which the pipeline refuses by name.
+  draft.appellation =
+    designationOf(split.raw, [...(options.designations ?? []), ...DESIGNATIONS_OUTSIDE_CATALOG]) ??
+    options.defaultAppellation ?? null;
 
   const parsed = FiltersSchema.safeParse(draft);
   if (!parsed.success) {
@@ -169,6 +177,44 @@ export function parseMessage(message: string, options: ParserOptions = {}): Filt
     return { ...EMPTY_FILTERS, appellation: options.defaultAppellation ?? null };
   }
   return parsed.data;
+}
+
+/**
+ * The designation the request names, on the exact words of its aliases: a
+ * designation is a proper noun, like the varieties outside the catalog.
+ *
+ *  - The longest alias wins: "coteaux du languedoc pic saint loup" is the Pic
+ *    Saint-Loup, not the Languedoc it contains.
+ *  - A negated mention is dropped: the filter is an equality, it cannot say
+ *    "anything but a Vin de France", and reading it as one would be the
+ *    opposite of the request.
+ *  - Two different designations ("un languedoc ou un pic saint loup") are not
+ *    guessed between: no filter, every designation stays in play.
+ */
+function designationOf(
+  raw: string[],
+  designations: NonNullable<ParserOptions['designations']>,
+): string | null {
+  const found: { id: string; start: number; end: number }[] = [];
+  for (const d of designations) {
+    for (const alias of d.aliases) {
+      const tokens = words(alias).raw;
+      if (tokens.length === 0) continue;
+      for (let i = 0; i + tokens.length <= raw.length; i++) {
+        if (tokens.every((t, k) => raw[i + k] === t)) {
+          found.push({ id: d.id, start: i, end: i + tokens.length });
+        }
+      }
+    }
+  }
+  found.sort((a, b) => (b.end - b.start) - (a.end - a.start));
+  const mentions: typeof found = [];
+  for (const m of found) {
+    if (mentions.some((k) => m.start < k.end && k.start < m.end)) continue;
+    mentions.push(m);
+  }
+  const ids = new Set(mentions.filter((m) => !isNegated(raw, m.start)).map((m) => m.id));
+  return ids.size === 1 ? [...ids][0]! : null;
 }
 
 /**
