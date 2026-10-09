@@ -1,0 +1,20 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://chateau-lascaux.com/produit/pic-saint-loup-carra-rose/ (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "id": "lascaux-carra",
+  "producer_id": "chateau-de-lascaux",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "CARRA",
+  "color": "rose",
+  "vintage": null,
+  "blend": [],
+  "abv": null,
+  "aging": null,
+  "price_eur": 12.5,
+  "price_as_of": "2026-10-09",
+  "organic": null,
+  "certification": null,
+  "tasting_note": null,
+  "tasting_note_source": null,
+  "producer_pairings": [],
+  "page_url": "https://chateau-lascaux.com/produit/pic-saint-loup-carra-rose/"
+}

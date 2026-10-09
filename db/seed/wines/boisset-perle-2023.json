@@ -1,0 +1,41 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://www.chateauboisset.fr/product-page/perle (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "id": "boisset-perle-2023",
+  "producer_id": "chateau-boisset",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "Perle",
+  "color": "red",
+  "vintage": 2023,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 50
+    },
+    {
+      "grape": "grenache",
+      "pct": 30
+    },
+    {
+      "grape": "mourvedre",
+      "pct": 20
+    }
+  ],
+  "abv": 14.5,
+  "aging": null,
+  "price_eur": 20,
+  "price_as_of": "2026-10-09",
+  "organic": null,
+  "certification": null,
+  "tasting_note": "Garde : 3 à 7 ans Robe de couleur rouge aux reflets grenat. Nez complexe sur notes de fruits et d’épices soyeuses. La bouche est fraîche, construite sur des tanins fruités souples et soyeux La finale est longue, bien enrobée et douce. Magrets de canards aux fruits rouges, lapin rotis à la moutarde, chevreau à la broche, fromage, ...",
+  "tasting_note_source": {
+    "id": "page-boisset-perle-2023",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://www.chateauboisset.fr/product-page/perle",
+    "authority": "Château Boisset",
+    "retrieved_on": "2026-10-09",
+    "content_sha256": "068e720a243cc85beb98055e826b63313f551e886fd27d9773864f8aef0b9233"
+  },
+  "producer_pairings": [],
+  "page_url": "https://www.chateauboisset.fr/product-page/perle"
+}

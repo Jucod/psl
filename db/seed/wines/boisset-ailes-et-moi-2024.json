@@ -1,0 +1,37 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://www.chateauboisset.fr/product-page/ailes-et-moi (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "id": "boisset-ailes-et-moi-2024",
+  "producer_id": "chateau-boisset",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "Ailes et Moi",
+  "color": "red",
+  "vintage": 2024,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": null
+    },
+    {
+      "grape": "grenache",
+      "pct": null
+    }
+  ],
+  "abv": 14,
+  "aging": null,
+  "price_eur": 13,
+  "price_as_of": "2026-10-09",
+  "organic": null,
+  "certification": null,
+  "tasting_note": "Garde : 2 à 5 ans Robe de couleur rouge aux reflets violets. Nez complexe sur notes de fruits frais et d’épices. La bouche est fraiche, construite sur des fruits croquants (cerise et cassis). La finale est longue, bien enrobée et moderne.",
+  "tasting_note_source": {
+    "id": "page-boisset-ailes-et-moi-2024",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://www.chateauboisset.fr/product-page/ailes-et-moi",
+    "authority": "Château Boisset",
+    "retrieved_on": "2026-10-09",
+    "content_sha256": "742ea74cba9a77cbc8681d542235fff228e1f52824fab5cd09202f1dc47e1fef"
+  },
+  "producer_pairings": [],
+  "page_url": "https://www.chateauboisset.fr/product-page/ailes-et-moi"
+}
