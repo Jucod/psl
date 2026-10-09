@@ -347,12 +347,14 @@ the demo goes public: it is not authentication, it is twenty lines.
 
 ## State of the data
 
-**The catalog is real.** 41 wines from 7 estates, collected on 16 September
+**The catalog is real.** 57 wines from 11 estates, collected on 16 September
 and 9 October 2026 from the pages published by the producers themselves, each
-under a `producer_page` source carrying its URL and date: 19 AOP Pic
-Saint-Loup (18 reds, 1 rose), 3 AOP Languedoc whites, 1 AOP Grés de
+under a `producer_page` source carrying its URL and date: 35 AOP Pic
+Saint-Loup (31 reds, 4 roses), 3 AOP Languedoc whites, 1 AOP Grés de
 Montpellier, 2 IGP Saint-Guilhem-le-Désert reds, 16 Vins de France (10 whites,
-6 reds). The reference data lists the
+6 reds). 14 of them carry no producer note, because their page has none
+(Cazeneuve, La Salade Saint-Henri, Lascaux): they fall back on the
+appellation profile, and the interface says so. The reference data lists the
 **74 producers** of the appellation, taken from the syndicate's directory. The
 details of the collection, including what was left out and why, are in
 `ingestion/DATA-COLLECTION-2026-09-16.md`.
@@ -389,7 +391,7 @@ two places and look like a bug. A screen showing two different wines under the
 same description loses the trust it is trying to build; deduplicating on the
 note is a product decision, not a fix.
 
-**Alcohol content is missing almost everywhere.** 12 wines out of 41. It is the
+**Alcohol content is missing almost everywhere.** 16 wines out of 57. It is the
 field least served by retail sites, and the one that would come from the tech
 sheets.
 
@@ -412,7 +414,7 @@ have to be requested from the estates or picked up at the cellar.
 
 | | | |
 |---|---|---|
-| 1 | Data foundation | done, on a real corpus (41 wines, 5 designations, 74 producers) |
+| 1 | Data foundation | done, on a real corpus (57 wines, 5 designations, 74 producers) |
 | 2 | Hybrid search without an LLM | done |
 | 3 | LLM layer, two calls | Anthropic provider tested offline against a fake HTTP server; not yet run against the live API |
 | 4 | Interface | done |

@@ -50,8 +50,14 @@ Only what is certainly outside it is excluded:
 - home and range pages read as a product ("Accueil", "Nos vins"), and pages on
   which nothing describes a wine (no color, designation, grape, vintage or
   alcohol content);
-- large formats, sparkling wines, and IGPs outside the reference data (Pays
-  d'Oc, Pays d'Hérault...).
+- boxes described by their content ("Deux bouteilles de 75 cl..."), large
+  formats (in the title or only in the address, "...-150cl"), sparkling
+  wines, and IGPs outside the reference data (Pays d'Oc, Pays d'Hérault...).
+
+When the directory points an estate to its page in a shop it shares with
+other estates (Château L'Euzière in the Vignobles Vellas shop, Mas Pages on
+Plugwine), only the products that page links to are read: the shop's sitemap
+or product API would file every wine it sells under the estate.
 
 Everything merely uncertain is kept:
 

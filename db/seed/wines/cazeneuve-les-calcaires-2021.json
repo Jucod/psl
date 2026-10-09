@@ -1,9 +1,9 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://www.chateaucazeneuve.com/en/product-page/calcaire-rouge (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://www.chateaucazeneuve.com/en/product-page/calcaire-rouge (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Name \"« Les Calcaires »\" stripped of its quotation marks at review.",
   "id": "cazeneuve-les-calcaires-2021",
   "producer_id": "chateau-de-cazeneuve",
   "appellation_id": "aoc-pic-saint-loup",
-  "name": "« Les Calcaires »",
+  "name": "Les Calcaires",
   "color": "red",
   "vintage": 2021,
   "blend": [],

@@ -257,10 +257,7 @@ async function fromSitemaps(http: PoliteFetcher, origin: string): Promise<string
 async function fromCrawl(http: PoliteFetcher, origin: string): Promise<string[]> {
   const links = new Set<string>();
   const collect = (html: string, base: string) => {
-    for (const a of parse(html).querySelectorAll('a[href]')) {
-      const href = absolute(a.getAttribute('href')!, base).split('#')[0]!;
-      if (sameSite(href, origin)) links.add(href);
-    }
+    for (const href of sameSiteLinks(html, base, origin)) links.add(href);
   };
   try {
     collect(await http.getText(origin), origin);
@@ -281,9 +278,37 @@ async function fromCrawl(http: PoliteFetcher, origin: string): Promise<string[]>
   return [...links];
 }
 
+function sameSiteLinks(html: string, base: string, origin: string): string[] {
+  const links: string[] = [];
+  for (const a of parse(html).querySelectorAll('a[href]')) {
+    const href = absolute(a.getAttribute('href')!, base).split('#')[0]!;
+    if (sameSite(href, origin)) links.push(href);
+  }
+  return links;
+}
+
+/** Pages of an estate's own website the directory sometimes links to. */
+const GENERIC_PAGE = /^(contact|accueil|home|index(\.html?|\.php)?|boutique|shop|e-?shop|nos-vins|vins|le-domaine|domaine)$/i;
+
+/**
+ * The estate's own page inside a shop it shares, or null for an estate's own
+ * website. The directory points some estates to a page of a larger shop
+ * ("shop.vignobles-vellas.com/fr/95-chateau-l-euziere", a Plugwine page):
+ * reading that shop's sitemap or product API would file every wine it sells
+ * under the estate. A specific path is the sign; a language prefix or a
+ * generic page of the estate's own site ("/contact/") is not.
+ */
+export function estatePage(website: string): string | null {
+  const segments = new URL(website).pathname.split('/').filter(Boolean)
+    .filter((s, i) => !(i === 0 && /^[a-z]{2}(-[a-z]{2})?$/i.test(s)));
+  if (segments.length === 0) return null;
+  if (segments.length === 1 && GENERIC_PAGE.test(segments[0]!)) return null;
+  return website;
+}
+
 export interface HtmlCollection {
   products: RawProduct[];
-  via: 'sitemap' | 'crawl';
+  via: 'sitemap' | 'crawl' | 'estate page';
   pagesRead: number;
   /** Wine-looking pages without product data: to look at by hand. */
   withoutData: string[];
@@ -295,11 +320,24 @@ export async function listProductsFromHtml(
   maxPages = 40,
 ): Promise<HtmlCollection> {
   const origin = new URL(website).origin + '/';
-  let via: HtmlCollection['via'] = 'sitemap';
-  let urls = await fromSitemaps(http, origin);
-  if (urls.length === 0) {
-    via = 'crawl';
-    urls = await fromCrawl(http, origin);
+  let via: HtmlCollection['via'];
+  let urls: string[];
+  const own = estatePage(website);
+  if (own) {
+    // A shared shop: only the products its page for the estate links to.
+    via = 'estate page';
+    try {
+      urls = sameSiteLinks(await http.getText(own), own, origin);
+    } catch {
+      urls = [];
+    }
+  } else {
+    via = 'sitemap';
+    urls = await fromSitemaps(http, origin);
+    if (urls.length === 0) {
+      via = 'crawl';
+      urls = await fromCrawl(http, origin);
+    }
   }
 
   const ranked = urls

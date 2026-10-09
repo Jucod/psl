@@ -106,6 +106,10 @@ describe('collector: from shop data to candidate', () => {
     ['a gift card', { ...shopifyRed, title: 'Wine & confectionery workshop gift card', tags: [] }, 'single bottle'],
     ['a spirit', { ...shopifyRed, title: 'Marc de grenache gris 35 cl', tags: [] }, 'single bottle'],
     ['a home page', { ...shopifyRed, title: 'Accueil', tags: [] }, 'home or range page'],
+    ['a box described by its content', { ...shopifyRed, title: 'Voyage en Pic Saint Loup 2023', tags: [],
+      body_html: '<p>Deux bouteilles de 75 cl AOP Pic Saint Loup 2023 - Jolie cuvée de vin rouge.</p>' }, 'single bottle'],
+    ['a magnum named only in the address', { ...shopifyRed, title: 'Aguirre AOP Pic Saint-Loup rouge',
+      handle: 'aguirre-aop-pic-saint-loup-rouge-150cl' }, 'format'],
     ['a page that describes no wine', { ...shopifyRed, title: 'Il était temps', tags: [], product_type: '',
       body_html: '<p>Réservez votre place, nombre de places limité.</p>' }, 'describes a wine'],
   ])('excludes only what is certainly not a bottle of the catalog: %s', (_label, product, reason) => {
@@ -214,6 +218,7 @@ describe('collector: from shop data to candidate', () => {
     ["L’OISEAU BLANC 2025", 'L’Oiseau'],
     ['Encore et Encore VDF rouge 2023', 'Encore et Encore'],
     ['Plan Bastit - vin rouge IGP Saint-Guilhem-le-Désert', 'Plan Bastit'],
+    ['« Le Causse » 2019', 'Le Causse'],
   ])('cleans a shop title into a wine name: %s', (title, name) => {
     const r = extractCandidate(fromShopify('https://morties.com/', { ...shopifyRed, title }), MORTIES, reference, DAY);
     if (r.kind !== 'candidate') throw new Error(`excluded: ${r.reason}`);

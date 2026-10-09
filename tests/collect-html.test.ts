@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { extractCandidate, type Producer } from '../src/collect/extract.js';
-import { listProductsFromHtml, locs, productScore, readProductPage } from '../src/collect/html.js';
+import { estatePage, listProductsFromHtml, locs, productScore, readProductPage } from '../src/collect/html.js';
 import { PoliteFetcher } from '../src/collect/http.js';
 import { designationsOf } from '../src/collect/catalog.js';
 import { buildGrapeIndex } from '../src/ingest/util.js';
@@ -167,6 +167,40 @@ describe('HTML reader: finding the product pages', () => {
     // Another site's page is never fetched; the product sitemap is read before the generic one.
     expect(requested).not.toContain('https://other-site.fr/produit/x');
     expect(requested.indexOf('/1_fr_product_sitemap.xml')).toBeLessThan(requested.indexOf('/1_fr_0_sitemap.xml'));
+  });
+
+  it('reads only the estate\'s page of a shop it shares with other estates', async () => {
+    // The directory sends Château L'Euzière to its page in the Vignobles Vellas
+    // shop: reading the shop's sitemap filed the group's other wines under it.
+    const requested: string[] = [];
+    const pages: Record<string, string> = {
+      '/fr/95-chateau-x': '<a href="/fr/rouge/12-les-coteaux-2022.html">Les Coteaux</a><a href="/fr/contact">Contact</a>',
+      '/fr/rouge/12-les-coteaux-2022.html': YOAST,
+      '/sitemap.xml': '<urlset><url><loc>https://shop.example.org/fr/rouge/99-autre-domaine.html</loc></url></urlset>',
+    };
+    const fake = async (url: string | URL | Request) => {
+      requested.push(new URL(String(url)).pathname);
+      const body = pages[new URL(String(url)).pathname];
+      return body === undefined ? new Response('', { status: 404 }) : new Response(body);
+    };
+    const http = new PoliteFetcher({ userAgent: 'psl/0.1', fetch: fake as typeof fetch, sleep: async () => {} });
+    const result = await listProductsFromHtml(http, 'https://shop.example.org/fr/95-chateau-x', 40);
+
+    expect(result.via).toBe('estate page');
+    expect(result.products.map((p) => p.title)).toEqual(['Les Coteaux 2022']);
+    expect(requested).not.toContain('/sitemap.xml');
+    expect(requested).not.toContain('/fr/rouge/99-autre-domaine.html');
+  });
+
+  it.each([
+    ['https://www.domaine-hortus.fr/', null],
+    ['https://www.domaine-hortus.fr/fr/', null],
+    // The directory's link for La Chouette du Chai: its own site, whose shop API works.
+    ['https://lachouetteduchai.com/contact/', null],
+    ['https://shop.vignobles-vellas.com/fr/95-chateau-l-euziere', 'https://shop.vignobles-vellas.com/fr/95-chateau-l-euziere'],
+    ['https://mas-pages.plugwine.com/domaine/mas-pages', 'https://mas-pages.plugwine.com/domaine/mas-pages'],
+  ])('tells an estate\'s website from its page in a shared shop: %s', (website, expected) => {
+    expect(estatePage(website)).toBe(expected);
   });
 
   it('crawls from the home page when there is no sitemap', async () => {

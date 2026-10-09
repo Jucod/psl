@@ -56,6 +56,11 @@ const NOT_A_BOTTLE = new RegExp([
   /degustation|visite|atelier|workshop|escape game|soiree|\bfete\b|invitation|reservation|evenement|pique[- ]nique|oursinade/,
   /huile|jus\b|vinaigre|hydrolat|\bmarc\b|eau[- ]de[- ]vie|liqueur|ratafia|confiture|tapenade|savon/,
 ].map((r) => r.source).join('|'));
+/**
+ * A box described by its content ("Deux bouteilles de 75 cl AOP Pic Saint
+ * Loup...", 197 €). Not "dès 6 bouteilles", the delivery terms of every page.
+ */
+const SEVERAL_BOTTLES = /\b(deux|trois|quatre|cinq|six|douze|\d+)\s+bouteilles\s+de\s+75/;
 /** A home, shop or range page read as a product: its title is not a wine's. */
 const NOT_A_PRODUCT_TITLE = /^(accueil|home|boutique|shop|e-?shop|la cave|nos vins|nos cuvees|les cuvees|les vins)\b/;
 const PSL = /pic[\s-]*s(ain)?t[\s-]*loup/;
@@ -107,8 +112,13 @@ export function extractCandidate(
   // 75 cl bottle and under a designation of the reference data. Everything
   // merely uncertain becomes a candidate to complete.
   if (NOT_A_PRODUCT_TITLE.test(titleN)) return exclude('a home or range page, not a product');
-  if (NOT_A_BOTTLE.test(titleN)) return exclude('not a single bottle of wine');
-  if (LARGE_FORMAT.test(titleN)) return exclude('large or small format: the 75 cl bottle is the reference');
+  if (NOT_A_BOTTLE.test(titleN) || SEVERAL_BOTTLES.test(normalize(product.text))) {
+    return exclude('not a single bottle of wine');
+  }
+  // The format is sometimes only in the address ("...-rouge-150cl").
+  if (LARGE_FORMAT.test(titleN) || LARGE_FORMAT.test(normalize(decodeURIComponent(product.url)))) {
+    return exclude('large or small format: the 75 cl bottle is the reference');
+  }
   if (SPARKLING_TITLE.test(titleN) || SPARKLING_TEXT.test(normalize(product.text))) {
     return exclude('sparkling wine: the catalog holds still wines');
   }
@@ -288,6 +298,8 @@ function cleanName(title: string): string {
     // A trailing color is a label ("Dame Jeanne Rose"); a leading one is part
     // of the name ("Rose du Pic").
     .replace(/\s+(vin\s+)?(rouge|ros[ée]|blanc)$/iu, '')
+    // « Le Causse »: the quotation marks are the shop's typography.
+    .replace(/^["«“\s]+|["»”\s]+$/g, '')
     .trim();
   return recase(name) || title.trim();
 }

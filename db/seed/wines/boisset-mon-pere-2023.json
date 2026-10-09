@@ -1,5 +1,5 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://www.chateauboisset.fr/product-page/mon-p%C3%A8re (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://www.chateauboisset.fr/product-page/mon-p%C3%A8re (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at review on 2026-10-09, by trimming only: the aging-potential line glued to the first sentence removed from the note; `aging` was a sentence about the nose, set to null.",
   "id": "boisset-mon-pere-2023",
   "producer_id": "chateau-boisset",
   "appellation_id": "aoc-pic-saint-loup",
@@ -17,12 +17,12 @@
     }
   ],
   "abv": 14.5,
-  "aging": "Un nez déjà ouvert et aromatique délivre des senteurs poivrées soutenu par la vanille de l’élevage en fûts neufs.",
+  "aging": null,
   "price_eur": 36,
   "price_as_of": "2026-10-09",
   "organic": null,
   "certification": null,
-  "tasting_note": "Garde : 10 à 15 ans Dans le verre, une robe est d’un rouge cerise uni, profond et brillant. Un nez déjà ouvert et aromatique délivre des senteurs poivrées soutenu par la vanille de l’élevage en fûts neufs. En bouche, c’est un vin ample et chaleureux. On sent une bonne fraicheur qui persiste en milieu de bouche, mais qui est équilibrée par l’ampleur de l’alcool et des tanins qui sont souples et soyeux. L’aromatique est bien sûr toujours épicée, mais un joli fruit se développe aussi en bouche, sur la cerise et la violette. L’acidité toujours persistante et ces arômes fruités donnent une bonne longueur en bouche à ce vin.",
+  "tasting_note": "Dans le verre, une robe est d’un rouge cerise uni, profond et brillant. Un nez déjà ouvert et aromatique délivre des senteurs poivrées soutenu par la vanille de l’élevage en fûts neufs. En bouche, c’est un vin ample et chaleureux. On sent une bonne fraicheur qui persiste en milieu de bouche, mais qui est équilibrée par l’ampleur de l’alcool et des tanins qui sont souples et soyeux. L’aromatique est bien sûr toujours épicée, mais un joli fruit se développe aussi en bouche, sur la cerise et la violette. L’acidité toujours persistante et ces arômes fruités donnent une bonne longueur en bouche à ce vin.",
   "tasting_note_source": {
     "id": "page-boisset-mon-pere-2023",
     "type": "producer_page",

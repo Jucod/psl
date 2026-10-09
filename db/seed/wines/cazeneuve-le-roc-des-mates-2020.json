@@ -1,9 +1,9 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://www.chateaucazeneuve.com/en/product-page/roc-des-mates (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://www.chateaucazeneuve.com/en/product-page/roc-des-mates (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Name \"« Le Roc des Mates »\" stripped of its quotation marks at review.",
   "id": "cazeneuve-le-roc-des-mates-2020",
   "producer_id": "chateau-de-cazeneuve",
   "appellation_id": "aoc-pic-saint-loup",
-  "name": "« Le Roc des Mates »",
+  "name": "Le Roc des Mates",
   "color": "red",
   "vintage": 2020,
   "blend": [],

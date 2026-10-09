@@ -6,7 +6,7 @@ import { env } from '../config/env.js';
 import { loadCatalog } from '../collect/catalog.js';
 import { extractCandidate, type Candidate } from '../collect/extract.js';
 import { PoliteFetcher } from '../collect/http.js';
-import { listProductsFromHtml } from '../collect/html.js';
+import { estatePage, listProductsFromHtml } from '../collect/html.js';
 import { listProducts, type RawProduct } from '../collect/platforms.js';
 import { reviewCandidate } from '../collect/review.js';
 
@@ -70,7 +70,8 @@ for (const producer of producers) {
   let list: RawProduct[] | null;
   let channel: string;
   try {
-    list = await listProducts(http, producer.website);
+    // A shop shared with other estates: its product API would list them all.
+    list = estatePage(producer.website) ? null : await listProducts(http, producer.website);
     channel = list?.[0]?.platform ?? 'api';
     if (list === null) {
       const html = await listProductsFromHtml(http, producer.website, Number(args['max-pages']));

@@ -1,9 +1,9 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://chateau-lascaux.com/produit/pic-saint-loup-carra-rose/ (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://chateau-lascaux.com/produit/pic-saint-loup-carra-rose/ (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Name \"CARRA\" recased at review.",
   "id": "lascaux-carra",
   "producer_id": "chateau-de-lascaux",
   "appellation_id": "aoc-pic-saint-loup",
-  "name": "CARRA",
+  "name": "Carra",
   "color": "rose",
   "vintage": null,
   "blend": [],

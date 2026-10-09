@@ -1,5 +1,5 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://www.chateauboisset.fr/product-page/reb-ailes (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://www.chateauboisset.fr/product-page/reb-ailes (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at review on 2026-10-09, by trimming only: the aging-potential line glued to the first sentence removed from the note.",
   "id": "boisset-reb-ailes-2024",
   "producer_id": "chateau-boisset",
   "appellation_id": "aoc-pic-saint-loup",
@@ -22,7 +22,7 @@
   "price_as_of": "2026-10-09",
   "organic": null,
   "certification": null,
-  "tasting_note": "Garde : 1 à 2 ans Robe rose clair, couleur « Pêche ». Nez fin, expressif et très floral. La bouche est fraiche, friande avec de la souplesse et beaucoup d’élégance. Finale sur les agrumes et une touche d’épices.",
+  "tasting_note": "Robe rose clair, couleur « Pêche ». Nez fin, expressif et très floral. La bouche est fraiche, friande avec de la souplesse et beaucoup d’élégance. Finale sur les agrumes et une touche d’épices.",
   "tasting_note_source": {
     "id": "page-boisset-reb-ailes-2024",
     "type": "producer_page",

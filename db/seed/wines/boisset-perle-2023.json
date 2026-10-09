@@ -1,5 +1,5 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://www.chateauboisset.fr/product-page/perle (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://www.chateauboisset.fr/product-page/perle (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Cleaned at review on 2026-10-09, by trimming only: the aging-potential line glued to the first sentence removed from the note; the pairing list moved from the note to `producer_pairings`.",
   "id": "boisset-perle-2023",
   "producer_id": "chateau-boisset",
   "appellation_id": "aoc-pic-saint-loup",
@@ -26,7 +26,7 @@
   "price_as_of": "2026-10-09",
   "organic": null,
   "certification": null,
-  "tasting_note": "Garde : 3 à 7 ans Robe de couleur rouge aux reflets grenat. Nez complexe sur notes de fruits et d’épices soyeuses. La bouche est fraîche, construite sur des tanins fruités souples et soyeux La finale est longue, bien enrobée et douce. Magrets de canards aux fruits rouges, lapin rotis à la moutarde, chevreau à la broche, fromage, ...",
+  "tasting_note": "Robe de couleur rouge aux reflets grenat. Nez complexe sur notes de fruits et d’épices soyeuses. La bouche est fraîche, construite sur des tanins fruités souples et soyeux La finale est longue, bien enrobée et douce.",
   "tasting_note_source": {
     "id": "page-boisset-perle-2023",
     "type": "producer_page",
@@ -36,6 +36,11 @@
     "retrieved_on": "2026-10-09",
     "content_sha256": "068e720a243cc85beb98055e826b63313f551e886fd27d9773864f8aef0b9233"
   },
-  "producer_pairings": [],
+  "producer_pairings": [
+    "Magrets de canards aux fruits rouges",
+    "lapin rotis à la moutarde",
+    "chevreau à la broche",
+    "fromage"
+  ],
   "page_url": "https://www.chateauboisset.fr/product-page/perle"
 }

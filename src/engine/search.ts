@@ -176,6 +176,26 @@ async function runQuery(
 }
 
 /**
+ * Spread of the scores over EVERY wine that satisfies the hard filters, not
+ * over the rows shown. Measured on the top three, it shrank as the catalog
+ * grew: the best three of 57 wines are close to each other by construction,
+ * and the engine fell back to a price ranking on requests the vector
+ * separated perfectly well. Whether the vector discriminates is a property of
+ * the candidates, not of the page.
+ */
+async function candidateSpread(
+  pool: pg.Pool, filters: Filters, vector: number[], allowFixtures: boolean,
+): Promise<number> {
+  const { text, params } = buildClauses(filters, 3);
+  const { rows } = await pool.query(
+    `SELECT COALESCE(max(score) - min(score), 0)::float AS spread
+       FROM (${RESULTS_SQL}(${text})) candidates`,
+    [toVector(vector), allowFixtures, ...params],
+  );
+  return rows[0]!.spread as number;
+}
+
+/**
  * Checks that the requested combination is covered by the catalog at the
  * reference-data level. It is a QUERY, not a prompt instruction: refusing a
  * white Pic Saint-Loup is reproducible and testable without any LLM call.
@@ -377,8 +397,6 @@ export async function search(
       // "ranked by price" while returning the 2nd and 3rd most expensive
       // bottles of the catalog, although two cheaper ones satisfied every
       // hard filter. So we run the query again without the vector.
-      const scores = results.map((r) => r.score);
-      const spread = Math.max(...scores) - Math.min(...scores);
 
       // Two conditions, both learned the hard way.
       //
@@ -390,11 +408,13 @@ export async function search(
       //    wine trait, in its most extreme form.
       //
       // 2. Discrimination is measured by the SPREAD, not by an absolute
-      //    floor. See the comment on config.discriminationThreshold.
+      //    floor, and over the candidates, not the rows shown. See the
+      //    comments on config.discriminationThreshold and candidateSpread().
       const relevant =
         vector !== null &&
         results.some((r) => r.level === 'wine') &&
-        spread >= config.discriminationThreshold;
+        (await candidateSpread(pool, current as Filters, vector, allowFixtures)) >=
+          config.discriminationThreshold;
 
       const ordered = relevant
         ? results

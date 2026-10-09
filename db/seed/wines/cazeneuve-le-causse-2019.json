@@ -1,9 +1,9 @@
 {
-  "_provenance": "Collected on 2026-10-09 from https://www.chateaucazeneuve.com/en/product-page/le-causse-rouge (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "_provenance": "Collected on 2026-10-09 from https://www.chateaucazeneuve.com/en/product-page/le-causse-rouge (html product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote. Name \"« Le Causse »\" stripped of its quotation marks at review.",
   "id": "cazeneuve-le-causse-2019",
   "producer_id": "chateau-de-cazeneuve",
   "appellation_id": "aoc-pic-saint-loup",
-  "name": "« Le Causse »",
+  "name": "Le Causse",
   "color": "red",
   "vintage": 2019,
   "blend": [],

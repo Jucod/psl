@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import pg from 'pg';
 import { afterAll, describe, expect, it } from 'vitest';
-import { closeDb } from '../src/db/client.js';
+import { closeDb, toVector } from '../src/db/client.js';
 import { search } from '../src/engine/search.js';
 import { LocalEmbedding } from '../src/embeddings/local.js';
 import { vectorText } from '../src/llm/parser.js';
@@ -160,8 +160,13 @@ describe('milestone 2 - hybrid search', () => {
     // A cap that cannot be reached lies about what the system really tried.
     //
     // Invisible on the fixture corpus: the cheapest wine there was at 14 €,
-    // so the first step was always enough.
-    const r = await search(filters({ color: 'red', price_max: 12 }), options);
+    // so the first step was always enough. The real corpus now has reds at
+    // 13 and 14 €: the state is BUILT, no red at 15 € or less, so that only
+    // the capped step can answer.
+    const r = await inTransaction(
+      'UPDATE wines SET available = false WHERE price_eur <= 15',
+      (pool) => search(filters({ color: 'red', price_max: 12 }), { ...options, pool }),
+    );
 
     expect(r.status).toBe('ok');
     expect(r.appliedFilters.price_max).toBeCloseTo(18, 2);
@@ -307,13 +312,22 @@ describe('milestone 2 - hybrid search', () => {
       expect(c.blend, c.id).toHaveLength(0);
       expect(c.fixture, c.id).toBe(true);
     }
+    // And a wine collected from the producer suffers none of this: with or
+    // without the flag, it reads the same. Some real pages carry no note
+    // (Cazeneuve): those sit on the profile because the note does not exist,
+    // not because it is hidden, and the comparison holds for them too.
+    const unmasked = await search(
+      filters({ color: 'red' }), { allowFixtures: true, maxResults: 50 },
+    );
+    const byId = new Map(unmasked.results.map((c) => [c.id, c]));
     for (const c of real) {
-      // And a wine collected from the producer suffers none of this.
-      expect(c.tasting_note, c.id).not.toBeNull();
-      expect(c.note_source!.url, c.id).toMatch(/^https?:\/\//);
-      expect(c.level, c.id).toBe('wine');
+      const same = byId.get(c.id)!;
       expect(c.fixture, c.id).toBe(false);
+      expect([c.tasting_note, c.price_eur, c.blend, c.level], c.id)
+        .toEqual([same.tasting_note, same.price_eur, same.blend, same.level]);
+      if (c.tasting_note !== null) expect(c.note_source!.url, c.id).toMatch(/^https?:\/\//);
     }
+    expect(real.some((c) => c.level === 'wine')).toBe(true);
   });
 
   ifOverlay('a price filter does not retain a wine whose price is masked', async () => {
@@ -464,7 +478,9 @@ describe('regressions found in review', () => {
 
   it('"rien de tannique" puts the structured wines last, not first', async () => {
     // End-to-end counterpart of the parser regression: the request used to
-    // come back with the most tannic wines on top.
+    // come back with the most tannic wines on top. It also holds the spread
+    // measure: taken over the three rows shown, it fell under the threshold
+    // once the catalog reached 57 wines, and this request lost its ranking.
     const { runPipeline } = await import('../src/pipeline.js');
     const output = await runPipeline({ message: 'un rouge, rien de tannique' });
     expect(output.search!.ranking).toBe('vector');
@@ -502,8 +518,32 @@ describe('regressions found in review', () => {
     // announced "ranked by price" while returning bottles selected by a
     // vector it had just deemed irrelevant, leaving out cheaper ones that met
     // every hard filter.
+    //
+    // The state is BUILT: every red gets its appellation profile as vector,
+    // and the bottles at 20 € or more a nudge toward the request, too small
+    // to count as discrimination. The vector then prefers the expensive
+    // bottles, the engine rightly judges it irrelevant, and the answer must
+    // be the cheapest set, not the vector's pick.
     const f = filters({ color: 'red', descriptors_excluded: ['red_fruit'] });
-    const r = await search(f, { ...options, queryVector: await vector(f) });
+    const v = (await vector(f))!;
+    const nudge = toVector(v.map((x) => x * 0.01));
+    const { r, vectorFirst } = await inTransaction(
+      `UPDATE wines w SET embedding = ap.embedding +
+              (CASE WHEN w.price_eur >= 20 THEN '${nudge}'::vector ELSE '${toVector(v.map(() => 0))}'::vector END)
+         FROM appellation_profiles ap
+        WHERE ap.appellation_id = w.appellation_id AND ap.color = w.color AND w.embedding IS NOT NULL`,
+      async (pool) => ({
+        r: await search(f, { ...options, pool, queryVector: v }),
+        // Without this, the case would pass on a vector that already agrees
+        // with the price order, and prove nothing.
+        vectorFirst: (await pool.query(
+          `SELECT price_eur::float AS p FROM wines
+            WHERE embedding IS NOT NULL AND appellation_id = $1 AND color = 'red'
+            ORDER BY embedding <=> $2::vector LIMIT 1`, [PSL, toVector(v)],
+        )).rows[0].p as number,
+      }),
+    );
+    expect(vectorFirst).toBeGreaterThanOrEqual(20);
 
     expect(r.ranking).toBe('lexicographic');
     {
