@@ -1,0 +1,45 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://boutique.masfoulaquier.fr/products/into-the-white-2024 (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "id": "mas-foulaquier-into-the-white-blanc-2025",
+  "producer_id": "mas-foulaquier",
+  "appellation_id": "vin-de-france",
+  "name": "Into The White",
+  "color": "white",
+  "vintage": 2025,
+  "blend": [
+    {
+      "grape": "grenache",
+      "pct": null
+    },
+    {
+      "grape": "vermentino",
+      "pct": null
+    },
+    {
+      "grape": "clairette",
+      "pct": null
+    },
+    {
+      "grape": "chardonnay",
+      "pct": null
+    }
+  ],
+  "abv": null,
+  "aging": "Vinification et Élevage",
+  "price_eur": 14,
+  "price_as_of": "2026-10-09",
+  "organic": true,
+  "certification": null,
+  "tasting_note": "Un blanc plein de gourmandise, floral et agrume! Et, en étant au dessus de la cuve, j'avais l'impression d'être en plongée dans les cépages blancs frais de notre région Occitanie.",
+  "tasting_note_source": {
+    "id": "page-mas-foulaquier-into-the-white-blanc-2025",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://boutique.masfoulaquier.fr/products/into-the-white-2024",
+    "authority": "Mas Foulaquier",
+    "retrieved_on": "2026-10-09",
+    "content_sha256": "3252815fd76f0ba91793eb7be872f61733155feb7072f236fd217649c277595b"
+  },
+  "producer_pairings": [],
+  "page_url": "https://boutique.masfoulaquier.fr/products/into-the-white-2024"
+}

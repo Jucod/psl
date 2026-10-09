@@ -1,0 +1,37 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://morties.com/products/blanc-aop-languedoc-blanc-2020-domaine-morties (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "id": "morties-blanc-2025",
+  "producer_id": "domaine-de-morties",
+  "appellation_id": "aoc-languedoc",
+  "name": "Blanc",
+  "color": "white",
+  "vintage": 2025,
+  "blend": [
+    {
+      "grape": "roussanne",
+      "pct": 80
+    },
+    {
+      "grape": "vermentino",
+      "pct": 20
+    }
+  ],
+  "abv": null,
+  "aging": null,
+  "price_eur": 23.5,
+  "price_as_of": "2026-10-09",
+  "organic": null,
+  "certification": null,
+  "tasting_note": "Vin jeune à la robe or pâle soutenue. Le nez est expressif sur des notes de fleurs blanches et d’agrumes, alliant fraicheur et caractère méditerranéen.",
+  "tasting_note_source": {
+    "id": "page-morties-blanc-2025",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://morties.com/products/blanc-aop-languedoc-blanc-2020-domaine-morties",
+    "authority": "Domaine de Morties",
+    "retrieved_on": "2026-10-09",
+    "content_sha256": "527333cd8e53e6871bb0606d67945d6268ae03d8f7b9377ef3e52ca7db50099b"
+  },
+  "producer_pairings": [],
+  "page_url": "https://morties.com/products/blanc-aop-languedoc-blanc-2020-domaine-morties"
+}

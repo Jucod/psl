@@ -1,0 +1,33 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://coste-ubesse.com/product/lauriera-2020-vin-de-france-100-sauvignon-bio/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "id": "coste-ubesse-l-auriera-2021",
+  "producer_id": "domaine-coste-ubesse",
+  "appellation_id": "vin-de-france",
+  "name": "L’Aurièra",
+  "color": "white",
+  "vintage": 2021,
+  "blend": [
+    {
+      "grape": "sauvignon",
+      "pct": 100
+    }
+  ],
+  "abv": 14,
+  "aging": null,
+  "price_eur": 15.6,
+  "price_as_of": "2026-10-09",
+  "organic": true,
+  "certification": null,
+  "tasting_note": "« Un vin blanc 100% sauvignon aux arômes fruités de citron vert, de pamplemousse rose et des notes végétales, chèvrefeuille, aubépine. L’Aurièra est un vin à forte personnalité et doté d’une amertume rafraîchissante en finale, qui appelle une nouvelle gorgée. » en barriques pendant 1 an.",
+  "tasting_note_source": {
+    "id": "page-coste-ubesse-l-auriera-2021",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://coste-ubesse.com/product/lauriera-2020-vin-de-france-100-sauvignon-bio/",
+    "authority": "Domaine Coste Ubesse",
+    "retrieved_on": "2026-10-09",
+    "content_sha256": "cbc56e04a9e6f75bf293677b33c11edc355b99a1e4c87deb00f45179d7b32c8f"
+  },
+  "producer_pairings": [],
+  "page_url": "https://coste-ubesse.com/product/lauriera-2020-vin-de-france-100-sauvignon-bio/"
+}

@@ -1,0 +1,41 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://coste-ubesse.com/product/moun-poulit-vin-rouge-vin-de-france/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "id": "coste-ubesse-moun-poulit-2019",
+  "producer_id": "domaine-coste-ubesse",
+  "appellation_id": "vin-de-france",
+  "name": "Moun Poulit",
+  "color": "red",
+  "vintage": 2019,
+  "blend": [
+    {
+      "grape": "cinsaut",
+      "pct": 40
+    },
+    {
+      "grape": "grenache",
+      "pct": 30
+    },
+    {
+      "grape": "syrah",
+      "pct": 30
+    }
+  ],
+  "abv": 14,
+  "aging": "Élevage en cuve pendant 9 mois avant la mise en bouteilles",
+  "price_eur": 13,
+  "price_as_of": "2026-10-09",
+  "organic": null,
+  "certification": null,
+  "tasting_note": "« Un assemblage harmonieux pour un vin gourmand sur le fruit, digeste et plein de fraîcheur malgré son caractère bien trempé.",
+  "tasting_note_source": {
+    "id": "page-coste-ubesse-moun-poulit-2019",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://coste-ubesse.com/product/moun-poulit-vin-rouge-vin-de-france/",
+    "authority": "Domaine Coste Ubesse",
+    "retrieved_on": "2026-10-09",
+    "content_sha256": "1c59660c6c1215ab339f0a9c5bc995afb246b6970155ed29841fe3e7585ad337"
+  },
+  "producer_pairings": [],
+  "page_url": "https://coste-ubesse.com/product/moun-poulit-vin-rouge-vin-de-france/"
+}

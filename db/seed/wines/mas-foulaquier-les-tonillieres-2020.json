@@ -1,0 +1,37 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://boutique.masfoulaquier.fr/products/tonillieres-mas-foulaquier (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "id": "mas-foulaquier-les-tonillieres-2020",
+  "producer_id": "mas-foulaquier",
+  "appellation_id": "vin-de-france",
+  "name": "Les Tonillières",
+  "color": "red",
+  "vintage": 2020,
+  "blend": [
+    {
+      "grape": "carignan",
+      "pct": 70
+    },
+    {
+      "grape": "grenache",
+      "pct": 30
+    }
+  ],
+  "abv": null,
+  "aging": "Vinification et Élevage",
+  "price_eur": 25,
+  "price_as_of": "2026-10-09",
+  "organic": true,
+  "certification": null,
+  "tasting_note": "Cuvée très originale autant par son terroir, le lieu-dit Les Tonillières, exposé nord que par l’assemblage très complémentaire de deux cépages à forte personnalité : carignan pour les épices et grenache pour l'expression du terroir calcaire. Vin à la couleur assez dense et assez puissant. Le nez très fruité (fruits rouges), épicé (curry, thym garrigue) allie gourmandise, souplesse et puissance aromatique. Les macérations sont douces et très longues, sans intervention, sous forme d' infusion , afin d'extraire lentement les matières et les tanins et que tout se fonde dans le vin avec harmonie.",
+  "tasting_note_source": {
+    "id": "page-mas-foulaquier-les-tonillieres-2020",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://boutique.masfoulaquier.fr/products/tonillieres-mas-foulaquier",
+    "authority": "Mas Foulaquier",
+    "retrieved_on": "2026-10-09",
+    "content_sha256": "108509e5b1ca80b267b39aff92727b1d17025fc1951b88785202252c049bb95a"
+  },
+  "producer_pairings": [],
+  "page_url": "https://boutique.masfoulaquier.fr/products/tonillieres-mas-foulaquier"
+}

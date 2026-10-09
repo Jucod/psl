@@ -1,0 +1,41 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://lachouetteduchai.com/produit/vin-rouge-aop-pic-saint-loup-2/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "id": "la-chouette-du-chai-rien-ne-m-effraie-2023",
+  "producer_id": "la-chouette-du-chai",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "Rien ne m’effraie",
+  "color": "red",
+  "vintage": 2023,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 60
+    },
+    {
+      "grape": "grenache",
+      "pct": 25
+    },
+    {
+      "grape": "mourvedre",
+      "pct": 15
+    }
+  ],
+  "abv": 15,
+  "aging": null,
+  "price_eur": null,
+  "price_as_of": null,
+  "organic": null,
+  "certification": null,
+  "tasting_note": "“ Avec le millésime 2023, Rien ne m’Effraie affirme une expression plus fraiche et plus immédiate du Pic Saint-Loup, tout en conservant la structure et la profondeur qui font l’identité de la cuvée. Le nez s’ouvre sur des fruits noirs et rouges croquants, relevés par des notes de poivre, d’épices douces et de garrigue. La bouche est droite énergique et équilibrée, avec une matière juteuse, des tanins fins et une finale fraîche, légèrement saline . ”",
+  "tasting_note_source": {
+    "id": "page-la-chouette-du-chai-rien-ne-m-effraie-2023",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://lachouetteduchai.com/produit/vin-rouge-aop-pic-saint-loup-2/",
+    "authority": "La chouette du chai",
+    "retrieved_on": "2026-10-09",
+    "content_sha256": "4a9f64e6aa74c93d2c89c5b4b2fd8591459b1194ef0826be1fab1cc1295d5b63"
+  },
+  "producer_pairings": [],
+  "page_url": "https://lachouetteduchai.com/produit/vin-rouge-aop-pic-saint-loup-2/"
+}

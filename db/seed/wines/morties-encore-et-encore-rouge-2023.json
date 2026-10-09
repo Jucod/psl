@@ -1,0 +1,37 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://morties.com/products/encore-et-encore-vdf-rouge-2019-vignobles-morties (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "id": "morties-encore-et-encore-rouge-2023",
+  "producer_id": "domaine-de-morties",
+  "appellation_id": "vin-de-france",
+  "name": "Encore et Encore",
+  "color": "red",
+  "vintage": 2023,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": null
+    },
+    {
+      "grape": "grenache",
+      "pct": null
+    }
+  ],
+  "abv": null,
+  "aging": null,
+  "price_eur": 16.5,
+  "price_as_of": "2026-10-09",
+  "organic": true,
+  "certification": null,
+  "tasting_note": "C’est un vin dominé par des notes de petits fruits rouges frais et gourmands. La syrah et le grenache noir sont récoltés entre garrigues et costières, sur les sols argilo-calcaire.",
+  "tasting_note_source": {
+    "id": "page-morties-encore-et-encore-rouge-2023",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://morties.com/products/encore-et-encore-vdf-rouge-2019-vignobles-morties",
+    "authority": "Domaine de Morties",
+    "retrieved_on": "2026-10-09",
+    "content_sha256": "5773a4ca6c0de7f7737ff7cd1c1ad69eb09d8ec5657d88705d544e70470c0740"
+  },
+  "producer_pairings": [],
+  "page_url": "https://morties.com/products/encore-et-encore-vdf-rouge-2019-vignobles-morties"
+}

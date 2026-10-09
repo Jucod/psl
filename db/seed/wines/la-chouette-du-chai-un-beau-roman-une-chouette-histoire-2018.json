@@ -1,0 +1,37 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://lachouetteduchai.com/produit/pic-saint-loup-red-wine/ (woocommerce product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "id": "la-chouette-du-chai-un-beau-roman-une-chouette-histoire-2018",
+  "producer_id": "la-chouette-du-chai",
+  "appellation_id": "aoc-pic-saint-loup",
+  "name": "Un beau roman, une chouette histoire",
+  "color": "red",
+  "vintage": 2018,
+  "blend": [
+    {
+      "grape": "syrah",
+      "pct": 90
+    },
+    {
+      "grape": "grenache",
+      "pct": 10
+    }
+  ],
+  "abv": 15,
+  "aging": "Elevage en cuve et en bouteilles",
+  "price_eur": null,
+  "price_as_of": null,
+  "organic": null,
+  "certification": null,
+  "tasting_note": "“ Avec sa robe sombre aux reflets grenat, ce vin puissant au nez franc puise ses arômes fruités dans la palette aromatique de son terroir épicé. Ses tanins fins, fougueux et harmonieux offrent une bouche à la fois minérale et généreuse avec une finale fraiche.",
+  "tasting_note_source": {
+    "id": "page-la-chouette-du-chai-un-beau-roman-une-chouette-histoire-2018",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://lachouetteduchai.com/produit/pic-saint-loup-red-wine/",
+    "authority": "La chouette du chai",
+    "retrieved_on": "2026-10-09",
+    "content_sha256": "50c90ad53e89463c2fa3cb8e256029532e468a2dbdfa70212f7527d880f062b6"
+  },
+  "producer_pairings": [],
+  "page_url": "https://lachouetteduchai.com/produit/pic-saint-loup-red-wine/"
+}

@@ -1,0 +1,33 @@
+{
+  "_provenance": "Collected on 2026-10-09 from https://morties.com/products/un-peu-dagrume-blanc-maceration-vdf-2023 (shopify product data) by npm run collect, reviewed by hand and promoted with npm run collect:promote.",
+  "id": "morties-un-peu-d-agrume-blanc-maceration-2024",
+  "producer_id": "domaine-de-morties",
+  "appellation_id": "vin-de-france",
+  "name": "\"Un peu d'agrume\" \"Blanc macération\"",
+  "color": "white",
+  "vintage": 2024,
+  "blend": [
+    {
+      "grape": "roussanne",
+      "pct": 100
+    }
+  ],
+  "abv": null,
+  "aging": "Élevage / Aging :",
+  "price_eur": 23.5,
+  "price_as_of": "2026-10-09",
+  "organic": null,
+  "certification": null,
+  "tasting_note": "Vin de macération de quelques jours à la robe orange ambrée soutenue. Le nez est expressif sur des notes d'agrumes et d'écorces d'orange. / A white wine macerated for a few days with a deep amber orange color.",
+  "tasting_note_source": {
+    "id": "page-morties-un-peu-d-agrume-blanc-maceration-2024",
+    "type": "producer_page",
+    "label": "Fiche cuvee publiee par le domaine",
+    "url": "https://morties.com/products/un-peu-dagrume-blanc-maceration-vdf-2023",
+    "authority": "Domaine de Morties",
+    "retrieved_on": "2026-10-09",
+    "content_sha256": "371a6efda4900a522438833af37aa090be5201d51fd57efcebcf785d94169147"
+  },
+  "producer_pairings": [],
+  "page_url": "https://morties.com/products/un-peu-dagrume-blanc-maceration-vdf-2023"
+}
