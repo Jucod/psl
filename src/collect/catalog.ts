@@ -18,9 +18,13 @@ export async function loadCatalog() {
     ...(seed.producers?.estates ?? []),
     ...(seed.producers?.cooperatives ?? []),
   ];
-  const producers: Producer[] = entries
-    .filter((p) => p.website && p.website !== 'TODO')
-    .map((p) => ({ id: slug(p.name), name: p.name, website: p.website! }));
+  const producers: Producer[] = [];
+  for (const p of entries) {
+    if (!p.website || p.website === 'TODO') continue;
+    // The directory lists some producers twice.
+    if (producers.some((q) => q.id === slug(p.name))) continue;
+    producers.push({ id: slug(p.name), name: p.name, website: p.website });
+  }
 
   const existing: Wine[] = [];
   for (const f of (await readdir(WINES_DIR)).filter((f) => f.endsWith('.json')).sort()) {

@@ -6,6 +6,8 @@
 export interface RobotsRules {
   allow: string[];
   disallow: string[];
+  /** `Sitemap:` lines, which apply to every user-agent. */
+  sitemaps: string[];
 }
 
 export function parseRobots(text: string, userAgent: string): RobotsRules {
@@ -13,6 +15,7 @@ export function parseRobots(text: string, userAgent: string): RobotsRules {
   const groups: { agents: string[]; allow: string[]; disallow: string[] }[] = [];
   let current: (typeof groups)[number] | null = null;
   let lastWasAgent = false;
+  const sitemaps: string[] = [];
 
   for (const rawLine of text.split(/\r?\n/)) {
     const line = rawLine.replace(/#.*/, '').trim();
@@ -20,6 +23,10 @@ export function parseRobots(text: string, userAgent: string): RobotsRules {
     if (!m) continue;
     const key = m[1]!.toLowerCase();
     const value = m[2]!.trim();
+    if (key === 'sitemap') {
+      if (value) sitemaps.push(value);
+      continue;
+    }
     if (key === 'user-agent') {
       if (!current || !lastWasAgent) {
         current = { agents: [], allow: [], disallow: [] };
@@ -40,6 +47,7 @@ export function parseRobots(text: string, userAgent: string): RobotsRules {
   return {
     allow: chosen.flatMap((g) => g.allow),
     disallow: chosen.flatMap((g) => g.disallow),
+    sitemaps,
   };
 }
 

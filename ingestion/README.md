@@ -18,11 +18,21 @@ npm run collect -- --producer domaine-de-morties  # or a few, comma-separated
 ```
 
 The collector reads each estate's shop through the two public product APIs
-the 16/09 collection found usable without a browser: Shopify
-(`/products.json`) and the WooCommerce Store API. It honors `robots.txt`,
-waits a second between two requests to the same host, identifies itself, and
-retries the flaky sites. Sites with neither API (PrestaShop, Wix) are listed in
-the report as such: they need HTML parsing or a browser, out of scope here.
+when it has one: Shopify (`/products.json`) and the WooCommerce Store API.
+Otherwise (PrestaShop, Wix, WordPress themes...) it reads the HTML pages,
+without a parser per site, through what platforms publish for search engines:
+
+1. the product pages are found in the sitemaps declared in `robots.txt` (or
+   `/sitemap.xml`, `/wp-sitemap.xml`), product sitemaps first; without a
+   sitemap, through the links of the home page and of its wine-list pages;
+2. each page is read from its schema.org `Product` data (JSON-LD, then
+   microdata, then Open Graph), plus its description blocks and feature tables
+   (vintage, grapes, alcohol). `--max-pages` caps the pages read per site (40).
+
+A wine page without structured product data is not read: it is listed in the
+report, to be looked at by hand, rather than guessed from its layout. Every
+request honors `robots.txt`, waits a second per host, identifies itself, and
+retries the flaky sites.
 
 It writes **candidates**, never wines: `ingestion/candidates/<date>/`, ignored
 by git, with one JSON file per wine, the product text it was taken from, and a
@@ -53,6 +63,11 @@ again on the same folder after completing the others:
 npm run collect:promote -- ingestion/candidates/2026-10-07
 npm run db:seed && npm run db:embed
 ```
+
+When the same decision holds for many "to complete" files (you checked that an
+estate's wines are all Pic Saint-Loup), `--set appellation_id=aoc-pic-saint-loup`
+or `--set color=red|rose` fills that field where it is empty, and says so in
+each promoted wine's provenance.
 
 Promotion checks again what must hold: the schema, a producer from the
 directory, known grapes, the AOC grape rules read from the seed (syrah share,

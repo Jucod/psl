@@ -6,14 +6,17 @@ import { env } from '../config/env.js';
 import { loadCatalog } from '../collect/catalog.js';
 import { extractCandidate, type Candidate } from '../collect/extract.js';
 import { PoliteFetcher } from '../collect/http.js';
-import { listProducts } from '../collect/platforms.js';
+import { listProductsFromHtml } from '../collect/html.js';
+import { listProducts, type RawProduct } from '../collect/platforms.js';
 import { reviewCandidate } from '../collect/review.js';
 
 /**
- * npm run collect [-- --producer <id>[,<id>...]] [--out <dir>]
+ * npm run collect [-- --producer <id>[,<id>...]] [--out <dir>] [--max-pages <n>]
  *
- * Reads the shops of the directory's estates through their public product
- * APIs and writes CANDIDATES for review: nothing here touches db/seed/wines/.
+ * Reads the shops of the directory's estates, through their public product
+ * APIs when they have one (Shopify, WooCommerce), otherwise through the
+ * product data of their HTML pages, and writes CANDIDATES for review: nothing
+ * here touches db/seed/wines/.
  * See ingestion/README.md, "Collecting more wines".
  */
 const { values: args } = parseArgs({
@@ -21,6 +24,7 @@ const { values: args } = parseArgs({
     producer: { type: 'string' },
     out: { type: 'string' },
     delay: { type: 'string', default: '1000' },
+    'max-pages': { type: 'string', default: '40' },
   },
 });
 
@@ -57,22 +61,33 @@ const ready: string[] = [];
 const toComplete: string[] = [];
 const excludedByReason = new Map<string, string[]>();
 const noApi: string[] = [];
+const byHand: string[] = [];
 let products = 0;
 let known = 0;
 
 for (const producer of producers) {
   process.stdout.write(`${producer.id.padEnd(44)} `);
-  let list;
+  let list: RawProduct[] | null;
+  let channel: string;
   try {
     list = await listProducts(http, producer.website);
+    channel = list?.[0]?.platform ?? 'api';
+    if (list === null) {
+      const html = await listProductsFromHtml(http, producer.website, Number(args['max-pages']));
+      list = html.products;
+      channel = `html (${html.via}, ${html.pagesRead} pages)`;
+      if (html.withoutData.length > 0) {
+        byHand.push(`### ${producer.id}`, '', ...html.withoutData.slice(0, 15).map((u) => `- <${u}>`), '');
+      }
+      if (list.length === 0) {
+        console.log(`no product data (${channel}${html.withoutData.length ? `, ${html.withoutData.length} wine pages to look at by hand` : ''})`);
+        noApi.push(`${producer.id} (${producer.website}): ${channel}`);
+        continue;
+      }
+    }
   } catch (e) {
     console.log(`error: ${(e as Error).message}`);
     rows.push(`| ${producer.id} | error: ${(e as Error).message.slice(0, 60)} | | | | | |`);
-    continue;
-  }
-  if (list === null) {
-    console.log('no public product API');
-    noApi.push(`${producer.id} (${producer.website})`);
     continue;
   }
 
@@ -92,7 +107,7 @@ for (const producer of producers) {
       counts.known++;
       continue;
     }
-    await writeCandidate(result.candidate, list[0]!.platform, [...verdict.errors, ...verdict.warnings]);
+    await writeCandidate(result.candidate, product.platform, [...verdict.errors, ...verdict.warnings]);
     const { wine, flags, toComplete: missing } = result.candidate;
     const entry = [
       `### ${wine.id}`, '', `<${wine.page_url}>`, '',
@@ -109,11 +124,11 @@ for (const producer of producers) {
   }
   known += counts.known;
   console.log(
-    `${list[0]?.platform ?? '-'}: ${list.length} products → ${counts.ready} ready, ` +
+    `${channel}: ${list.length} products → ${counts.ready} ready, ` +
     `${counts.toComplete} to complete, ${counts.known} known, ${counts.excluded} excluded`,
   );
   rows.push(
-    `| ${producer.id} | ${list[0]?.platform ?? '-'} | ${list.length} | ${counts.ready} | ` +
+    `| ${producer.id} | ${channel} | ${list.length} | ${counts.ready} | ` +
     `${counts.toComplete} | ${counts.known} | ${counts.excluded} |`,
   );
 }
@@ -127,7 +142,7 @@ const report = [
   '',
   `${products} products read on ${producers.length - noApi.length} shops: ` +
   `**${readyCount} ready**, **${completeCount} to complete**, ${known} already in the catalog, ` +
-  `${excludedCount} excluded. ${noApi.length} websites expose no product API.`,
+  `${excludedCount} excluded. ${noApi.length} websites gave no product data.`,
   '',
   '"To complete" candidates leave the appellation or the color empty because the page does not',
   'settle it: set the field in the JSON file, or delete the file. Promotion refuses them until then.',
@@ -145,16 +160,21 @@ const report = [
   `## To complete (${completeCount})`, '', ...toComplete,
   `## Excluded (${excludedCount})`, '',
   ...[...excludedByReason].flatMap(([reason, items]) => [`### ${reason}`, '', ...items.map((i) => `- ${i}`), '']),
-  `## Websites without a product API (${noApi.length})`, '',
-  'Their wines need HTML parsing, a browser, or the PDF tech sheets.', '',
+  `## Websites without product data (${noApi.length})`, '',
+  'Neither a product API nor schema.org product data on their pages: their wines need a browser,',
+  'a parser written for the site, or the PDF tech sheets.', '',
   ...noApi.map((p) => `- ${p}`), '',
+  '## Wine pages without product data, to look at by hand', '',
+  'Pages whose address looks like a wine but which carry no structured product data. They are',
+  'not read automatically, so that nothing is guessed from a page layout.', '',
+  ...byHand,
 ];
 await writeFile(join(outDir, 'REPORT.md'), report.join('\n'), 'utf8');
 
 const shown = relative(process.cwd(), outDir).replaceAll('\\', '/');
 console.log(
   `\n${readyCount} ready, ${completeCount} to complete, ${known} already in the catalog, ` +
-  `${excludedCount} excluded, ${noApi.length} websites without a product API.\n` +
+  `${excludedCount} excluded, ${noApi.length} websites without product data.\n` +
   [...excludedByReason].sort((a, b) => b[1].length - a[1].length)
     .map(([reason, items]) => `  excluded ${String(items.length).padStart(3)} × ${reason}`).join('\n') +
   `\n\nNext:\n` +

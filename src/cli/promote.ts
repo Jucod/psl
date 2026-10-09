@@ -1,22 +1,48 @@
 import { mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
+import { parseArgs } from 'node:util';
 import { loadCatalog, WINES_DIR } from '../collect/catalog.js';
 import { reviewCandidate } from '../collect/review.js';
 
 /**
  * npm run collect:promote -- <candidate.json>... | <candidates folder>
+ *                             [--set appellation_id=aoc-pic-saint-loup] [--set color=red]
  *
  * The only way into db/seed/wines/: the reviewed candidate is checked again
  * (schema, known producer and grapes, AOC grape rules, duplicates, note copied
  * verbatim from the page, quarantine), then written without its review block.
  */
-const args = process.argv.slice(2);
+const { values: options, positionals: args } = parseArgs({
+  allowPositionals: true,
+  options: { set: { type: 'string', multiple: true } },
+});
 if (args.length === 0) {
   console.error(
     'usage: npm run collect:promote -- <candidate.json>...\n' +
-    '       npm run collect:promote -- <candidates folder>   (every candidate in it)',
+    '       npm run collect:promote -- <candidates folder>   (every candidate in it)\n' +
+    '       ... --set appellation_id=aoc-pic-saint-loup       (fills that field where it is empty)',
   );
   process.exit(1);
+}
+
+/**
+ * A decision the reviewer takes once for many files ("these are all Pic
+ * Saint-Loup"). It only fills the fields the page left empty, and only the two
+ * the collector leaves to the reviewer; it is written in each wine's
+ * provenance.
+ */
+const SETTABLE: Record<string, (v: string) => boolean> = {
+  appellation_id: (v) => v === 'aoc-pic-saint-loup',
+  color: (v) => v === 'red' || v === 'rose',
+};
+const decisions: [string, string][] = [];
+for (const item of options.set ?? []) {
+  const [field, value] = item.split('=') as [string, string | undefined];
+  if (!SETTABLE[field] || value === undefined || !SETTABLE[field](value)) {
+    console.error(`--set ${item}: only appellation_id=aoc-pic-saint-loup, color=red or color=rose`);
+    process.exit(1);
+  }
+  decisions.push([field, value]);
 }
 
 // A folder stands for every candidate it holds.
@@ -39,6 +65,13 @@ let failures = 0;
 
 for (const file of files) {
   const { _review: review, ...raw } = JSON.parse(await readFile(file, 'utf8'));
+  const applied: string[] = [];
+  for (const [field, value] of decisions) {
+    if (raw[field] == null) {
+      raw[field] = value;
+      applied.push(`${field}=${value}`);
+    }
+  }
   let sourceText: string | null = null;
   if (review?.source_text) {
     try {
@@ -60,7 +93,8 @@ for (const file of files) {
   const provenance =
     `Collected on ${review?.collected_on ?? 'unknown date'} from ${wine.page_url} ` +
     `(${review?.platform ?? 'unknown'} product data) by npm run collect, ` +
-    'reviewed by hand and promoted with npm run collect:promote.';
+    'reviewed by hand and promoted with npm run collect:promote' +
+    (applied.length ? ` (set by the reviewer for a batch: ${applied.join(', ')}).` : '.');
   await writeFile(
     join(WINES_DIR, `${wine.id}.json`),
     JSON.stringify({ _provenance: provenance, ...wine }, null, 2) + '\n',

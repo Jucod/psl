@@ -1,3 +1,4 @@
+import { gunzipSync } from 'node:zlib';
 import { isAllowed, parseRobots, type RobotsRules } from './robots.js';
 
 export interface PoliteFetchOptions {
@@ -33,6 +34,20 @@ export class PoliteFetcher {
     return response.json();
   }
 
+  /** HTML or XML. A gzipped sitemap (`.xml.gz`) is inflated. */
+  async getText(url: string): Promise<string> {
+    const response = await this.get(url, 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8');
+    if (!response.ok) throw new Error(`HTTP ${response.status} on ${url}`);
+    const bytes = Buffer.from(await response.arrayBuffer());
+    const gzipped = bytes[0] === 0x1f && bytes[1] === 0x8b;
+    return (gzipped ? gunzipSync(bytes) : bytes).toString('utf8');
+  }
+
+  /** The sitemaps a site declares in its robots.txt. */
+  async declaredSitemaps(origin: string): Promise<string[]> {
+    return (await this.rulesFor(new URL(origin))).sitemaps;
+  }
+
   private async get(url: string, accept: string): Promise<Response> {
     const target = new URL(url);
     const rules = await this.rulesFor(target);
@@ -45,7 +60,7 @@ export class PoliteFetcher {
   private async rulesFor(target: URL): Promise<RobotsRules> {
     const cached = this.robots.get(target.host);
     if (cached) return cached;
-    let rules: RobotsRules = { allow: [], disallow: [] };
+    let rules: RobotsRules = { allow: [], disallow: [], sitemaps: [] };
     try {
       const response = await this.request(new URL('/robots.txt', target), 'text/plain');
       if (response.ok) rules = parseRobots(await response.text(), this.opts.userAgent);

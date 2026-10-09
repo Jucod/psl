@@ -2,7 +2,7 @@ import type { PoliteFetcher } from './http.js';
 
 /** A product as a shop publishes it, reduced to what extraction needs. */
 export interface RawProduct {
-  platform: 'shopify' | 'woocommerce';
+  platform: 'shopify' | 'woocommerce' | 'html';
   title: string;
   url: string;
   /** Plain text of the product page fields, in the order the shop gives them. */
