@@ -93,6 +93,8 @@ describe('collector: from shop data to candidate', () => {
     ['a white wine', { ...shopifyRed, title: 'Blanc des Garrigues 2024 - AOP Pic Saint-Loup' }, 'white'],
     ['a gift box', { ...shopifyRed, title: 'Coffret découverte AOP Pic Saint-Loup' }, 'single bottle'],
     ['a magnum', { ...shopifyRed, title: 'Les Terrasses 2023 Magnum' }, 'format'],
+    ['a sparkling wine', { ...shopifyRed, title: 'Bulles du Pic', body_html: '<p>Méthode traditionnelle, AOP Pic Saint-Loup.</p>' }, 'sparkling'],
+    ['a pet-nat', { ...shopifyRed, title: 'Pet Nat 2024 - AOP Pic Saint-Loup rosé' }, 'sparkling'],
     ['another designation, no Pic Saint-Loup', { ...shopifyRed, title: 'Les Mûriers 2024', tags: [],
       body_html: '<p>IGP Saint-Guilhem-le-Désert, vin rouge.</p>' }, 'another designation'],
   ])('excludes only what is certainly not a bottle of Pic Saint-Loup: %s', (_label, product, reason) => {

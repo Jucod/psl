@@ -53,6 +53,9 @@ const PSL = /pic[\s-]*s(ain)?t[\s-]*loup/;
 // Saint-Loup", still on the labels of vintages before its own AOC (2016).
 const PSL_AS_APPELLATION = /\b(aop|aoc|appellation)\s+(d'origine\s+(protegee|controlee)\s+)?((coteaux\s+du\s+)?languedoc[\s-]+)?pic[\s-]*s(ain)?t[\s-]*loup/;
 const OTHER_DESIGNATION = /\bigp\b|vin de france|\b(aop|aoc)\s+languedoc\b(?![\s-]+pic)|coteaux du languedoc(?![\s-]+pic)|saint[- ]guilhem/;
+/** Sparkling wines: the catalog, like the appellation, holds still wines. */
+const SPARKLING_TITLE = /petillant|mousseux|cremant|pet[- ]?nat|methode (traditionnelle|ancestrale)|\bbulles?\b/;
+const SPARKLING_TEXT = /\b(vin )?(petillant|mousseux|cremant)\b|pet[- ]?nat|methode (traditionnelle|ancestrale)/;
 const LARGE_FORMAT = /magnum|jeroboam|150\s?cl|1[,.]5\s?l\b|\b37[,.]5\s?cl|demi[- ]bouteille/;
 
 /** Sentences of the page that describe the wine itself, by vocabulary. */
@@ -74,6 +77,9 @@ export function extractCandidate(
   // Everything merely uncertain becomes a candidate to complete.
   if (NOT_A_BOTTLE.test(titleN)) return exclude('not a single bottle of wine');
   if (LARGE_FORMAT.test(titleN)) return exclude('large or small format: the 75 cl bottle is the reference');
+  if (SPARKLING_TITLE.test(titleN) || SPARKLING_TEXT.test(normalize(product.text))) {
+    return exclude('sparkling wine: the catalog holds still wines');
+  }
 
   const pslNamed = PSL_AS_APPELLATION.test(all) || product.labels.some((l) => PSL.test(normalize(l)));
   const pslMentioned = PSL.test(all);
