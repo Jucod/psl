@@ -162,9 +162,16 @@ async function runQuery(
   maxResults: number = config.maxResults,
 ): Promise<WineResult[]> {
   const { text, params } = buildClauses(filters, 3);
+  // In a vector ranking, the wines described by their own note come first.
+  // A wine without one is scored on its appellation's profile: "un rose
+  // frais" put two rosés without a note ahead of the one whose sheet says
+  // "fraiche", on the strength of what the INAO says of every Pic Saint-Loup
+  // rosé. An appellation trait does not rank a wine (see N7 in the tests);
+  // those wines still answer, after the ones we can vouch for.
+  const level = vector ? `(w.embedding_level = 'wine') DESC, ` : '';
   const sql =
     RESULTS_SQL + `(${text})\n` +
-    `  ORDER BY score DESC NULLS LAST, w.price_eur ASC NULLS LAST, w.id\n` +
+    `  ORDER BY ${level}score DESC NULLS LAST, w.price_eur ASC NULLS LAST, w.id\n` +
     `  LIMIT ${Number.isInteger(maxResults) ? maxResults : config.maxResults}`;
 
   const { rows } = await pool.query(sql, [

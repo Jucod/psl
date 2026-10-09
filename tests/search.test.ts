@@ -659,6 +659,21 @@ describe('regressions found in the second review', () => {
     expect(r.ranking).toBe('vector');
   });
 
+  it('a wine described by its own note ranks before one scored on the appellation profile', async () => {
+    const f = filters({ color: 'rose', descriptors: ['fresh'] });
+    const r = await search(f, { ...options, queryVector: await vector(f), maxResults: 50 });
+    expect(r.ranking).toBe('vector');
+
+    const levels = r.results.map((c) => c.level);
+    const firstProfile = levels.indexOf('appellation');
+    expect(levels.includes('wine') && firstProfile > 0).toBe(true);
+    expect(levels.slice(firstProfile)).not.toContain('wine');
+    // Not vacuous: on score alone, a profile row would come before a wine row.
+    const best = (level: string) => Math.max(...r.results.filter((c) => c.level === level).map((c) => c.score));
+    const worst = (level: string) => Math.min(...r.results.filter((c) => c.level === level).map((c) => c.score));
+    expect(best('appellation')).toBeGreaterThan(worst('wine'));
+  });
+
   it('the rejection vector really takes part in the ranking', async () => {
     // Witness of the mechanism itself: on a REJECTION-ONLY request, the query
     // vector exists only through the rejection. With rejectionWeight = 0 it
@@ -680,7 +695,9 @@ describe('regressions found in the second review', () => {
       expect(i, `${id} missing from the ranking`).toBeGreaterThanOrEqual(0);
       return i;
     };
-    const last = r.results[r.results.length - 1]!;
+    // Among the wines described by their own note: the others come after
+    // them whatever their score, and have nothing to say about tannins.
+    const last = r.results.filter((x) => x.level === 'wine').at(-1)!;
     expect(STRUCTURED).toContain(last.id);
     // And a note silent about structure comes before a note that names it:
     // the rejection, and it alone, produces this order.

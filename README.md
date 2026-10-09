@@ -157,6 +157,12 @@ dominates the cosine and the ranking collapses.
 - missing → no vector is made up, `embedding_level = 'appellation'`, search
   falls back on the AOC profile **and says so** in the interface.
 
+In a relevance ranking, the wines described by their own note come first.
+Scored on the profile, a rosé without a note outranked, on "un rosé frais",
+the one whose sheet says "fraîche": the INAO's words about every Pic
+Saint-Loup rosé were ranking a single bottle. The profile wines still answer,
+after the ones the catalog can vouch for.
+
 ### What switching to real data revealed
 
 The fixture corpus validated the engine on a vocabulary I had written myself.
