@@ -46,9 +46,10 @@ export default async function setup(): Promise<void> {
     }
     await embedCatalog(db(), embeddingProvider());
   } catch (e) {
+    const unreachable = (e as { code?: string }).code === 'ECONNREFUSED';
     throw new Error(
-      `could not prepare the test database "${name}". Is Postgres running? ` +
-      `(docker compose up -d, or bash scripts/bootstrap-postgres-local.sh)\n${(e as Error).message}`,
+      `could not prepare the test database "${name}": ${(e as Error).message}` +
+      (unreachable ? '\nIs Postgres running? (docker compose up -d, or bash scripts/bootstrap-postgres-local.sh)' : ''),
       { cause: e },
     );
   } finally {
